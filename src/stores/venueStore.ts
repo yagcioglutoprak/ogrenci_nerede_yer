@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Venue, Review, VenueFilters } from '../types';
+import { MOCK_VENUES, MOCK_REVIEWS, MOCK_USERS } from '../lib/mockData';
 
 interface VenueState {
   venues: Venue[];
@@ -16,6 +17,31 @@ interface VenueState {
   addReview: (review: Omit<Review, 'id' | 'created_at'>) => Promise<{ error: string | null }>;
   toggleFavorite: (venueId: string, userId: string) => Promise<void>;
   setFilters: (filters: VenueFilters) => void;
+}
+
+/**
+ * Apply venue filters to a list of venues (used for mock data fallback).
+ */
+function applyFiltersToMockVenues(venues: Venue[], filters: VenueFilters): Venue[] {
+  let filtered = [...venues];
+
+  if (filters.minRating) {
+    filtered = filtered.filter((v) => v.overall_rating >= filters.minRating!);
+  }
+  if (filters.priceRange && filters.priceRange.length > 0) {
+    filtered = filtered.filter((v) => filters.priceRange!.includes(v.price_range));
+  }
+  if (filters.isVerified) {
+    filtered = filtered.filter((v) => v.is_verified);
+  }
+  if (filters.tags && filters.tags.length > 0) {
+    filtered = filtered.filter((v) => v.tags.some((t) => filters.tags!.includes(t)));
+  }
+
+  // Sort by rating descending (matches the Supabase query default)
+  filtered.sort((a, b) => b.overall_rating - a.overall_rating);
+
+  return filtered;
 }
 
 export const useVenueStore = create<VenueState>((set, get) => ({
@@ -43,8 +69,12 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
     const { data, error } = await query.order('overall_rating', { ascending: false }).limit(100);
 
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       set({ venues: data as Venue[] });
+    } else {
+      // Fallback to mock data when Supabase returns empty or error
+      const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
+      set({ venues: mockFiltered });
     }
     set({ loading: false });
   },
@@ -59,19 +89,33 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
     if (!error && data) {
       set({ selectedVenue: data as Venue });
+    } else {
+      // Fallback: find venue from mock data
+      const mockVenue = MOCK_VENUES.find((v) => v.id === id) || null;
+      set({ selectedVenue: mockVenue });
     }
     set({ loading: false });
   },
 
   fetchReviews: async (venueId) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('reviews')
       .select('*, user:users(*)')
       .eq('venue_id', venueId)
       .order('created_at', { ascending: false });
 
-    if (data) {
+    if (!error && data && data.length > 0) {
       set({ reviews: data as Review[] });
+    } else {
+      // Fallback: filter mock reviews for this venue and join user data
+      const mockReviews = MOCK_REVIEWS
+        .filter((r) => r.venue_id === venueId)
+        .map((r) => ({
+          ...r,
+          user: MOCK_USERS.find((u) => u.id === r.user_id),
+        }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      set({ reviews: mockReviews as Review[] });
     }
   },
 
@@ -96,14 +140,14 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       return { data: data as Venue, error: null };
     }
 
-    return { data: null, error: error?.message || 'Mekan eklenirken hata oluştu' };
+    return { data: null, error: error?.message || 'Mekan eklenirken hata olustu' };
   },
 
   addReview: async (review) => {
     const { error } = await supabase.from('reviews').insert(review);
 
     if (!error) {
-      // Mekan ortalamalarını güncelle
+      // Mekan ortalamalarini guncelle
       const { data: reviews } = await supabase
         .from('reviews')
         .select('taste_rating, value_rating, friendliness_rating')

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Post, Comment } from '../types';
+import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS } from '../lib/mockData';
 
 interface FeedState {
   posts: Post[];
@@ -18,6 +19,37 @@ interface FeedState {
   refreshFeed: () => Promise<void>;
 }
 
+/**
+ * Build fully-joined mock posts (with user, venue, images data attached).
+ */
+function buildMockPostsWithJoins(): Post[] {
+  return MOCK_POSTS.map((post) => {
+    const venue = post.venue_id
+      ? MOCK_VENUES.find((v) => v.id === post.venue_id)
+      : undefined;
+
+    return {
+      ...post,
+      user: MOCK_USERS.find((u) => u.id === post.user_id),
+      venue: venue as Post['venue'],
+      images: MOCK_POST_IMAGES.filter((img) => img.post_id === post.id).sort((a, b) => a.order - b.order),
+    };
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+/**
+ * Build mock comments with user data joined.
+ */
+function buildMockCommentsWithUser(postId: string): Comment[] {
+  return MOCK_COMMENTS
+    .filter((c) => c.post_id === postId)
+    .map((c) => ({
+      ...c,
+      user: MOCK_USERS.find((u) => u.id === c.user_id),
+    }))
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+}
+
 export const useFeedStore = create<FeedState>((set, get) => ({
   posts: [],
   selectedPost: null,
@@ -27,7 +59,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   fetchPosts: async () => {
     set({ loading: true });
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('posts')
       .select(`
         *,
@@ -38,8 +70,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (data) {
-      // Her post için beğeni ve yorum sayısını al
+    if (!error && data && data.length > 0) {
+      // Her post icin begeni ve yorum sayisini al
       const postsWithCounts = await Promise.all(
         data.map(async (post) => {
           const [{ count: likesCount }, { count: commentsCount }] = await Promise.all([
@@ -54,12 +86,16 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         })
       );
       set({ posts: postsWithCounts as Post[] });
+    } else {
+      // Fallback to mock data when Supabase returns empty or error
+      const mockPosts = buildMockPostsWithJoins();
+      set({ posts: mockPosts as Post[] });
     }
     set({ loading: false });
   },
 
   fetchPostById: async (id) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('posts')
       .select(`
         *,
@@ -70,20 +106,29 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       .eq('id', id)
       .single();
 
-    if (data) {
+    if (!error && data) {
       set({ selectedPost: data as Post });
+    } else {
+      // Fallback: find from mock data with joins
+      const allMock = buildMockPostsWithJoins();
+      const mockPost = allMock.find((p) => p.id === id) || null;
+      set({ selectedPost: mockPost });
     }
   },
 
   fetchComments: async (postId) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('comments')
       .select('*, user:users(*)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
-    if (data) {
+    if (!error && data && data.length > 0) {
       set({ comments: data as Comment[] });
+    } else {
+      // Fallback to mock comments
+      const mockComments = buildMockCommentsWithUser(postId);
+      set({ comments: mockComments as Comment[] });
     }
   },
 
@@ -96,7 +141,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     if (error) return { error: error.message };
 
-    // Fotoğrafları ekle
+    // Fotograflari ekle
     if (post && image_urls.length > 0) {
       const images = image_urls.map((url, index) => ({
         post_id: post.id,
@@ -111,20 +156,25 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   toggleLike: async (postId, userId) => {
-    const { data: existing } = await supabase
+    // Try Supabase first
+    const { data: existing, error: fetchError } = await supabase
       .from('likes')
       .select('*')
       .eq('post_id', postId)
       .eq('user_id', userId)
       .single();
 
-    if (existing) {
-      await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', userId);
-    } else {
-      await supabase.from('likes').insert({ post_id: postId, user_id: userId });
+    if (!fetchError || fetchError.code === 'PGRST116') {
+      // Supabase is reachable - do normal toggle
+      if (existing) {
+        await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', userId);
+      } else {
+        await supabase.from('likes').insert({ post_id: postId, user_id: userId });
+      }
     }
+    // If Supabase fails entirely, we still update local state below
 
-    // Lokal state güncelle
+    // Lokal state guncelle (works for both Supabase and mock data)
     const posts = get().posts.map((p) => {
       if (p.id === postId) {
         const isLiked = !p.is_liked;
@@ -148,6 +198,18 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     if (!error) {
       await get().fetchComments(postId);
+    } else {
+      // Fallback: add comment to local state for mock data
+      const newComment: Comment = {
+        id: `c-local-${Date.now()}`,
+        post_id: postId,
+        user_id: userId,
+        text,
+        created_at: new Date().toISOString(),
+        user: MOCK_USERS.find((u) => u.id === userId),
+      };
+      const currentComments = get().comments;
+      set({ comments: [...currentComments, newComment] });
     }
 
     return { error: error?.message || null };
