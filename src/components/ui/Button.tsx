@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  View,
   ViewStyle,
-  TextStyle,
   StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
@@ -20,6 +20,8 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  iconPosition?: 'left' | 'right';
+  fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -30,40 +32,52 @@ export default function Button({
   loading = false,
   disabled = false,
   icon,
+  iconPosition = 'left',
+  fullWidth = true,
   style,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const textColor = getTextColor(variant, isDisabled);
 
   const containerStyles: StyleProp<ViewStyle>[] = [
     styles.base,
-    styles[variant],
+    variantStyles[variant],
     isDisabled && styles.disabled,
+    variant === 'primary' && !isDisabled && styles.primaryShadow,
+    variant === 'secondary' && !isDisabled && styles.secondaryShadow,
+    fullWidth && styles.fullWidth,
     style,
   ];
-
-  const textColor = getTextColor(variant, isDisabled);
 
   return (
     <TouchableOpacity
       style={containerStyles}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.7}
+      activeOpacity={0.75}
     >
       {loading ? (
         <ActivityIndicator size="small" color={textColor} />
       ) : (
-        <>
-          {icon && (
+        <View style={styles.content}>
+          {icon && iconPosition === 'left' && (
             <Ionicons
               name={icon}
               size={20}
               color={textColor}
-              style={styles.icon}
+              style={styles.iconLeft}
             />
           )}
           <Text style={[styles.text, { color: textColor }]}>{title}</Text>
-        </>
+          {icon && iconPosition === 'right' && (
+            <Ionicons
+              name={icon}
+              size={20}
+              color={textColor}
+              style={styles.iconRight}
+            />
+          )}
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -71,57 +85,84 @@ export default function Button({
 
 function getTextColor(variant: ButtonVariant, isDisabled: boolean): string {
   if (isDisabled) {
-    return variant === 'outline' || variant === 'ghost'
-      ? Colors.textLight
-      : 'rgba(255,255,255,0.6)';
+    if (variant === 'outline' || variant === 'ghost') {
+      return Colors.textTertiary;
+    }
+    return 'rgba(255, 255, 255, 0.6)';
   }
 
   switch (variant) {
     case 'primary':
+      return Colors.textOnPrimary;
     case 'secondary':
-      return '#FFFFFF';
+      return Colors.textOnPrimary;
     case 'outline':
       return Colors.primary;
     case 'ghost':
-      return Colors.text;
+      return Colors.primary;
   }
 }
+
+const variantStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: Colors.primary,
+  },
+  secondary: {
+    backgroundColor: Colors.accent,
+  },
+  outline: {
+    backgroundColor: Colors.background,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+  },
+});
 
 const styles = StyleSheet.create({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    minHeight: 50,
+    height: 52,
+    paddingHorizontal: Spacing.xxl,
+    borderRadius: 14,
   },
-  primary: {
-    backgroundColor: Colors.primary,
+  fullWidth: {
+    width: '100%',
   },
-  secondary: {
-    backgroundColor: Colors.secondary,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  disabled: {
-    opacity: 0.5,
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
-  icon: {
-    marginRight: 8,
+  iconLeft: {
+    marginRight: Spacing.sm,
+  },
+  iconRight: {
+    marginLeft: Spacing.sm,
+  },
+  disabled: {
+    opacity: 0.45,
+  },
+  primaryShadow: {
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  secondaryShadow: {
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 6,
   },
 });

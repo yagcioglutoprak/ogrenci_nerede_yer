@@ -8,8 +8,9 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, PriceRanges, VenueLevels } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, PriceRanges, VenueLevels } from '../../lib/constants';
 import type { Venue } from '../../types';
 import StarRating from '../ui/StarRating';
 import Badge from '../ui/Badge';
@@ -28,9 +29,9 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
     <TouchableOpacity
       style={[styles.card, style]}
       onPress={() => onPress(venue)}
-      activeOpacity={0.85}
+      activeOpacity={0.88}
     >
-      {/* Cover Image */}
+      {/* Cover Image with 16:10 ratio */}
       <View style={styles.imageContainer}>
         {venue.cover_image_url ? (
           <Image
@@ -39,26 +40,32 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Ionicons name="restaurant-outline" size={36} color={Colors.textLight} />
+            <Ionicons name="restaurant-outline" size={40} color={Colors.textTertiary} />
           </View>
         )}
 
-        {/* Price overlay */}
-        <View style={styles.priceOverlay}>
+        {/* Dark gradient overlay at bottom */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0, 0, 0, 0.45)']}
+          style={styles.gradientOverlay}
+        />
+
+        {/* Price tag - top-left red pill */}
+        <View style={styles.priceTag}>
           <Text style={styles.priceText}>{priceLabel}</Text>
         </View>
 
-        {/* Verified overlay */}
+        {/* Verified badge - top-right red circle with checkmark */}
         {venue.is_verified && (
-          <View style={styles.verifiedOverlay}>
-            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-            <Text style={styles.verifiedText}>Onayli</Text>
+          <View style={styles.verifiedBadge}>
+            <Ionicons name="checkmark" size={14} color={Colors.textOnPrimary} />
           </View>
         )}
       </View>
 
       {/* Info Section */}
       <View style={styles.info}>
+        {/* Name + Level Badge row */}
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
             {venue.name}
@@ -72,18 +79,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
           )}
         </View>
 
-        {/* Rating Row */}
-        <View style={styles.ratingRow}>
-          <StarRating rating={venue.overall_rating} size={16} />
-          <Text style={styles.ratingValue}>
-            {venue.overall_rating.toFixed(1)}
-          </Text>
-          <Text style={styles.reviewCount}>
-            ({venue.total_reviews})
-          </Text>
-        </View>
-
-        {/* Address */}
+        {/* Address row */}
         <View style={styles.addressRow}>
           <Ionicons
             name="location-outline"
@@ -95,11 +91,22 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
           </Text>
         </View>
 
+        {/* Rating row */}
+        <View style={styles.ratingRow}>
+          <StarRating rating={venue.overall_rating} size="sm" />
+          <Text style={styles.ratingValue}>
+            {venue.overall_rating.toFixed(1)}
+          </Text>
+          <Text style={styles.reviewCount}>
+            ({venue.total_reviews} yorum)
+          </Text>
+        </View>
+
         {/* Tags */}
         {venue.tags && venue.tags.length > 0 && (
           <View style={styles.tagsRow}>
             {venue.tags.slice(0, 3).map((tag) => (
-              <View key={tag} style={styles.tag}>
+              <View key={tag} style={styles.tagChip}>
                 <Text style={styles.tagText}>{tag}</Text>
               </View>
             ))}
@@ -115,19 +122,19 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.lg,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   imageContainer: {
     position: 'relative',
-    height: 160,
-    backgroundColor: Colors.surfaceElevated,
+    aspectRatio: 16 / 10,
+    backgroundColor: Colors.backgroundSecondary,
   },
   coverImage: {
     width: '100%',
@@ -139,100 +146,108 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.backgroundSecondary,
   },
-  priceOverlay: {
+  gradientOverlay: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+  },
+  priceTag: {
+    position: 'absolute',
+    top: Spacing.md,
+    left: Spacing.md,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   priceText: {
-    color: Colors.star,
-    fontSize: 13,
-    fontWeight: '700',
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  verifiedOverlay: {
+  verifiedBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    top: Spacing.md,
+    right: Spacing.md,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: Colors.verified,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  verifiedText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   info: {
-    padding: 14,
-    gap: 8,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: Spacing.sm,
   },
   name: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.text,
+    flex: 1,
+    letterSpacing: -0.2,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  address: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
     flex: 1,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.sm,
   },
   ratingValue: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     fontWeight: '700',
     color: Colors.text,
   },
   reviewCount: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  address: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    flex: 1,
   },
   tagsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 2,
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
   },
-  tag: {
-    backgroundColor: Colors.borderLight,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  tagChip: {
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
   moreTagsText: {
-    fontSize: 11,
-    color: Colors.textLight,
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
     fontWeight: '500',
   },
 });

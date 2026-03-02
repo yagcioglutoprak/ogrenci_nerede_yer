@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 
@@ -25,6 +25,10 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
+
+  const clearError = () => {
+    if (error) setError('');
+  };
 
   const handleRegister = async () => {
     setError('');
@@ -74,20 +78,25 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Close button */}
-          <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => router.back()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="close" size={28} color={Colors.text} />
           </TouchableOpacity>
 
-          {/* Logo / Brand */}
+          {/* Brand Section */}
           <View style={styles.brandSection}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="restaurant" size={40} color="#FFFFFF" />
+            <View style={styles.logoCircle}>
+              <Ionicons name="restaurant" size={48} color={Colors.textOnPrimary} />
             </View>
+
             <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
             <Text style={styles.brandSubtitle}>Yeni hesap olustur</Text>
           </View>
 
-          {/* Form */}
+          {/* Form Section */}
           <View style={styles.formSection}>
             <Input
               label="Kullanici Adi"
@@ -95,7 +104,7 @@ export default function RegisterScreen() {
               value={username}
               onChangeText={(text) => {
                 setUsername(text);
-                setError('');
+                clearError();
               }}
               icon="person-outline"
               autoCapitalize="none"
@@ -108,7 +117,7 @@ export default function RegisterScreen() {
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                setError('');
+                clearError();
               }}
               icon="mail-outline"
               keyboardType="email-address"
@@ -122,7 +131,7 @@ export default function RegisterScreen() {
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                setError('');
+                clearError();
               }}
               icon="lock-closed-outline"
               secureTextEntry
@@ -135,7 +144,7 @@ export default function RegisterScreen() {
               value={passwordConfirm}
               onChangeText={(text) => {
                 setPasswordConfirm(text);
-                setError('');
+                clearError();
               }}
               icon="lock-closed-outline"
               secureTextEntry
@@ -161,16 +170,22 @@ export default function RegisterScreen() {
               onPress={handleRegister}
               loading={loading}
               disabled={loading}
-              icon="person-add-outline"
               style={styles.registerButton}
             />
           </View>
 
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>veya</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           {/* Login Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Zaten hesabin var mi?</Text>
+            <Text style={styles.footerText}>Zaten hesabin var mi? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/login')}>
-              <Text style={styles.footerLink}> Giris Yap</Text>
+              <Text style={styles.footerLink}>Giris Yap</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -189,83 +204,108 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.xxl,
     paddingBottom: 40,
   },
+
   // Close
   closeButton: {
     alignSelf: 'flex-end',
-    padding: 8,
-    marginTop: 8,
+    padding: Spacing.sm,
+    marginTop: Spacing.sm,
   },
+
   // Brand
   brandSection: {
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 32,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xxxl,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.xl,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 10,
   },
   brandName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     color: Colors.primary,
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   brandSubtitle: {
-    fontSize: 15,
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
+    fontWeight: '400',
+    textAlign: 'center',
   },
+
   // Form
   formSection: {
-    gap: 4,
+    gap: Spacing.xs,
   },
   registerButton: {
-    marginTop: 12,
+    marginTop: Spacing.md,
   },
+
   // Error
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   errorText: {
     fontSize: 14,
     color: Colors.error,
     flex: 1,
+    fontWeight: '500',
   },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xxl,
+    marginBottom: Spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: Spacing.lg,
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+
   // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
   },
   footerText: {
-    fontSize: 15,
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
   },
   footerLink: {
-    fontSize: 15,
+    fontSize: FontSize.md,
     fontWeight: '700',
     color: Colors.primary,
   },

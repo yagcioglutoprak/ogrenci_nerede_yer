@@ -3,13 +3,14 @@ import {
   View,
   Text,
   TextInput,
+  TouchableOpacity,
   StyleSheet,
   StyleProp,
   ViewStyle,
   TextInputProps,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -36,12 +37,20 @@ export default function Input({
   ...rest
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [isSecureVisible, setIsSecureVisible] = useState(false);
 
-  const borderColor = error
+  const hasError = Boolean(error);
+  const showSecureToggle = secureTextEntry;
+
+  const wrapperBorderColor = hasError
     ? Colors.error
     : isFocused
-      ? Colors.primary
-      : Colors.border;
+      ? Colors.borderFocus
+      : 'transparent';
+
+  const wrapperBackgroundColor = isFocused
+    ? Colors.background
+    : Colors.backgroundSecondary;
 
   return (
     <View style={[styles.container, style]}>
@@ -50,8 +59,12 @@ export default function Input({
       <View
         style={[
           styles.inputWrapper,
-          { borderColor },
+          {
+            borderColor: wrapperBorderColor,
+            backgroundColor: wrapperBackgroundColor,
+          },
           isFocused && styles.inputWrapperFocused,
+          hasError && styles.inputWrapperError,
           multiline && styles.inputWrapperMultiline,
         ]}
       >
@@ -59,22 +72,27 @@ export default function Input({
           <Ionicons
             name={icon}
             size={20}
-            color={isFocused ? Colors.primary : Colors.textSecondary}
-            style={styles.icon}
+            color={
+              hasError
+                ? Colors.error
+                : isFocused
+                  ? Colors.primary
+                  : Colors.textTertiary
+            }
+            style={styles.leadingIcon}
           />
         )}
 
         <TextInput
           style={[
             styles.input,
-            icon && styles.inputWithIcon,
             multiline && styles.inputMultiline,
           ]}
           placeholder={placeholder}
-          placeholderTextColor={Colors.textLight}
+          placeholderTextColor={Colors.textTertiary}
           value={value}
           onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={secureTextEntry && !isSecureVisible}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={() => setIsFocused(true)}
@@ -82,9 +100,23 @@ export default function Input({
           selectionColor={Colors.primary}
           {...rest}
         />
+
+        {showSecureToggle && (
+          <TouchableOpacity
+            onPress={() => setIsSecureVisible(!isSecureVisible)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.secureToggle}
+          >
+            <Ionicons
+              name={isSecureVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={Colors.textTertiary}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {error && (
+      {hasError && (
         <View style={styles.errorRow}>
           <Ionicons name="alert-circle" size={14} color={Colors.error} />
           <Text style={styles.errorText}>{error}</Text>
@@ -96,55 +128,68 @@ export default function Input({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   label: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 6,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.sm,
+    letterSpacing: 0.1,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 14,
-    minHeight: 50,
+    borderRadius: 14,
+    paddingHorizontal: Spacing.lg,
+    height: 52,
   },
   inputWrapperFocused: {
-    backgroundColor: '#FFF8F5',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  inputWrapperError: {
+    backgroundColor: Colors.primarySoft,
   },
   inputWrapperMultiline: {
     alignItems: 'flex-start',
-    minHeight: 100,
-    paddingVertical: 12,
+    height: 'auto' as any,
+    minHeight: 110,
+    paddingVertical: Spacing.md,
   },
-  icon: {
-    marginRight: 10,
+  leadingIcon: {
+    marginRight: Spacing.md,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: FontSize.md,
+    fontWeight: '400',
     color: Colors.text,
     paddingVertical: 0,
-  },
-  inputWithIcon: {
-    paddingLeft: 0,
+    height: '100%',
   },
   inputMultiline: {
-    minHeight: 76,
+    minHeight: 86,
     paddingTop: 2,
+    height: 'auto' as any,
+  },
+  secureToggle: {
+    marginLeft: Spacing.sm,
+    padding: Spacing.xs,
   },
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
-    gap: 4,
+    marginTop: Spacing.sm,
+    gap: Spacing.xs,
   },
   errorText: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     color: Colors.error,
+    fontWeight: '500',
   },
 });

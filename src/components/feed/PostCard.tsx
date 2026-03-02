@@ -11,7 +11,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../lib/constants';
+import { Colors, Spacing, FontSize } from '../../lib/constants';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
 
@@ -22,6 +22,7 @@ interface PostCardProps {
   post: Post;
   onLike?: (postId: string) => void;
   onComment?: (postId: string) => void;
+  onBookmark?: (postId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onUserPress?: (userId: string) => void;
 }
@@ -30,6 +31,7 @@ export default function PostCard({
   post,
   onLike,
   onComment,
+  onBookmark,
   onVenuePress,
   onUserPress,
 }: PostCardProps) {
@@ -48,35 +50,46 @@ export default function PostCard({
 
   return (
     <View style={styles.card}>
-      {/* Header: Avatar + Username + Venue Tag */}
-      <TouchableOpacity
-        style={styles.header}
-        onPress={() => post.user && onUserPress?.(post.user_id)}
-        activeOpacity={0.7}
-      >
-        <Avatar
-          uri={post.user?.avatar_url}
-          name={post.user?.full_name ?? post.user?.username ?? '?'}
-          size={36}
-        />
+      {/* Header: Avatar + Username + Venue + Time */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => post.user && onUserPress?.(post.user_id)}
+          activeOpacity={0.7}
+        >
+          <Avatar
+            uri={post.user?.avatar_url}
+            name={post.user?.full_name ?? post.user?.username ?? '?'}
+            size={36}
+          />
+        </TouchableOpacity>
+
         <View style={styles.headerText}>
-          <Text style={styles.username} numberOfLines={1}>
-            {post.user?.username ?? 'Kullanici'}
-          </Text>
-          {post.venue && (
+          <View style={styles.headerNameRow}>
             <TouchableOpacity
-              onPress={() => post.venue && onVenuePress?.(post.venue.id)}
-              activeOpacity={0.6}
+              onPress={() => post.user && onUserPress?.(post.user_id)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.venueLink} numberOfLines={1}>
-                <Ionicons name="location" size={12} color={Colors.primary} />
-                {' '}{post.venue.name}
+              <Text style={styles.username} numberOfLines={1}>
+                {post.user?.username ?? 'Kullanici'}
               </Text>
             </TouchableOpacity>
-          )}
+            {post.venue && (
+              <TouchableOpacity
+                onPress={() => post.venue && onVenuePress?.(post.venue.id)}
+                activeOpacity={0.6}
+                style={styles.venueRow}
+              >
+                <Ionicons name="location" size={11} color={Colors.primary} />
+                <Text style={styles.venueLink} numberOfLines={1}>
+                  {post.venue.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
         <Text style={styles.time}>{timeSince}</Text>
-      </TouchableOpacity>
+      </View>
 
       {/* Image Carousel */}
       {images.length > 0 && (
@@ -131,22 +144,30 @@ export default function PostCard({
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onLike?.(post.id)}
-            activeOpacity={0.6}
+            activeOpacity={0.5}
           >
             <Ionicons
               name={post.is_liked ? 'heart' : 'heart-outline'}
               size={26}
-              color={post.is_liked ? Colors.error : Colors.text}
+              color={post.is_liked ? Colors.primary : Colors.text}
             />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onComment?.(post.id)}
-            activeOpacity={0.6}
+            activeOpacity={0.5}
           >
             <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onBookmark?.(post.id)}
+          activeOpacity={0.5}
+        >
+          <Ionicons name="bookmark-outline" size={24} color={Colors.text} />
+        </TouchableOpacity>
       </View>
 
       {/* Likes Count */}
@@ -159,7 +180,7 @@ export default function PostCard({
       {/* Caption */}
       {post.caption ? (
         <View style={styles.captionRow}>
-          <Text style={styles.caption}>
+          <Text style={styles.caption} numberOfLines={3}>
             <Text style={styles.captionUsername}>
               {post.user?.username ?? 'Kullanici'}
             </Text>
@@ -173,9 +194,10 @@ export default function PostCard({
         <TouchableOpacity
           onPress={() => onComment?.(post.id)}
           activeOpacity={0.6}
+          style={styles.commentsRow}
         >
           <Text style={styles.commentsLink}>
-            {post.comments_count} yorumun tumunu gor
+            Tum yorumlari gor ({post.comments_count})
           </Text>
         </TouchableOpacity>
       )}
@@ -202,38 +224,51 @@ function getRelativeTime(dateString: string): string {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
   },
   headerText: {
     flex: 1,
+  },
+  headerNameRow: {
+    gap: 2,
   },
   username: {
     fontSize: 14,
     fontWeight: '700',
     color: Colors.text,
+    letterSpacing: -0.1,
+  },
+  venueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   venueLink: {
-    fontSize: 12,
+    fontSize: FontSize.xs,
     color: Colors.primary,
-    fontWeight: '500',
-    marginTop: 1,
+    fontWeight: '600',
   },
   time: {
-    fontSize: 12,
-    color: Colors.textLight,
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    fontWeight: '400',
   },
+
+  // Image Carousel
   imageSection: {
     position: 'relative',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.backgroundSecondary,
   },
   postImage: {
     width: SCREEN_WIDTH,
@@ -244,63 +279,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
-    bottom: 12,
+    bottom: Spacing.md,
     left: 0,
     right: 0,
-    gap: 5,
+    gap: Spacing.sm,
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.40)',
   },
   dotActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.primary,
     width: 8,
     height: 8,
     borderRadius: 4,
   },
   imageCounter: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    top: Spacing.md,
+    right: Spacing.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   imageCounterText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+    color: Colors.textOnDark,
+    fontSize: FontSize.xs,
     fontWeight: '600',
   },
+
+  // Actions
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
   },
   actionsLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: Spacing.lg,
   },
   actionButton: {
     padding: 2,
   },
+
+  // Likes
   likesCount: {
     fontSize: 14,
     fontWeight: '700',
     color: Colors.text,
-    paddingHorizontal: 14,
-    marginTop: 2,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.xs,
+    letterSpacing: -0.1,
   },
+
+  // Caption
   captionRow: {
-    paddingHorizontal: 14,
-    marginTop: 4,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.xs,
   },
   caption: {
     fontSize: 14,
@@ -309,12 +351,18 @@ const styles = StyleSheet.create({
   },
   captionUsername: {
     fontWeight: '700',
+    letterSpacing: -0.1,
+  },
+
+  // Comments
+  commentsRow: {
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.xs,
+    paddingBottom: Spacing.lg,
   },
   commentsLink: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    paddingHorizontal: 14,
-    marginTop: 4,
-    paddingBottom: 12,
+    fontWeight: '400',
   },
 });

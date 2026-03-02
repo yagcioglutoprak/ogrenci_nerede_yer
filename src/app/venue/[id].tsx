@@ -1,14 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Image,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Dimensions,
-  FlatList,
-  Modal,
   Alert,
   ActivityIndicator,
   Linking,
@@ -20,11 +19,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, PriceRanges, VenueLevels, RatingCategories } from '../../lib/constants';
+import {
+  Colors,
+  PriceRanges,
+  VenueLevels,
+  RatingCategories,
+  Spacing,
+  BorderRadius,
+  FontSize,
+} from '../../lib/constants';
 import StarRating from '../../components/ui/StarRating';
-import Badge from '../../components/ui/Badge';
 import Avatar from '../../components/ui/Avatar';
-import Button from '../../components/ui/Button';
 import type { Review } from '../../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -45,7 +50,7 @@ export default function VenueDetailScreen() {
   } = useVenueStore();
 
   const [isFavorited, setIsFavorited] = useState(false);
-  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showRatingForm, setShowRatingForm] = useState(false);
   const [ratingTaste, setRatingTaste] = useState(0);
   const [ratingValue, setRatingValue] = useState(0);
   const [ratingFriendliness, setRatingFriendliness] = useState(0);
@@ -69,6 +74,14 @@ export default function VenueDetailScreen() {
     await toggleFavorite(venue.id, user.id);
   };
 
+  const handleToggleRatingForm = () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    setShowRatingForm((prev) => !prev);
+  };
+
   const handleSubmitReview = async () => {
     if (!user) {
       router.push('/auth/login');
@@ -76,7 +89,7 @@ export default function VenueDetailScreen() {
     }
     if (!venue) return;
     if (ratingTaste === 0 || ratingValue === 0 || ratingFriendliness === 0) {
-      Alert.alert('Hata', 'Lutfen tum kategorileri puanlayin.');
+      Alert.alert('Hata', 'Lütfen tüm kategorileri puanlayın.');
       return;
     }
 
@@ -94,13 +107,14 @@ export default function VenueDetailScreen() {
     if (error) {
       Alert.alert('Hata', error);
     } else {
-      Alert.alert('Tesekkurler!', 'Degerlendirmeniz kaydedildi.');
-      setShowRatingModal(false);
+      Alert.alert('Teşekkürler!', 'Değerlendirmeniz kaydedildi.');
+      setShowRatingForm(false);
       setRatingTaste(0);
       setRatingValue(0);
       setRatingFriendliness(0);
       setRatingComment('');
       fetchVenueById(venue.id);
+      fetchReviews(venue.id);
     }
   };
 
@@ -110,6 +124,7 @@ export default function VenueDetailScreen() {
     }
   };
 
+  // -- Loading state --
   if (loading || !venue) {
     return (
       <View style={styles.loadingScreen}>
@@ -118,318 +133,450 @@ export default function VenueDetailScreen() {
     );
   }
 
-  const priceLabel = PriceRanges.find((p) => p.value === venue.price_range)?.label ?? '';
-  const priceDesc = PriceRanges.find((p) => p.value === venue.price_range)?.description ?? '';
+  const priceLabel =
+    PriceRanges.find((p) => p.value === venue.price_range)?.label ?? '';
+  const priceDesc =
+    PriceRanges.find((p) => p.value === venue.price_range)?.description ?? '';
   const levelInfo = VenueLevels.find((l) => l.level === venue.level);
 
   const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
 
-  const renderReviewItem = ({ item }: { item: Review }) => (
-    <View style={styles.reviewCard}>
-      <View style={styles.reviewHeader}>
-        <Avatar
-          uri={item.user?.avatar_url}
-          name={item.user?.full_name ?? item.user?.username ?? '?'}
-          size={36}
-        />
-        <View style={styles.reviewHeaderText}>
-          <Text style={styles.reviewUsername}>{item.user?.username ?? 'Anonim'}</Text>
-          <Text style={styles.reviewDate}>
-            {new Date(item.created_at).toLocaleDateString('tr-TR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </Text>
-        </View>
-        <View style={styles.reviewOverall}>
-          <Ionicons name="star" size={14} color={Colors.star} />
-          <Text style={styles.reviewOverallText}>
-            {((item.taste_rating + item.value_rating + item.friendliness_rating) / 3).toFixed(1)}
-          </Text>
-        </View>
-      </View>
-      {item.comment ? (
-        <Text style={styles.reviewComment}>{item.comment}</Text>
-      ) : null}
-      <View style={styles.reviewRatings}>
-        <Text style={styles.reviewRatingItem}>Lezzet: {item.taste_rating}/5</Text>
-        <Text style={styles.reviewRatingDot}>-</Text>
-        <Text style={styles.reviewRatingItem}>F/P: {item.value_rating}/5</Text>
-        <Text style={styles.reviewRatingDot}>-</Text>
-        <Text style={styles.reviewRatingItem}>Ogrenci: {item.friendliness_rating}/5</Text>
-      </View>
-    </View>
-  );
+  // -- Render review item --
+  const renderReviewItem = (item: Review) => {
+    const avg = (
+      (item.taste_rating + item.value_rating + item.friendliness_rating) /
+      3
+    ).toFixed(1);
 
+    return (
+      <View key={item.id} style={styles.reviewCard}>
+        {/* Header: avatar + name + date */}
+        <View style={styles.reviewHeader}>
+          <Avatar
+            uri={item.user?.avatar_url}
+            name={item.user?.full_name ?? item.user?.username ?? '?'}
+            size={38}
+          />
+          <View style={styles.reviewHeaderText}>
+            <Text style={styles.reviewUsername}>
+              {item.user?.username ?? 'Anonim'}
+            </Text>
+            <Text style={styles.reviewDate}>
+              {new Date(item.created_at).toLocaleDateString('tr-TR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </Text>
+          </View>
+          <View style={styles.reviewScoreBadge}>
+            <Ionicons name="star" size={12} color={Colors.star} />
+            <Text style={styles.reviewScoreText}>{avg}</Text>
+          </View>
+        </View>
+
+        {/* Mini inline ratings */}
+        <View style={styles.reviewMiniRatings}>
+          <View style={styles.reviewMiniItem}>
+            <Ionicons name="restaurant" size={12} color={Colors.primary} />
+            <StarRating rating={item.taste_rating} size="sm" />
+          </View>
+          <View style={styles.reviewMiniItem}>
+            <Ionicons name="pricetag" size={12} color={Colors.accent} />
+            <StarRating rating={item.value_rating} size="sm" />
+          </View>
+          <View style={styles.reviewMiniItem}>
+            <Ionicons name="people" size={12} color={Colors.verified} />
+            <StarRating rating={item.friendliness_rating} size="sm" />
+          </View>
+        </View>
+
+        {/* Comment */}
+        {item.comment ? (
+          <Text style={styles.reviewComment}>{item.comment}</Text>
+        ) : null}
+      </View>
+    );
+  };
+
+  // ===========================
+  // MAIN RENDER
+  // ===========================
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-        {/* Hero Image */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* ============================
+            HERO SECTION
+        ============================ */}
         <View style={styles.heroContainer}>
           {venue.cover_image_url ? (
-            <Image source={{ uri: venue.cover_image_url }} style={styles.heroImage} />
+            <Image
+              source={{ uri: venue.cover_image_url }}
+              style={styles.heroImage}
+            />
           ) : (
-            <View style={[styles.heroImage, styles.heroPlaceholder]}>
-              <Ionicons name="restaurant-outline" size={64} color={Colors.textLight} />
-            </View>
+            <LinearGradient
+              colors={[Colors.primaryDark, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.heroImage, styles.heroPlaceholder]}
+            >
+              <Ionicons
+                name="restaurant-outline"
+                size={64}
+                color="rgba(255,255,255,0.4)"
+              />
+            </LinearGradient>
           )}
+
+          {/* Dark gradient overlay */}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={['transparent', 'rgba(0,0,0,0.75)']}
             style={styles.heroGradient}
           />
 
-          {/* Back & Favorite buttons */}
+          {/* Top bar: Back + Favorite */}
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
-            <TouchableOpacity style={styles.heroButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <TouchableOpacity
+              style={styles.heroCircleButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.heroButton} onPress={handleFavorite}>
+            <TouchableOpacity
+              style={styles.heroCircleButton}
+              onPress={handleFavorite}
+              activeOpacity={0.7}
+            >
               <Ionicons
                 name={isFavorited ? 'heart' : 'heart-outline'}
-                size={24}
-                color={isFavorited ? Colors.error : '#FFFFFF'}
+                size={22}
+                color={isFavorited ? Colors.primary : '#FFFFFF'}
               />
             </TouchableOpacity>
           </SafeAreaView>
 
-          {/* Hero Text */}
-          <View style={styles.heroTextContainer}>
+          {/* Hero bottom text */}
+          <View style={styles.heroBottomContent}>
             <View style={styles.heroNameRow}>
-              <Text style={styles.heroName} numberOfLines={2}>{venue.name}</Text>
+              <Text style={styles.heroName} numberOfLines={2}>
+                {venue.name}
+              </Text>
               {venue.is_verified && (
                 <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color="#FFFFFF"
+                  />
                 </View>
               )}
             </View>
             {levelInfo && (
-              <Badge
-                label={levelInfo.name}
-                color={levelInfo.color}
-                icon="shield-checkmark"
-                size="md"
-              />
+              <View
+                style={[
+                  styles.levelPill,
+                  { backgroundColor: levelInfo.color },
+                ]}
+              >
+                <Ionicons name="shield-checkmark" size={12} color="#FFFFFF" />
+                <Text style={styles.levelPillText}>{levelInfo.name}</Text>
+              </View>
             )}
           </View>
         </View>
 
-        {/* Ratings Section */}
-        <View style={styles.ratingsSection}>
-          <View style={styles.overallRatingRow}>
-            <Text style={styles.overallRatingValue}>{venue.overall_rating.toFixed(1)}</Text>
-            <View style={styles.overallRatingStars}>
-              <StarRating rating={venue.overall_rating} size={22} />
-              <Text style={styles.totalReviewsText}>
-                {venue.total_reviews} degerlendirme
+        {/* ============================
+            RATING OVERVIEW CARD
+        ============================ */}
+        <View style={styles.ratingCard}>
+          {/* Top row: big number + stars */}
+          <View style={styles.ratingCardTop}>
+            <Text style={styles.ratingBigNumber}>
+              {venue.overall_rating.toFixed(1)}
+            </Text>
+            <View style={styles.ratingCardStarsCol}>
+              <StarRating rating={venue.overall_rating} size="md" />
+              <Text style={styles.ratingCardReviewCount}>
+                {venue.total_reviews} değerlendirme
               </Text>
             </View>
           </View>
 
-          {/* Sub-ratings */}
+          {/* Divider */}
+          <View style={styles.ratingCardDivider} />
+
+          {/* Sub-rating rows */}
           {[
-            { label: 'Lezzet', value: venue.avg_taste_rating, icon: 'restaurant' as const },
-            { label: 'Fiyat/Performans', value: venue.avg_value_rating, icon: 'pricetag' as const },
-            { label: 'Ogrenci Dostu', value: venue.avg_friendliness_rating, icon: 'people' as const },
+            {
+              label: RatingCategories[0].label,
+              value: venue.avg_taste_rating,
+              icon: RatingCategories[0].icon as keyof typeof Ionicons.glyphMap,
+              color: Colors.primary,
+            },
+            {
+              label: RatingCategories[1].label,
+              value: venue.avg_value_rating,
+              icon: RatingCategories[1].icon as keyof typeof Ionicons.glyphMap,
+              color: Colors.accent,
+            },
+            {
+              label: RatingCategories[2].label,
+              value: venue.avg_friendliness_rating,
+              icon: RatingCategories[2].icon as keyof typeof Ionicons.glyphMap,
+              color: Colors.verified,
+            },
           ].map((cat) => (
             <View key={cat.label} style={styles.subRatingRow}>
-              <View style={styles.subRatingLabel}>
-                <Ionicons name={cat.icon} size={16} color={Colors.textSecondary} />
+              <View style={styles.subRatingLabelArea}>
+                <Ionicons name={cat.icon} size={16} color={cat.color} />
                 <Text style={styles.subRatingLabelText}>{cat.label}</Text>
               </View>
-              <View style={styles.subRatingBar}>
+              <View style={styles.subRatingBarTrack}>
                 <View
                   style={[
                     styles.subRatingBarFill,
-                    { width: ratingBarWidth(cat.value) as any },
+                    {
+                      width: ratingBarWidth(cat.value) as any,
+                      backgroundColor: Colors.primary,
+                    },
                   ]}
                 />
               </View>
-              <Text style={styles.subRatingValue}>{cat.value.toFixed(1)}</Text>
+              <Text style={styles.subRatingValueText}>
+                {cat.value.toFixed(1)}
+              </Text>
             </View>
           ))}
         </View>
 
-        {/* YouTube Link */}
-        {venue.youtube_video_url && (
-          <TouchableOpacity style={styles.youtubeButton} onPress={openYouTube} activeOpacity={0.8}>
-            <Ionicons name="logo-youtube" size={24} color="#FF0000" />
-            <Text style={styles.youtubeText}>YouTube Incelemesini Izle</Text>
-            <Ionicons name="open-outline" size={18} color={Colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-
-        {/* Info Section */}
+        {/* ============================
+            INFO SECTION
+        ============================ */}
         <View style={styles.infoSection}>
+          {/* Address */}
           <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={20} color={Colors.primary} />
+            <View style={styles.infoIconCircle}>
+              <Ionicons name="location" size={16} color={Colors.primary} />
+            </View>
             <Text style={styles.infoText}>{venue.address}</Text>
           </View>
+
+          {/* Price */}
           <View style={styles.infoRow}>
-            <Ionicons name="pricetag-outline" size={20} color={Colors.primary} />
-            <Text style={styles.infoText}>{priceLabel} ({priceDesc})</Text>
+            <View style={styles.infoIconCircle}>
+              <Ionicons name="cash" size={16} color={Colors.accent} />
+            </View>
+            <Text style={styles.infoText}>
+              {priceLabel} &middot; {priceDesc}
+            </Text>
           </View>
+
+          {/* Phone */}
           {venue.phone && (
             <View style={styles.infoRow}>
-              <Ionicons name="call-outline" size={20} color={Colors.primary} />
+              <View style={styles.infoIconCircle}>
+                <Ionicons
+                  name="call"
+                  size={16}
+                  color={Colors.primaryDark}
+                />
+              </View>
               <Text style={styles.infoText}>{venue.phone}</Text>
             </View>
           )}
-        </View>
 
-        {/* Tags */}
-        {venue.tags && venue.tags.length > 0 && (
-          <View style={styles.tagsSection}>
-            {venue.tags.map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Rate Button */}
-        <View style={styles.rateButtonContainer}>
-          <Button
-            title="Puan Ver"
-            onPress={() => {
-              if (!user) {
-                router.push('/auth/login');
-                return;
-              }
-              setShowRatingModal(true);
-            }}
-            icon="star-outline"
-            variant="secondary"
-          />
-        </View>
-
-        {/* Reviews */}
-        <View style={styles.reviewsSection}>
-          <Text style={styles.reviewsSectionTitle}>
-            Degerlendirmeler ({reviews.length})
-          </Text>
-          {reviews.length === 0 ? (
-            <View style={styles.noReviews}>
-              <Ionicons name="chatbubbles-outline" size={40} color={Colors.borderLight} />
-              <Text style={styles.noReviewsText}>Henuz degerlendirme yok</Text>
-              <Text style={styles.noReviewsSubtext}>Ilk degerlendirmeyi sen yap!</Text>
+          {/* Tags */}
+          {venue.tags && venue.tags.length > 0 && (
+            <View style={styles.tagContainer}>
+              {venue.tags.map((tag) => (
+                <View key={tag} style={styles.tagPill}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
             </View>
-          ) : (
-            reviews.map((review) => (
-              <View key={review.id}>
-                {renderReviewItem({ item: review })}
-              </View>
-            ))
+          )}
+
+          {/* YouTube link */}
+          {venue.youtube_video_url && (
+            <TouchableOpacity
+              style={styles.youtubeButton}
+              onPress={openYouTube}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="play-circle" size={22} color={Colors.primary} />
+              <Text style={styles.youtubeButtonText}>
+                YouTube İncelemesini İzle
+              </Text>
+              <Ionicons
+                name="open-outline"
+                size={16}
+                color={Colors.textTertiary}
+              />
+            </TouchableOpacity>
           )}
         </View>
-      </ScrollView>
 
-      {/* Rating Modal */}
-      <Modal
-        visible={showRatingModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowRatingModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowRatingModal(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={styles.ratingSheet}>
-            <View style={styles.ratingHandle} />
-            <Text style={styles.ratingSheetTitle}>Degerlendirme</Text>
-            <Text style={styles.ratingSheetSubtitle}>{venue.name}</Text>
+        {/* ============================
+            PUAN VER SECTION
+        ============================ */}
+        <View style={styles.rateSection}>
+          <TouchableOpacity
+            style={styles.rateToggleButton}
+            onPress={handleToggleRatingForm}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showRatingForm ? 'chevron-up' : 'star-outline'}
+              size={20}
+              color={Colors.primary}
+            />
+            <Text style={styles.rateToggleText}>
+              {showRatingForm ? 'Kapat' : 'Puan Ver'}
+            </Text>
+          </TouchableOpacity>
 
-            {/* Taste */}
-            <View style={styles.ratingCategoryRow}>
-              <View style={styles.ratingCategoryLabel}>
-                <Ionicons name="restaurant" size={18} color={Colors.primary} />
-                <Text style={styles.ratingCategoryText}>Lezzet</Text>
+          {/* Expandable rating form */}
+          {showRatingForm && (
+            <View style={styles.rateFormContainer}>
+              {/* Taste */}
+              <View style={styles.rateFormRow}>
+                <View style={styles.rateFormLabel}>
+                  <Ionicons
+                    name="restaurant"
+                    size={18}
+                    color={Colors.primary}
+                  />
+                  <Text style={styles.rateFormLabelText}>Lezzet</Text>
+                </View>
+                <StarRating
+                  rating={ratingTaste}
+                  interactive
+                  onRatingChange={setRatingTaste}
+                  size={28}
+                />
               </View>
-              <StarRating
-                rating={ratingTaste}
-                interactive
-                onRatingChange={setRatingTaste}
-                size={30}
+
+              {/* Value */}
+              <View style={styles.rateFormRow}>
+                <View style={styles.rateFormLabel}>
+                  <Ionicons
+                    name="pricetag"
+                    size={18}
+                    color={Colors.accent}
+                  />
+                  <Text style={styles.rateFormLabelText}>
+                    Fiyat/Performans
+                  </Text>
+                </View>
+                <StarRating
+                  rating={ratingValue}
+                  interactive
+                  onRatingChange={setRatingValue}
+                  size={28}
+                />
+              </View>
+
+              {/* Friendliness */}
+              <View style={styles.rateFormRow}>
+                <View style={styles.rateFormLabel}>
+                  <Ionicons
+                    name="people"
+                    size={18}
+                    color={Colors.verified}
+                  />
+                  <Text style={styles.rateFormLabelText}>
+                    Öğrenci Dostu
+                  </Text>
+                </View>
+                <StarRating
+                  rating={ratingFriendliness}
+                  interactive
+                  onRatingChange={setRatingFriendliness}
+                  size={28}
+                />
+              </View>
+
+              {/* Comment input */}
+              <TextInput
+                style={styles.rateCommentInput}
+                placeholder="Deneyimini paylaş..."
+                placeholderTextColor={Colors.textTertiary}
+                multiline
+                value={ratingComment}
+                onChangeText={setRatingComment}
+                textAlignVertical="top"
               />
-            </View>
 
-            {/* Value */}
-            <View style={styles.ratingCategoryRow}>
-              <View style={styles.ratingCategoryLabel}>
-                <Ionicons name="pricetag" size={18} color={Colors.secondary} />
-                <Text style={styles.ratingCategoryText}>Fiyat/Performans</Text>
-              </View>
-              <StarRating
-                rating={ratingValue}
-                interactive
-                onRatingChange={setRatingValue}
-                size={30}
-              />
-            </View>
-
-            {/* Friendliness */}
-            <View style={styles.ratingCategoryRow}>
-              <View style={styles.ratingCategoryLabel}>
-                <Ionicons name="people" size={18} color={Colors.verified} />
-                <Text style={styles.ratingCategoryText}>Ogrenci Dostu</Text>
-              </View>
-              <StarRating
-                rating={ratingFriendliness}
-                interactive
-                onRatingChange={setRatingFriendliness}
-                size={30}
-              />
-            </View>
-
-            {/* Comment */}
-            <View style={styles.ratingCommentContainer}>
-              <Text style={styles.ratingCommentLabel}>Yorum (Opsiyonel)</Text>
-              <View style={styles.ratingCommentInput}>
-                <Text
-                  style={styles.ratingCommentPlaceholder}
-                  // Using a Text as a placeholder display since we need a TextInput
-                >
-                  {ratingComment || 'Deneyimini paylas...'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.ratingActions}>
-              <TouchableOpacity
-                style={styles.ratingCancelButton}
-                onPress={() => setShowRatingModal(false)}
-              >
-                <Text style={styles.ratingCancelText}>Iptal</Text>
-              </TouchableOpacity>
+              {/* Submit button */}
               <TouchableOpacity
                 style={[
-                  styles.ratingSubmitButton,
-                  submittingReview && styles.ratingSubmitButtonDisabled,
+                  styles.rateSubmitButton,
+                  submittingReview && styles.rateSubmitDisabled,
                 ]}
                 onPress={handleSubmitReview}
                 disabled={submittingReview}
+                activeOpacity={0.8}
               >
                 {submittingReview ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.ratingSubmitText}>Gonder</Text>
+                  <>
+                    <Ionicons name="send" size={16} color="#FFFFFF" />
+                    <Text style={styles.rateSubmitText}>Gönder</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+          )}
+        </View>
+
+        {/* ============================
+            REVIEWS LIST
+        ============================ */}
+        <View style={styles.reviewsSection}>
+          <Text style={styles.reviewsSectionTitle}>
+            Değerlendirmeler ({reviews.length})
+          </Text>
+
+          {reviews.length === 0 ? (
+            <View style={styles.noReviews}>
+              <Ionicons
+                name="chatbubbles-outline"
+                size={48}
+                color={Colors.border}
+              />
+              <Text style={styles.noReviewsTitle}>
+                Henüz değerlendirme yok
+              </Text>
+              <Text style={styles.noReviewsSubtitle}>
+                İlk değerlendirmeyi sen yap!
+              </Text>
+            </View>
+          ) : (
+            reviews.map((review) => renderReviewItem(review))
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
+// ======================================
+// STYLES
+// ======================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
   loadingScreen: {
     flex: 1,
@@ -437,7 +584,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.background,
   },
-  // Hero
+
+  // ---- HERO ----
   heroContainer: {
     height: HERO_HEIGHT,
     position: 'relative',
@@ -448,7 +596,6 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   heroPlaceholder: {
-    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -457,7 +604,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: HERO_HEIGHT * 0.6,
+    height: HERO_HEIGHT * 0.65,
   },
   heroTopBar: {
     position: 'absolute',
@@ -466,357 +613,364 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
-  heroButton: {
+  heroCircleButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  heroTextContainer: {
+  heroBottomContent: {
     position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    gap: 8,
+    bottom: Spacing.xl,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    gap: Spacing.sm,
   },
   heroNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
   },
   heroName: {
     fontSize: 26,
     fontWeight: '800',
     color: '#FFFFFF',
     flex: 1,
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 6,
+    letterSpacing: -0.3,
   },
   verifiedBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: Colors.verified,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: Colors.verified,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  // Ratings
-  ratingsSection: {
-    backgroundColor: Colors.surface,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  overallRatingRow: {
+  levelPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 20,
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
   },
-  overallRatingValue: {
-    fontSize: 44,
+  levelPillText: {
+    fontSize: FontSize.xs,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+
+  // ---- RATING OVERVIEW CARD ----
+  ratingCard: {
+    backgroundColor: Colors.card,
+    marginHorizontal: Spacing.lg,
+    marginTop: -Spacing.xxl,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
+    zIndex: 10,
+  },
+  ratingCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  ratingBigNumber: {
+    fontSize: FontSize.display,
     fontWeight: '800',
     color: Colors.text,
+    letterSpacing: -1,
   },
-  overallRatingStars: {
-    gap: 4,
+  ratingCardStarsCol: {
+    gap: Spacing.xs,
   },
-  totalReviewsText: {
-    fontSize: 13,
+  ratingCardReviewCount: {
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  ratingCardDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: Spacing.lg,
   },
   subRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
-  subRatingLabel: {
+  subRatingLabelArea: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     width: 140,
   },
   subRatingLabelText: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-  subRatingBar: {
+  subRatingBarTrack: {
     flex: 1,
-    height: 8,
-    backgroundColor: Colors.borderLight,
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   subRatingBarFill: {
     height: '100%',
-    backgroundColor: Colors.star,
-    borderRadius: 4,
+    borderRadius: 3,
   },
-  subRatingValue: {
-    fontSize: 13,
+  subRatingValueText: {
+    fontSize: FontSize.sm,
     fontWeight: '700',
     color: Colors.text,
     width: 30,
     textAlign: 'right',
   },
-  // YouTube
-  youtubeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.surface,
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  youtubeText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  // Info
+
+  // ---- INFO SECTION ----
   infoSection: {
-    backgroundColor: Colors.surface,
-    marginTop: 8,
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xxl,
+    gap: Spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.md,
+  },
+  infoIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoText: {
-    fontSize: 14,
+    fontSize: FontSize.md,
     color: Colors.text,
     flex: 1,
+    lineHeight: 22,
   },
-  // Tags
-  tagsSection: {
+  tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    padding: 16,
-    backgroundColor: Colors.surface,
-    marginTop: 1,
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
   },
-  tag: {
-    backgroundColor: Colors.borderLight,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  tagPill: {
+    backgroundColor: Colors.accentSoft,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 1,
   },
   tagText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    fontSize: FontSize.xs,
+    color: Colors.accent,
+    fontWeight: '600',
   },
-  // Rate Button
-  rateButtonContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  // Reviews
-  reviewsSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  reviewsSectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  noReviews: {
+  youtubeButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 40,
-    gap: 8,
+    gap: Spacing.sm,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.xs,
   },
-  noReviewsText: {
-    fontSize: 16,
+  youtubeButtonText: {
+    flex: 1,
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+
+  // ---- PUAN VER SECTION ----
+  rateSection: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xxl,
+  },
+  rateToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md + 2,
+  },
+  rateToggleText: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  rateFormContainer: {
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  rateFormRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  rateFormLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  rateFormLabelText: {
+    fontSize: FontSize.md,
     fontWeight: '600',
     color: Colors.text,
   },
-  noReviewsSubtext: {
-    fontSize: 14,
+  rateCommentInput: {
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    minHeight: 80,
+    marginTop: Spacing.xs,
+  },
+  rateSubmitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md + 2,
+    marginTop: Spacing.xs,
+  },
+  rateSubmitDisabled: {
+    opacity: 0.6,
+  },
+  rateSubmitText: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // ---- REVIEWS ----
+  reviewsSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xxl,
+  },
+  reviewsSectionTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.lg,
+  },
+  noReviews: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxxl + 8,
+    gap: Spacing.sm,
+  },
+  noReviewsTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  noReviewsSubtitle: {
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
   },
   reviewCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   reviewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   reviewHeaderText: {
     flex: 1,
   },
   reviewUsername: {
-    fontSize: 14,
+    fontSize: FontSize.md,
     fontWeight: '700',
     color: Colors.text,
   },
   reviewDate: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 1,
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    marginTop: 2,
   },
-  reviewOverall: {
+  reviewScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  reviewScoreText: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  reviewMiniRatings: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  reviewMiniItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.borderLight,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  reviewOverallText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.text,
   },
   reviewComment: {
-    fontSize: 14,
+    fontSize: FontSize.md,
     color: Colors.text,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  reviewRatings: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  reviewRatingItem: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  reviewRatingDot: {
-    fontSize: 12,
-    color: Colors.textLight,
-  },
-  // Rating Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
-  },
-  ratingSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    paddingTop: 12,
-  },
-  ratingHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.borderLight,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  ratingSheetTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  ratingSheetSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-  },
-  ratingCategoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  ratingCategoryLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  ratingCategoryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  ratingCommentContainer: {
-    marginTop: 16,
-  },
-  ratingCommentLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  ratingCommentInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 12,
-    minHeight: 80,
-  },
-  ratingCommentPlaceholder: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  ratingActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-  },
-  ratingCancelButton: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ratingCancelText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  ratingSubmitButton: {
-    flex: 2,
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ratingSubmitButtonDisabled: {
-    opacity: 0.6,
-  },
-  ratingSubmitText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    lineHeight: 22,
   },
 });

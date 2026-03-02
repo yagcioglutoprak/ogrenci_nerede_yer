@@ -1,25 +1,40 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../lib/constants';
+import { Colors, Spacing } from '../../lib/constants';
+
+type StarSize = 'sm' | 'md' | 'lg';
+
+const STAR_SIZES: Record<StarSize, number> = {
+  sm: 16,
+  md: 22,
+  lg: 28,
+};
 
 interface StarRatingProps {
   rating: number;
   maxStars?: number;
-  size?: number;
+  size?: StarSize | number;
   interactive?: boolean;
   onRatingChange?: (rating: number) => void;
   color?: string;
+  emptyColor?: string;
+  gap?: number;
 }
 
 export default function StarRating({
   rating,
   maxStars = 5,
-  size = 24,
+  size = 'md',
   interactive = false,
   onRatingChange,
   color = Colors.star,
+  emptyColor = Colors.starEmpty,
+  gap = 2,
 }: StarRatingProps) {
+  const starSize = typeof size === 'number' ? size : STAR_SIZES[size];
+  const touchPadding = Math.max(4, Math.round(starSize * 0.3));
+
   const handlePress = (starIndex: number) => {
     if (interactive && onRatingChange) {
       onRatingChange(starIndex + 1);
@@ -36,14 +51,10 @@ export default function StarRating({
         ? 'star-half'
         : 'star-outline';
 
-    const starColor = filled || halfFilled ? color : Colors.borderLight;
+    const starColor = filled || halfFilled ? color : emptyColor;
 
-    const star = (
-      <Ionicons
-        name={iconName}
-        size={size}
-        color={starColor}
-      />
+    const starIcon = (
+      <Ionicons name={iconName} size={starSize} color={starColor} />
     );
 
     if (interactive) {
@@ -51,18 +62,23 @@ export default function StarRating({
         <TouchableOpacity
           key={index}
           onPress={() => handlePress(index)}
-          activeOpacity={0.6}
-          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          style={styles.starButton}
+          activeOpacity={0.5}
+          hitSlop={{
+            top: touchPadding,
+            bottom: touchPadding,
+            left: touchPadding / 2,
+            right: touchPadding / 2,
+          }}
+          style={{ paddingHorizontal: gap }}
         >
-          {star}
+          {starIcon}
         </TouchableOpacity>
       );
     }
 
     return (
-      <View key={index} style={styles.starDisplay}>
-        {star}
+      <View key={index} style={{ paddingHorizontal: gap / 2 }}>
+        {starIcon}
       </View>
     );
   };
@@ -78,11 +94,5 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  starButton: {
-    paddingHorizontal: 2,
-  },
-  starDisplay: {
-    paddingHorizontal: 1,
   },
 });

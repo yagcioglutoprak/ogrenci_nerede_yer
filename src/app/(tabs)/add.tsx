@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, MapPressEvent } from 'react-native-maps';
@@ -20,17 +21,17 @@ import { useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useFeedStore } from '../../stores/feedStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, DEFAULT_REGION, PriceRanges } from '../../lib/constants';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
+import {
+  Colors,
+  Spacing,
+  BorderRadius,
+  FontSize,
+  PriceRanges,
+  VENUE_TAGS,
+  DEFAULT_REGION,
+} from '../../lib/constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const VENUE_TAGS = [
-  'wifi', 'vejetaryen', 'kahvalti', 'cay', 'ogrenci-indirim',
-  'sessiz', 'acik-hava', 'ev-yemegi', 'fast-food', 'tatli',
-  'kahve', 'calisma-alani', 'gece-acik', 'ekonomik',
-];
 
 type TabMode = 'venue' | 'post';
 
@@ -48,7 +49,10 @@ export default function AddScreen() {
   const [venueDescription, setVenueDescription] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
   const [venuePriceRange, setVenuePriceRange] = useState<1 | 2 | 3 | 4>(1);
-  const [venueLocation, setVenueLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [venueLocation, setVenueLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [venueTags, setVenueTags] = useState<string[]>([]);
   const [venueImages, setVenueImages] = useState<string[]>([]);
 
@@ -60,26 +64,36 @@ export default function AddScreen() {
 
   const mapRef = useRef<MapView>(null);
 
-  // Auth guard
+  // =============================================
+  // AUTH GUARD
+  // =============================================
   if (!user) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.authGuard}>
-          <Ionicons name="lock-closed-outline" size={56} color={Colors.textLight} />
-          <Text style={styles.authGuardTitle}>Giris Yap</Text>
-          <Text style={styles.authGuardSubtitle}>
+          <View style={styles.authIconCircle}>
+            <Ionicons name="restaurant-outline" size={44} color={Colors.primary} />
+          </View>
+          <Text style={styles.authTitle}>Giris Yap</Text>
+          <Text style={styles.authSubtitle}>
             Mekan eklemek veya gonderi paylasmak icin{'\n'}hesabiniza giris yapin.
           </Text>
-          <Button
-            title="Giris Yap"
+          <TouchableOpacity
+            style={styles.authButton}
             onPress={() => router.push('/auth/login')}
-            icon="log-in-outline"
-          />
+            activeOpacity={0.8}
+          >
+            <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.authButtonText}>Giris Yap</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+  // =============================================
+  // HANDLERS
+  // =============================================
   const handleMapPress = (e: MapPressEvent) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setVenueLocation({ latitude, longitude });
@@ -94,7 +108,7 @@ export default function AddScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsMultipleSelection: !forVenue,
+      allowsMultipleSelection: true,
       quality: 0.8,
       aspect: [4, 3],
     });
@@ -104,7 +118,29 @@ export default function AddScreen() {
       if (forVenue) {
         setVenueImages((prev) => [...prev, ...uris].slice(0, 5));
       } else {
-        setPostImages((prev) => [...prev, ...uris].slice(0, 10));
+        setPostImages((prev) => [...prev, ...uris].slice(0, 5));
+      }
+    }
+  };
+
+  const takePhoto = async (forVenue: boolean) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Izin Gerekli', 'Kamera erisimi gereklidir.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      if (forVenue) {
+        setVenueImages((prev) => [...prev, uri].slice(0, 5));
+      } else {
+        setPostImages((prev) => [...prev, uri].slice(0, 5));
       }
     }
   };
@@ -180,7 +216,7 @@ export default function AddScreen() {
     if (error) {
       Alert.alert('Hata', error);
     } else {
-      Alert.alert('Basarili', 'Gonderi basariyla paylashildi!');
+      Alert.alert('Basarili', 'Gonderi basariyla paylasildi!');
       resetPostForm();
     }
   };
@@ -208,6 +244,9 @@ export default function AddScreen() {
 
   const selectedVenueForPost = venues.find((v) => v.id === postVenueId);
 
+  // =============================================
+  // RENDER
+  // =============================================
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
@@ -220,33 +259,53 @@ export default function AddScreen() {
         </View>
 
         {/* Segment Control */}
-        <View style={styles.segmentContainer}>
-          <TouchableOpacity
-            style={[styles.segmentButton, activeTab === 'venue' && styles.segmentButtonActive]}
-            onPress={() => setActiveTab('venue')}
-          >
-            <Ionicons
-              name="restaurant"
-              size={18}
-              color={activeTab === 'venue' ? '#FFFFFF' : Colors.textSecondary}
-            />
-            <Text style={[styles.segmentText, activeTab === 'venue' && styles.segmentTextActive]}>
-              Mekan Ekle
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.segmentButton, activeTab === 'post' && styles.segmentButtonActive]}
-            onPress={() => setActiveTab('post')}
-          >
-            <Ionicons
-              name="camera"
-              size={18}
-              color={activeTab === 'post' ? '#FFFFFF' : Colors.textSecondary}
-            />
-            <Text style={[styles.segmentText, activeTab === 'post' && styles.segmentTextActive]}>
-              Gonderi Paylas
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.segmentWrapper}>
+          <View style={styles.segmentContainer}>
+            <TouchableOpacity
+              style={[
+                styles.segmentButton,
+                activeTab === 'venue' && styles.segmentButtonActive,
+              ]}
+              onPress={() => setActiveTab('venue')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="restaurant"
+                size={16}
+                color={activeTab === 'venue' ? '#FFFFFF' : Colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === 'venue' && styles.segmentTextActive,
+                ]}
+              >
+                Mekan Ekle
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.segmentButton,
+                activeTab === 'post' && styles.segmentButtonActive,
+              ]}
+              onPress={() => setActiveTab('post')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="camera"
+                size={16}
+                color={activeTab === 'post' ? '#FFFFFF' : Colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.segmentText,
+                  activeTab === 'post' && styles.segmentTextActive,
+                ]}
+              >
+                Gonderi Paylas
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
@@ -256,233 +315,376 @@ export default function AddScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {activeTab === 'venue' ? (
-            /* ======== VENUE FORM ======== */
-            <View style={styles.formSection}>
-              <Input
-                label="Mekan Adi"
-                placeholder="Ornek: Ali Usta Doner"
-                value={venueName}
-                onChangeText={setVenueName}
-                icon="restaurant-outline"
-              />
+            // ======== VENUE FORM ========
+            <View style={styles.formContainer}>
+              {/* Mekan Adi */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Temel Bilgiler</Text>
 
-              <Input
-                label="Aciklama"
-                placeholder="Mekan hakkinda kisa bilgi..."
-                value={venueDescription}
-                onChangeText={setVenueDescription}
-                multiline
-                icon="document-text-outline"
-              />
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Mekan Adi</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="restaurant-outline"
+                      size={18}
+                      color={Colors.textTertiary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Ornek: Ali Usta Doner"
+                      placeholderTextColor={Colors.textTertiary}
+                      value={venueName}
+                      onChangeText={setVenueName}
+                      selectionColor={Colors.primary}
+                    />
+                  </View>
+                </View>
 
-              <Input
-                label="Adres"
-                placeholder="Cadde, sokak, numara..."
-                value={venueAddress}
-                onChangeText={setVenueAddress}
-                icon="location-outline"
-              />
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Aciklama</Text>
+                  <View style={[styles.inputWrapper, styles.inputWrapperMultiline]}>
+                    <Ionicons
+                      name="document-text-outline"
+                      size={18}
+                      color={Colors.textTertiary}
+                      style={[styles.inputIcon, { marginTop: 2 }]}
+                    />
+                    <TextInput
+                      style={[styles.textInput, styles.textInputMultiline]}
+                      placeholder="Mekan hakkinda kisa bilgi..."
+                      placeholderTextColor={Colors.textTertiary}
+                      value={venueDescription}
+                      onChangeText={setVenueDescription}
+                      multiline
+                      textAlignVertical="top"
+                      selectionColor={Colors.primary}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Adres</Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons
+                      name="location-outline"
+                      size={18}
+                      color={Colors.textTertiary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Cadde, sokak, numara..."
+                      placeholderTextColor={Colors.textTertiary}
+                      value={venueAddress}
+                      onChangeText={setVenueAddress}
+                      selectionColor={Colors.primary}
+                    />
+                  </View>
+                </View>
+              </View>
 
               {/* Map Picker */}
-              <Text style={styles.label}>Konum Sec</Text>
-              <Text style={styles.labelHint}>Haritaya dokunarak konum isaretleyin</Text>
-              <View style={styles.mapPickerContainer}>
-                <MapView
-                  ref={mapRef}
-                  style={styles.mapPicker}
-                  initialRegion={DEFAULT_REGION}
-                  onPress={handleMapPress}
-                  showsUserLocation
-                >
-                  {venueLocation && (
-                    <Marker coordinate={venueLocation}>
-                      <View style={styles.selectedMarker}>
-                        <Ionicons name="restaurant" size={16} color="#FFFFFF" />
-                      </View>
-                    </Marker>
-                  )}
-                </MapView>
-                {venueLocation && (
-                  <View style={styles.mapCoords}>
-                    <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
-                    <Text style={styles.mapCoordsText}>Konum secildi</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Price Range */}
-              <Text style={styles.label}>Fiyat Araligi</Text>
-              <View style={styles.priceRow}>
-                {PriceRanges.map((price) => {
-                  const isActive = venuePriceRange === price.value;
-                  return (
-                    <TouchableOpacity
-                      key={price.value}
-                      style={[styles.priceButton, isActive && styles.priceButtonActive]}
-                      onPress={() => setVenuePriceRange(price.value as 1 | 2 | 3 | 4)}
-                    >
-                      <Text style={[styles.priceButtonLabel, isActive && styles.priceButtonLabelActive]}>
-                        {price.label}
-                      </Text>
-                      <Text style={[styles.priceButtonDesc, isActive && styles.priceButtonDescActive]}>
-                        {price.description}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Tags */}
-              <Text style={styles.label}>Etiketler</Text>
-              <View style={styles.tagsGrid}>
-                {VENUE_TAGS.map((tag) => {
-                  const isActive = venueTags.includes(tag);
-                  return (
-                    <TouchableOpacity
-                      key={tag}
-                      style={[styles.tagChip, isActive && styles.tagChipActive]}
-                      onPress={() => toggleTag(tag)}
-                    >
-                      {isActive && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-                      <Text style={[styles.tagChipText, isActive && styles.tagChipTextActive]}>
-                        {tag}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Photo Picker */}
-              <Text style={styles.label}>Fotograflar</Text>
-              <View style={styles.imageRow}>
-                {venueImages.map((uri) => (
-                  <View key={uri} style={styles.imageThumb}>
-                    <Image source={{ uri }} style={styles.imageThumbImage} />
-                    <TouchableOpacity
-                      style={styles.imageRemove}
-                      onPress={() => removeImage(uri, true)}
-                    >
-                      <Ionicons name="close-circle" size={22} color={Colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                {venueImages.length < 5 && (
-                  <TouchableOpacity
-                    style={styles.imageAddButton}
-                    onPress={() => pickImages(true)}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Konum Sec</Text>
+                <Text style={styles.sectionHint}>Haritaya dokunarak konum isaretleyin</Text>
+                <View style={styles.mapContainer}>
+                  <MapView
+                    ref={mapRef}
+                    style={styles.mapView}
+                    initialRegion={DEFAULT_REGION}
+                    onPress={handleMapPress}
+                    showsUserLocation
                   >
-                    <Ionicons name="camera-outline" size={28} color={Colors.textLight} />
-                    <Text style={styles.imageAddText}>Ekle</Text>
-                  </TouchableOpacity>
+                    {venueLocation && (
+                      <Marker coordinate={venueLocation}>
+                        <View style={styles.mapMarker}>
+                          <Ionicons name="restaurant" size={14} color="#FFFFFF" />
+                        </View>
+                      </Marker>
+                    )}
+                  </MapView>
+                </View>
+                {venueLocation && (
+                  <View style={styles.locationConfirm}>
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                    <Text style={styles.locationConfirmText}>Konum secildi</Text>
+                  </View>
                 )}
+              </View>
+
+              {/* Fiyat Araligi */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Fiyat Araligi</Text>
+                <View style={styles.priceRow}>
+                  {PriceRanges.map((price) => {
+                    const isActive = venuePriceRange === price.value;
+                    return (
+                      <TouchableOpacity
+                        key={price.value}
+                        style={[styles.pricePill, isActive && styles.pricePillActive]}
+                        onPress={() => setVenuePriceRange(price.value as 1 | 2 | 3 | 4)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.pricePillLabel,
+                            isActive && styles.pricePillLabelActive,
+                          ]}
+                        >
+                          {price.label}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.pricePillDesc,
+                            isActive && styles.pricePillDescActive,
+                          ]}
+                        >
+                          {price.description}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Etiketler */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Etiketler</Text>
+                <View style={styles.tagsGrid}>
+                  {VENUE_TAGS.map((tag) => {
+                    const isActive = venueTags.includes(tag.key);
+                    return (
+                      <TouchableOpacity
+                        key={tag.key}
+                        style={[styles.tagChip, isActive && styles.tagChipActive]}
+                        onPress={() => toggleTag(tag.key)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={tag.icon as any}
+                          size={14}
+                          color={isActive ? Colors.accent : Colors.textSecondary}
+                        />
+                        <Text
+                          style={[
+                            styles.tagChipText,
+                            isActive && styles.tagChipTextActive,
+                          ]}
+                        >
+                          {tag.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Fotograflar */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Fotograflar</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.photoScrollContent}
+                >
+                  {venueImages.map((uri) => (
+                    <View key={uri} style={styles.photoThumb}>
+                      <Image source={{ uri }} style={styles.photoThumbImage} />
+                      <TouchableOpacity
+                        style={styles.photoRemoveBtn}
+                        onPress={() => removeImage(uri, true)}
+                      >
+                        <Ionicons name="close" size={14} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {venueImages.length < 5 && (
+                    <TouchableOpacity
+                      style={styles.photoAddBtn}
+                      onPress={() => pickImages(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add" size={28} color={Colors.textTertiary} />
+                      <Text style={styles.photoAddText}>Ekle</Text>
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
               </View>
 
               {/* Submit */}
-              <Button
-                title={submitting ? 'Ekleniyor...' : 'Mekan Ekle'}
+              <TouchableOpacity
+                style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
                 onPress={handleSubmitVenue}
-                loading={submitting}
                 disabled={submitting}
-                icon="add-circle-outline"
-                style={styles.submitButton}
-              />
+                activeOpacity={0.8}
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                    <Text style={styles.submitBtnText}>Mekani Kaydet</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           ) : (
-            /* ======== POST FORM ======== */
-            <View style={styles.formSection}>
-              {/* Photo Picker */}
-              <Text style={styles.label}>Fotograflar</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.postImagesScroll}
-                contentContainerStyle={styles.postImagesScrollContent}
-              >
-                {postImages.map((uri) => (
-                  <View key={uri} style={styles.postImageThumb}>
-                    <Image source={{ uri }} style={styles.postImageThumbImage} />
-                    <TouchableOpacity
-                      style={styles.imageRemove}
-                      onPress={() => removeImage(uri, false)}
-                    >
-                      <Ionicons name="close-circle" size={22} color={Colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                {postImages.length < 10 && (
-                  <TouchableOpacity
-                    style={styles.postImageAddButton}
-                    onPress={() => pickImages(false)}
-                  >
-                    <Ionicons name="images-outline" size={32} color={Colors.textLight} />
-                    <Text style={styles.imageAddText}>Fotograf Sec</Text>
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
+            // ======== POST FORM ========
+            <View style={styles.formContainer}>
+              {/* Photo Grid Picker */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Fotograflar</Text>
+                <Text style={styles.sectionHint}>En fazla 5 fotograf ekleyebilirsiniz</Text>
+                <View style={styles.postPhotoGrid}>
+                  {postImages.map((uri) => (
+                    <View key={uri} style={styles.postPhotoItem}>
+                      <Image source={{ uri }} style={styles.postPhotoImage} />
+                      <TouchableOpacity
+                        style={styles.photoRemoveBtn}
+                        onPress={() => removeImage(uri, false)}
+                      >
+                        <Ionicons name="close" size={14} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {postImages.length < 5 && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.postPhotoAddBtn}
+                        onPress={() => pickImages(false)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="images-outline" size={26} color={Colors.textTertiary} />
+                        <Text style={styles.postPhotoAddText}>Galeri</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.postPhotoAddBtn}
+                        onPress={() => takePhoto(false)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="camera-outline" size={26} color={Colors.textTertiary} />
+                        <Text style={styles.postPhotoAddText}>Kamera</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </View>
 
               {/* Caption */}
-              <Input
-                label="Aciklama"
-                placeholder="Deneyimini paylas..."
-                value={postCaption}
-                onChangeText={setPostCaption}
-                multiline
-                icon="create-outline"
-              />
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Aciklama</Text>
+                <View style={[styles.inputWrapper, styles.inputWrapperMultiline]}>
+                  <TextInput
+                    style={[styles.textInput, styles.textInputMultiline, { paddingLeft: 0 }]}
+                    placeholder="Deneyimini paylas..."
+                    placeholderTextColor={Colors.textTertiary}
+                    value={postCaption}
+                    onChangeText={setPostCaption}
+                    multiline
+                    textAlignVertical="top"
+                    selectionColor={Colors.primary}
+                  />
+                </View>
+              </View>
 
               {/* Venue Tag Selector */}
-              <Text style={styles.label}>Mekan Etiketi (Opsiyonel)</Text>
-              {selectedVenueForPost ? (
-                <View style={styles.selectedVenueRow}>
-                  <Ionicons name="restaurant" size={18} color={Colors.primary} />
-                  <Text style={styles.selectedVenueName}>{selectedVenueForPost.name}</Text>
-                  <TouchableOpacity onPress={() => setPostVenueId(null)}>
-                    <Ionicons name="close-circle" size={20} color={Colors.textLight} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <>
-                  <Input
-                    placeholder="Mekan ara..."
-                    value={venueSearchQuery}
-                    onChangeText={setVenueSearchQuery}
-                    icon="search-outline"
-                  />
-                  {venueSearchQuery.length > 0 && (
-                    <View style={styles.venueResults}>
-                      {filteredVenuesForTag.slice(0, 5).map((v) => (
-                        <TouchableOpacity
-                          key={v.id}
-                          style={styles.venueResultItem}
-                          onPress={() => {
-                            setPostVenueId(v.id);
-                            setVenueSearchQuery('');
-                          }}
-                        >
-                          <Ionicons name="restaurant-outline" size={16} color={Colors.textSecondary} />
-                          <Text style={styles.venueResultName}>{v.name}</Text>
-                          <Text style={styles.venueResultAddress} numberOfLines={1}>
-                            {v.address}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                      {filteredVenuesForTag.length === 0 && (
-                        <Text style={styles.noVenueResult}>Mekan bulunamadi</Text>
-                      )}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Mekan Etiketi</Text>
+                <Text style={styles.sectionHint}>Opsiyonel - gonderinizi bir mekanla iliskilendirin</Text>
+
+                {selectedVenueForPost ? (
+                  <View style={styles.selectedVenueCard}>
+                    <View style={styles.selectedVenueIcon}>
+                      <Ionicons name="restaurant" size={16} color={Colors.primary} />
                     </View>
-                  )}
-                </>
-              )}
+                    <Text style={styles.selectedVenueName} numberOfLines={1}>
+                      {selectedVenueForPost.name}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setPostVenueId(null)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close-circle" size={22} color={Colors.textTertiary} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.inputWrapper}>
+                      <Ionicons
+                        name="search-outline"
+                        size={18}
+                        color={Colors.textTertiary}
+                        style={styles.inputIcon}
+                      />
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Mekan ara..."
+                        placeholderTextColor={Colors.textTertiary}
+                        value={venueSearchQuery}
+                        onChangeText={setVenueSearchQuery}
+                        selectionColor={Colors.primary}
+                      />
+                    </View>
+                    {venueSearchQuery.length > 0 && (
+                      <View style={styles.venueSearchResults}>
+                        {filteredVenuesForTag.slice(0, 5).map((v) => (
+                          <TouchableOpacity
+                            key={v.id}
+                            style={styles.venueSearchItem}
+                            onPress={() => {
+                              setPostVenueId(v.id);
+                              setVenueSearchQuery('');
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <View style={styles.venueSearchItemIcon}>
+                              <Ionicons
+                                name="restaurant-outline"
+                                size={14}
+                                color={Colors.primary}
+                              />
+                            </View>
+                            <View style={styles.venueSearchItemInfo}>
+                              <Text style={styles.venueSearchItemName}>{v.name}</Text>
+                              <Text style={styles.venueSearchItemAddr} numberOfLines={1}>
+                                {v.address}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                        {filteredVenuesForTag.length === 0 && (
+                          <View style={styles.venueSearchEmpty}>
+                            <Ionicons
+                              name="search-outline"
+                              size={20}
+                              color={Colors.textTertiary}
+                            />
+                            <Text style={styles.venueSearchEmptyText}>Mekan bulunamadi</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </>
+                )}
+              </View>
 
               {/* Submit */}
-              <Button
-                title={submitting ? 'Paylasiliyor...' : 'Paylas'}
+              <TouchableOpacity
+                style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
                 onPress={handleSubmitPost}
-                loading={submitting}
                 disabled={submitting}
-                icon="paper-plane-outline"
-                style={styles.submitButton}
-              />
+                activeOpacity={0.8}
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="paper-plane" size={18} color="#FFFFFF" />
+                    <Text style={styles.submitBtnText}>Paylas</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
@@ -491,328 +693,482 @@ export default function AddScreen() {
   );
 }
 
+// =============================================
+// STYLES
+// =============================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.backgroundSecondary,
   },
   flex: {
     flex: 1,
   },
+
   // Header
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: FontSize.xxl,
     fontWeight: '800',
     color: Colors.text,
+    letterSpacing: -0.5,
   },
+
   // Segment Control
+  segmentWrapper: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    backgroundColor: Colors.backgroundSecondary,
+  },
   segmentContainer: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 12,
-    padding: 4,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 3,
   },
   segmentButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    gap: Spacing.xs + 2,
   },
   segmentButtonActive: {
     backgroundColor: Colors.primary,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   segmentText: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
   segmentTextActive: {
     color: '#FFFFFF',
   },
+
+  // Scroll Content
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: Spacing.lg,
+    paddingBottom: 60,
   },
-  formSection: {
-    gap: 4,
+  formContainer: {
+    gap: Spacing.lg,
   },
-  label: {
-    fontSize: 14,
+
+  // Section Cards
+  sectionCard: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.lg,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  sectionHint: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+
+  // Input styles
+  inputGroup: {
+    marginBottom: Spacing.lg,
+  },
+  inputLabel: {
+    fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.text,
-    marginBottom: 6,
-    marginTop: 12,
+    marginBottom: Spacing.sm,
   },
-  labelHint: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginBottom: 8,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+    minHeight: 48,
   },
-  // Map Picker
-  mapPickerContainer: {
-    borderRadius: 14,
+  inputWrapperMultiline: {
+    alignItems: 'flex-start',
+    minHeight: 100,
+    paddingVertical: Spacing.md,
+  },
+  inputIcon: {
+    marginRight: Spacing.md,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    paddingVertical: 0,
+  },
+  textInputMultiline: {
+    minHeight: 76,
+    paddingTop: 2,
+    textAlignVertical: 'top',
+  },
+
+  // Map
+  mapContainer: {
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: 8,
   },
-  mapPicker: {
+  mapView: {
     width: '100%',
-    height: 180,
+    height: 150,
   },
-  selectedMarker: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  mapMarker: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  mapCoords: {
+  locationConfirm: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.surface,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
-  mapCoordsText: {
-    fontSize: 13,
+  locationConfirmText: {
+    fontSize: FontSize.sm,
     color: Colors.success,
-    fontWeight: '500',
+    fontWeight: '600',
   },
+
   // Price Range
   priceRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: Spacing.sm,
   },
-  priceButton: {
+  pricePill: {
     flex: 1,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.backgroundSecondary,
   },
-  priceButtonActive: {
+  pricePillActive: {
     borderColor: Colors.primary,
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  priceButtonLabel: {
-    fontSize: 16,
+  pricePillLabel: {
+    fontSize: FontSize.lg,
     fontWeight: '700',
     color: Colors.text,
   },
-  priceButtonLabelActive: {
+  pricePillLabelActive: {
     color: '#FFFFFF',
   },
-  priceButtonDesc: {
-    fontSize: 10,
+  pricePillDesc: {
+    fontSize: FontSize.xs - 1,
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  priceButtonDescActive: {
+  pricePillDescActive: {
     color: 'rgba(255,255,255,0.8)',
   },
+
   // Tags
   tagsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
+    gap: Spacing.sm,
   },
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.xs + 2,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.backgroundSecondary,
   },
   tagChipActive: {
-    backgroundColor: Colors.secondary,
-    borderColor: Colors.secondary,
+    backgroundColor: Colors.accentSoft,
+    borderColor: Colors.accentLight,
   },
   tagChipText: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
   tagChipTextActive: {
-    color: '#FFFFFF',
+    color: Colors.accentDark,
+    fontWeight: '600',
   },
-  // Images
-  imageRow: {
+
+  // Photos
+  photoScrollContent: {
+    gap: Spacing.md,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photoThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: Spacing.xs,
+    right: Spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: BorderRadius.full,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAddBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+    gap: Spacing.xs,
+  },
+  photoAddText: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+  },
+
+  // Post Photo Grid
+  postPhotoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 16,
+    gap: Spacing.md,
   },
-  imageThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+  postPhotoItem: {
+    width: (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.md * 2) / 3,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
     position: 'relative',
   },
-  imageThumbImage: {
+  postPhotoImage: {
     width: '100%',
     height: '100%',
   },
-  imageRemove: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 11,
-  },
-  imageAddButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+  postPhotoAddBtn: {
+    width: (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.md * 2) / 3,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.md,
     borderWidth: 1.5,
     borderColor: Colors.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.backgroundSecondary,
+    gap: Spacing.xs,
   },
-  imageAddText: {
-    fontSize: 11,
-    color: Colors.textLight,
-    marginTop: 2,
+  postPhotoAddText: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+    fontWeight: '500',
   },
-  // Post form images
-  postImagesScroll: {
-    marginBottom: 8,
-  },
-  postImagesScrollContent: {
-    gap: 10,
-    paddingRight: 16,
-  },
-  postImageThumb: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  postImageThumbImage: {
-    width: '100%',
-    height: '100%',
-  },
-  postImageAddButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surfaceElevated,
-    gap: 6,
-  },
-  // Venue search for post
-  selectedVenueRow: {
+
+  // Venue Search
+  selectedVenueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
+    gap: Spacing.md,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight + '30',
+  },
+  selectedVenueIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedVenueName: {
     flex: 1,
-    fontSize: 14,
+    fontSize: FontSize.md,
     fontWeight: '600',
     color: Colors.text,
   },
-  venueResults: {
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
+  venueSearchResults: {
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginTop: -8,
-    marginBottom: 12,
     overflow: 'hidden',
   },
-  venueResultItem: {
+  venueSearchItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
-  venueResultName: {
-    fontSize: 14,
+  venueSearchItemIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  venueSearchItemInfo: {
+    flex: 1,
+  },
+  venueSearchItemName: {
+    fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.text,
   },
-  venueResultAddress: {
-    flex: 1,
-    fontSize: 12,
+  venueSearchItemAddr: {
+    fontSize: FontSize.xs,
     color: Colors.textSecondary,
-    textAlign: 'right',
+    marginTop: 1,
   },
-  noVenueResult: {
-    fontSize: 13,
-    color: Colors.textLight,
-    textAlign: 'center',
-    paddingVertical: 16,
+  venueSearchEmpty: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+    gap: Spacing.sm,
   },
-  // Submit
-  submitButton: {
-    marginTop: 24,
+  venueSearchEmptyText: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
   },
-  // Auth guard
+
+  // Submit Button
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
+  },
+  submitBtnText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  // Auth Guard
   authGuard: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
-    gap: 12,
+    paddingHorizontal: Spacing.xxxl + 8,
   },
-  authGuardTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+  authIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  authTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
     color: Colors.text,
-    marginTop: 12,
+    marginBottom: Spacing.sm,
   },
-  authGuardSubtitle: {
-    fontSize: 15,
+  authSubtitle: {
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 8,
+    marginBottom: Spacing.xxl,
+  },
+  authButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    width: '100%',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  authButtonText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

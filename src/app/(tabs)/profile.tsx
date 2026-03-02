@@ -1,24 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Image,
-  ScrollView,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors } from '../../lib/constants';
+import {
+  Colors,
+  Spacing,
+  BorderRadius,
+  FontSize,
+} from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
-import Button from '../../components/ui/Button';
 import type { Venue, Post } from '../../types';
 import { supabase } from '../../lib/supabase';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ProfileTab = 'favorites' | 'posts';
 
@@ -67,9 +73,18 @@ export default function ProfileScreen() {
       // Fetch stats
       const [{ count: venuesCount }, { count: reviewsCount }, { count: followersCount }] =
         await Promise.all([
-          supabase.from('venues').select('*', { count: 'exact', head: true }).eq('created_by', user.id),
-          supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
+          supabase
+            .from('venues')
+            .select('*', { count: 'exact', head: true })
+            .eq('created_by', user.id),
+          supabase
+            .from('reviews')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id),
+          supabase
+            .from('follows')
+            .select('*', { count: 'exact', head: true })
+            .eq('following_id', user.id),
         ]);
 
       setStats({
@@ -95,27 +110,38 @@ export default function ProfileScreen() {
     ]);
   };
 
-  // Not logged in state
+  // =============================================
+  // NOT LOGGED IN
+  // =============================================
   if (!user) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loginPrompt}>
-          <View style={styles.loginIllustration}>
-            <Ionicons name="person-circle-outline" size={80} color={Colors.borderLight} />
+          <View style={styles.loginIconCircle}>
+            <Ionicons name="person-outline" size={40} color="#FFFFFF" />
           </View>
+
           <Text style={styles.loginTitle}>Hesabina Giris Yap</Text>
           <Text style={styles.loginSubtitle}>
             Favori mekanlarini kaydet, yorumlarini paylas{'\n'}ve topluluga katil!
           </Text>
-          <Button
-            title="Giris Yap"
-            onPress={() => router.push('/auth/login')}
-            icon="log-in-outline"
+
+          <TouchableOpacity
             style={styles.loginButton}
-          />
-          <TouchableOpacity onPress={() => router.push('/auth/register')}>
-            <Text style={styles.registerLink}>
-              Hesabin yok mu? <Text style={styles.registerLinkBold}>Kayit Ol</Text>
+            onPress={() => router.push('/auth/login')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.loginButtonText}>Giris Yap</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push('/auth/register')}
+            style={styles.registerRow}
+          >
+            <Text style={styles.registerText}>
+              Hesabin yok mu?{' '}
+              <Text style={styles.registerTextBold}>Kayit Ol</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -123,39 +149,59 @@ export default function ProfileScreen() {
     );
   }
 
+  // =============================================
+  // LOGGED IN
+  // =============================================
+  const GRID_ITEM_WIDTH = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.md) / 2;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profil</Text>
-          <TouchableOpacity style={styles.settingsButton} onPress={handleSignOut}>
-            <Ionicons name="settings-outline" size={24} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
+      {/* Header bar */}
+      <View style={styles.headerBar}>
+        <Text style={styles.headerTitle}>Profil</Text>
+        <TouchableOpacity
+          style={styles.settingsBtn}
+          onPress={handleSignOut}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="settings-outline" size={22} color={Colors.textTertiary} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Profile Info */}
-        <View style={styles.profileSection}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Profile Header Card */}
+        <View style={styles.profileCard}>
           <Avatar
             uri={user.avatar_url}
             name={user.full_name || user.username}
-            size={80}
+            size={72}
           />
-          <Text style={styles.username}>@{user.username}</Text>
-          <Text style={styles.fullName}>{user.full_name}</Text>
+          <Text style={styles.profileName}>{user.full_name}</Text>
+          <Text style={styles.profileUsername}>@{user.username}</Text>
+
           {user.university && (
             <View style={styles.universityRow}>
-              <Ionicons name="school-outline" size={16} color={Colors.textSecondary} />
+              <Ionicons name="school-outline" size={14} color={Colors.textSecondary} />
               <Text style={styles.universityText}>{user.university}</Text>
             </View>
           )}
+
           {user.bio && (
-            <Text style={styles.bio}>{user.bio}</Text>
+            <Text style={styles.bioText}>{user.bio}</Text>
           )}
+
+          {/* XP Badge */}
+          <View style={styles.xpBadge}>
+            <Ionicons name="star" size={14} color={Colors.accent} />
+            <Text style={styles.xpText}>{user.xp_points || 250} XP</Text>
+          </View>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
+        {/* Stats Row */}
+        <View style={styles.statsCard}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.venues}</Text>
             <Text style={styles.statLabel}>Kesif</Text>
@@ -172,53 +218,61 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* XP Badge */}
-        <View style={styles.xpBadge}>
-          <Ionicons name="flash" size={18} color={Colors.star} />
-          <Text style={styles.xpText}>{user.xp_points} XP</Text>
-        </View>
-
         {/* Tab Switch */}
-        <View style={styles.tabRow}>
+        <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'favorites' && styles.tabButtonActive]}
             onPress={() => setActiveTab('favorites')}
+            activeOpacity={0.7}
           >
             <Ionicons
               name={activeTab === 'favorites' ? 'heart' : 'heart-outline'}
-              size={20}
+              size={18}
               color={activeTab === 'favorites' ? Colors.primary : Colors.textSecondary}
             />
-            <Text style={[styles.tabText, activeTab === 'favorites' && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'favorites' && styles.tabTextActive,
+              ]}
+            >
               Favorilerim
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'posts' && styles.tabButtonActive]}
             onPress={() => setActiveTab('posts')}
+            activeOpacity={0.7}
           >
             <Ionicons
               name={activeTab === 'posts' ? 'grid' : 'grid-outline'}
-              size={20}
+              size={18}
               color={activeTab === 'posts' ? Colors.primary : Colors.textSecondary}
             />
-            <Text style={[styles.tabText, activeTab === 'posts' && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'posts' && styles.tabTextActive,
+              ]}
+            >
               Gonderilerim
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
+        {/* Content Area */}
         {loading ? (
-          <View style={styles.loadingContainer}>
+          <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : activeTab === 'favorites' ? (
           favorites.length === 0 ? (
-            <View style={styles.emptyContent}>
-              <Ionicons name="heart-outline" size={48} color={Colors.borderLight} />
-              <Text style={styles.emptyText}>Henuz favori mekanin yok</Text>
-              <Text style={styles.emptySubtext}>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="heart-outline" size={32} color={Colors.textTertiary} />
+              </View>
+              <Text style={styles.emptyTitle}>Henuz favori mekanin yok</Text>
+              <Text style={styles.emptySubtitle}>
                 Mekanlari kesfet ve favorilerine ekle!
               </Text>
             </View>
@@ -227,19 +281,30 @@ export default function ProfileScreen() {
               {favorites.map((venue) => (
                 <TouchableOpacity
                   key={venue.id}
-                  style={styles.gridItem}
+                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }]}
                   onPress={() => router.push(`/venue/${venue.id}`)}
                   activeOpacity={0.85}
                 >
-                  {venue.cover_image_url ? (
-                    <Image source={{ uri: venue.cover_image_url }} style={styles.gridImage} />
-                  ) : (
-                    <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
-                      <Ionicons name="restaurant-outline" size={24} color={Colors.textLight} />
-                    </View>
-                  )}
-                  <View style={styles.gridItemOverlay}>
-                    <Text style={styles.gridItemName} numberOfLines={1}>{venue.name}</Text>
+                  <View style={styles.gridImageWrapper}>
+                    {venue.cover_image_url ? (
+                      <Image
+                        source={{ uri: venue.cover_image_url }}
+                        style={styles.gridImage}
+                      />
+                    ) : (
+                      <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
+                        <Ionicons
+                          name="restaurant-outline"
+                          size={28}
+                          color={Colors.textTertiary}
+                        />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.gridItemInfo}>
+                    <Text style={styles.gridItemName} numberOfLines={1}>
+                      {venue.name}
+                    </Text>
                     <View style={styles.gridItemRating}>
                       <Ionicons name="star" size={12} color={Colors.star} />
                       <Text style={styles.gridItemRatingText}>
@@ -252,10 +317,12 @@ export default function ProfileScreen() {
             </View>
           )
         ) : userPosts.length === 0 ? (
-          <View style={styles.emptyContent}>
-            <Ionicons name="camera-outline" size={48} color={Colors.borderLight} />
-            <Text style={styles.emptyText}>Henuz gonderin yok</Text>
-            <Text style={styles.emptySubtext}>
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="camera-outline" size={32} color={Colors.textTertiary} />
+            </View>
+            <Text style={styles.emptyTitle}>Henuz gonderin yok</Text>
+            <Text style={styles.emptySubtitle}>
               Deneyimlerini paylasmaya basla!
             </Text>
           </View>
@@ -266,21 +333,36 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={post.id}
-                  style={styles.gridItem}
+                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }]}
                   activeOpacity={0.85}
                 >
-                  {firstImage ? (
-                    <Image source={{ uri: firstImage }} style={styles.gridImage} />
-                  ) : (
-                    <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
-                      <Ionicons name="document-text-outline" size={24} color={Colors.textLight} />
-                    </View>
-                  )}
-                  {post.images && post.images.length > 1 && (
-                    <View style={styles.multiImageBadge}>
-                      <Ionicons name="copy" size={12} color="#FFFFFF" />
-                    </View>
-                  )}
+                  <View style={styles.gridImageWrapper}>
+                    {firstImage ? (
+                      <Image
+                        source={{ uri: firstImage }}
+                        style={styles.gridImage}
+                      />
+                    ) : (
+                      <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
+                        <Ionicons
+                          name="document-text-outline"
+                          size={28}
+                          color={Colors.textTertiary}
+                        />
+                      </View>
+                    )}
+                    {post.images && post.images.length > 1 && (
+                      <View style={styles.multiImageBadge}>
+                        <Ionicons name="copy-outline" size={12} color="#FFFFFF" />
+                        <Text style={styles.multiImageCount}>{post.images.length}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.gridItemInfo}>
+                    <Text style={styles.gridItemCaption} numberOfLines={2}>
+                      {post.caption || 'Gonderi'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -291,254 +373,381 @@ export default function ProfileScreen() {
   );
 }
 
+// =============================================
+// STYLES
+// =============================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.backgroundSecondary,
   },
-  // Header
-  header: {
+
+  // Header Bar
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
   headerTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
+    color: Colors.text,
+    letterSpacing: -0.5,
+  },
+  settingsBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Scroll
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  // =========================================
+  // LOGIN PROMPT (not logged in)
+  // =========================================
+  loginPrompt: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xxxl + 8,
+  },
+  loginIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xxl,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  loginTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: '800',
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  loginSubtitle: {
+    fontSize: FontSize.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Spacing.xxl,
+  },
+  loginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    width: '100%',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: Spacing.lg,
+  },
+  loginButtonText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  registerRow: {
+    paddingVertical: Spacing.sm,
+  },
+  registerText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  registerTextBold: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+
+  // =========================================
+  // PROFILE CARD (logged in)
+  // =========================================
+  profileCard: {
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  profileName: {
     fontSize: 22,
     fontWeight: '800',
     color: Colors.text,
+    marginTop: Spacing.md,
+    letterSpacing: -0.3,
   },
-  settingsButton: {
-    padding: 4,
-  },
-  // Profile Info
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.surface,
-  },
-  username: {
-    fontSize: 14,
+  profileUsername: {
+    fontSize: FontSize.sm,
     fontWeight: '500',
     color: Colors.textSecondary,
-    marginTop: 10,
-  },
-  fullName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginTop: 2,
+    marginTop: Spacing.xs,
   },
   universityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
+    gap: Spacing.xs + 2,
+    marginTop: Spacing.md,
+    backgroundColor: Colors.backgroundSecondary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
   },
   universityText: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
+    fontWeight: '500',
   },
-  bio: {
-    fontSize: 14,
+  bioText: {
+    fontSize: FontSize.sm,
     color: Colors.text,
     textAlign: 'center',
     lineHeight: 20,
-    marginTop: 10,
-    paddingHorizontal: 20,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
-  // Stats
-  statsRow: {
+  xpBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    gap: Spacing.xs + 2,
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.accentSoft,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.accentLight + '40',
+  },
+  xpText: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.accent,
+  },
+
+  // =========================================
+  // STATS CARD
+  // =========================================
+  statsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.lg + 2,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statItem: {
     flex: 1,
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: FontSize.xl,
     fontWeight: '800',
     color: Colors.text,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
     fontWeight: '500',
-    marginTop: 2,
+    marginTop: Spacing.xs,
   },
   statDivider: {
     width: 1,
-    height: 30,
-    backgroundColor: Colors.borderLight,
+    height: 32,
+    backgroundColor: Colors.border,
   },
-  // XP Badge
-  xpBadge: {
+
+  // =========================================
+  // TAB SWITCH
+  // =========================================
+  tabContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.surface,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  xpText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.star,
-  },
-  // Tabs
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
   },
   tabButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 2.5,
     borderBottomColor: 'transparent',
   },
   tabButtonActive: {
     borderBottomColor: Colors.primary,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
   tabTextActive: {
     color: Colors.primary,
+    fontWeight: '700',
   },
-  // Loading
-  loadingContainer: {
+
+  // =========================================
+  // LOADING
+  // =========================================
+  loadingBox: {
     paddingVertical: 60,
     alignItems: 'center',
   },
-  // Empty
-  emptyContent: {
+
+  // =========================================
+  // EMPTY STATE
+  // =========================================
+  emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingHorizontal: Spacing.xxxl,
   },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  emptyTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
     color: Colors.text,
-    marginTop: 16,
   },
-  emptySubtext: {
-    fontSize: 14,
+  emptySubtitle: {
+    fontSize: FontSize.sm,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: Spacing.sm,
+    lineHeight: 20,
   },
-  // Grid
+
+  // =========================================
+  // GRID
+  // =========================================
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 2,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
   },
   gridItem: {
-    width: '33.33%',
-    aspectRatio: 1,
-    padding: 2,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  gridImageWrapper: {
+    width: '100%',
+    aspectRatio: 4 / 3,
     position: 'relative',
   },
   gridImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 4,
   },
   gridImagePlaceholder: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gridItemOverlay: {
-    position: 'absolute',
-    bottom: 2,
-    left: 2,
-    right: 2,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    padding: 6,
+  gridItemInfo: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
   },
   gridItemName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.text,
   },
   gridItemRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    marginTop: 2,
+    gap: 3,
+    marginTop: Spacing.xs,
   },
   gridItemRatingText: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.textSecondary,
+  },
+  gridItemCaption: {
+    fontSize: FontSize.sm,
+    color: Colors.text,
+    lineHeight: 18,
   },
   multiImageBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 4,
-    padding: 3,
-  },
-  // Login prompt
-  loginPrompt: {
-    flex: 1,
+    top: Spacing.sm,
+    right: Spacing.sm,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
   },
-  loginIllustration: {
-    marginBottom: 8,
-  },
-  loginTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  loginSubtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  loginButton: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  registerLink: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  registerLinkBold: {
-    color: Colors.primary,
-    fontWeight: '700',
+  multiImageCount: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

@@ -18,22 +18,32 @@ export default function Avatar({
   const [hasError, setHasError] = useState(false);
 
   const initials = getInitials(name);
-  const backgroundColor = getColorFromName(name);
-  const fontSize = Math.round(size * 0.38);
+  const backgroundColor = getWarmColorFromName(name);
+  const fontSize = Math.round(size * 0.36);
   const borderRadius = size / 2;
+  const borderWidth = Math.max(1.5, size * 0.05);
 
   const containerStyle: ViewStyle = {
     width: size,
     height: size,
     borderRadius,
+    borderWidth,
+    borderColor: Colors.background,
   };
 
   if (uri && !hasError) {
     return (
-      <View style={[styles.container, containerStyle, style]}>
+      <View style={[styles.container, styles.shadow, containerStyle, style]}>
         <Image
           source={{ uri }}
-          style={[styles.image, { width: size, height: size, borderRadius }]}
+          style={[
+            styles.image,
+            {
+              width: size - borderWidth * 2,
+              height: size - borderWidth * 2,
+              borderRadius: (size - borderWidth * 2) / 2,
+            },
+          ]}
           onError={() => setHasError(true)}
         />
       </View>
@@ -41,7 +51,16 @@ export default function Avatar({
   }
 
   return (
-    <View style={[styles.container, styles.fallback, containerStyle, { backgroundColor }, style]}>
+    <View
+      style={[
+        styles.container,
+        styles.fallback,
+        styles.shadow,
+        containerStyle,
+        { backgroundColor },
+        style,
+      ]}
+    >
       <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
     </View>
   );
@@ -49,27 +68,44 @@ export default function Avatar({
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return '?';
+  if (parts.length === 0 || !parts[0]) return '?';
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-function getColorFromName(name: string): string {
-  const palette = [
-    '#FF6B35', '#2EC4B6', '#8B5CF6', '#EC4899',
-    '#F59E0B', '#3B82F6', '#10B981', '#EF4444',
-    '#6366F1', '#14B8A6',
+// Warm-tone palette only: reds, oranges, warm pinks, corals
+function getWarmColorFromName(name: string): string {
+  const warmPalette = [
+    '#E23744', // rich red
+    '#FF6B35', // warm orange
+    '#C62828', // deep red
+    '#E55A2B', // dark orange
+    '#FF5252', // light red
+    '#FF8F66', // light orange
+    '#D84315', // burnt orange
+    '#E53935', // medium red
+    '#FF7043', // coral orange
+    '#EF5350', // soft red
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return palette[Math.abs(hash) % palette.length];
+  return warmPalette[Math.abs(hash) % warmPalette.length];
 }
 
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shadow: {
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
+    elevation: 3,
   },
   image: {
     resizeMode: 'cover',
@@ -79,7 +115,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    color: '#FFFFFF',
+    color: Colors.textOnPrimary,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
