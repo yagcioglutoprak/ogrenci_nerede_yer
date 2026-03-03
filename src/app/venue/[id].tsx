@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
+import { MOCK_SOCIAL_VIDEOS } from '../../lib/mockData';
 import {
   Colors,
   PriceRanges,
@@ -30,12 +31,15 @@ import {
 } from '../../lib/constants';
 import StarRating from '../../components/ui/StarRating';
 import Avatar from '../../components/ui/Avatar';
-import type { Review } from '../../types';
+import type { Review, SocialVideo } from '../../types';
+import GlassView from '../../components/ui/GlassView';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 280;
 
 export default function VenueDetailScreen() {
+  const colors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -124,10 +128,25 @@ export default function VenueDetailScreen() {
     }
   };
 
+  const openVideo = (url: string) => {
+    Linking.openURL(url);
+  };
+
+  const getPlatformInfo = (platform: SocialVideo['platform']) => {
+    switch (platform) {
+      case 'youtube':
+        return { icon: 'logo-youtube' as const, color: '#FF0000', label: 'YouTube' };
+      case 'instagram':
+        return { icon: 'logo-instagram' as const, color: '#E4405F', label: 'Instagram' };
+      case 'tiktok':
+        return { icon: 'musical-notes' as const, color: '#000000', label: 'TikTok' };
+    }
+  };
+
   // -- Loading state --
   if (loading || !venue) {
     return (
-      <View style={styles.loadingScreen}>
+      <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
@@ -141,6 +160,9 @@ export default function VenueDetailScreen() {
 
   const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
 
+  // Social videos for this venue
+  const venueVideos = MOCK_SOCIAL_VIDEOS.filter((v) => v.venue_id === venue.id);
+
   // -- Render review item --
   const renderReviewItem = (item: Review) => {
     const avg = (
@@ -149,7 +171,7 @@ export default function VenueDetailScreen() {
     ).toFixed(1);
 
     return (
-      <View key={item.id} style={styles.reviewCard}>
+      <GlassView key={item.id} style={[styles.reviewCard, Platform.OS === 'ios' && styles.reviewCardGlass, { backgroundColor: colors.card, borderColor: colors.border }]} fallbackColor={colors.card}>
         {/* Header: avatar + name + date */}
         <View style={styles.reviewHeader}>
           <Avatar
@@ -158,7 +180,7 @@ export default function VenueDetailScreen() {
             size={38}
           />
           <View style={styles.reviewHeaderText}>
-            <Text style={styles.reviewUsername}>
+            <Text style={[styles.reviewUsername, { color: colors.text }]}>
               {item.user?.username ?? 'Anonim'}
             </Text>
             <Text style={styles.reviewDate}>
@@ -169,9 +191,9 @@ export default function VenueDetailScreen() {
               })}
             </Text>
           </View>
-          <View style={styles.reviewScoreBadge}>
+          <View style={[styles.reviewScoreBadge, { backgroundColor: colors.primarySoft }]}>
             <Ionicons name="star" size={12} color={Colors.star} />
-            <Text style={styles.reviewScoreText}>{avg}</Text>
+            <Text style={[styles.reviewScoreText, { color: colors.text }]}>{avg}</Text>
           </View>
         </View>
 
@@ -193,9 +215,9 @@ export default function VenueDetailScreen() {
 
         {/* Comment */}
         {item.comment ? (
-          <Text style={styles.reviewComment}>{item.comment}</Text>
+          <Text style={[styles.reviewComment, { color: colors.text }]}>{item.comment}</Text>
         ) : null}
-      </View>
+      </GlassView>
     );
   };
 
@@ -203,7 +225,7 @@ export default function VenueDetailScreen() {
   // MAIN RENDER
   // ===========================
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         bounces={false}
@@ -241,24 +263,28 @@ export default function VenueDetailScreen() {
 
           {/* Top bar: Back + Favorite */}
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
-            <TouchableOpacity
-              style={styles.heroCircleButton}
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.heroCircleButton}
-              onPress={handleFavorite}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isFavorited ? 'heart' : 'heart-outline'}
-                size={22}
-                color={isFavorited ? Colors.primary : '#FFFFFF'}
-              />
-            </TouchableOpacity>
+            <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+              <TouchableOpacity
+                style={styles.heroCircleButtonInner}
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </GlassView>
+            <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+              <TouchableOpacity
+                style={styles.heroCircleButtonInner}
+                onPress={handleFavorite}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={isFavorited ? 'heart' : 'heart-outline'}
+                  size={22}
+                  color={isFavorited ? Colors.primary : '#FFFFFF'}
+                />
+              </TouchableOpacity>
+            </GlassView>
           </SafeAreaView>
 
           {/* Hero bottom text */}
@@ -294,22 +320,22 @@ export default function VenueDetailScreen() {
         {/* ============================
             RATING OVERVIEW CARD
         ============================ */}
-        <View style={styles.ratingCard}>
+        <GlassView style={[styles.ratingCard, Platform.OS === 'ios' && styles.ratingCardGlass, { backgroundColor: colors.card }]} fallbackColor={colors.card}>
           {/* Top row: big number + stars */}
           <View style={styles.ratingCardTop}>
-            <Text style={styles.ratingBigNumber}>
+            <Text style={[styles.ratingBigNumber, { color: colors.text }]}>
               {venue.overall_rating.toFixed(1)}
             </Text>
             <View style={styles.ratingCardStarsCol}>
               <StarRating rating={venue.overall_rating} size="md" />
-              <Text style={styles.ratingCardReviewCount}>
+              <Text style={[styles.ratingCardReviewCount, { color: colors.textSecondary }]}>
                 {venue.total_reviews} değerlendirme
               </Text>
             </View>
           </View>
 
           {/* Divider */}
-          <View style={styles.ratingCardDivider} />
+          <View style={[styles.ratingCardDivider, { backgroundColor: colors.border }]} />
 
           {/* Sub-rating rows */}
           {[
@@ -335,9 +361,9 @@ export default function VenueDetailScreen() {
             <View key={cat.label} style={styles.subRatingRow}>
               <View style={styles.subRatingLabelArea}>
                 <Ionicons name={cat.icon} size={16} color={cat.color} />
-                <Text style={styles.subRatingLabelText}>{cat.label}</Text>
+                <Text style={[styles.subRatingLabelText, { color: colors.textSecondary }]}>{cat.label}</Text>
               </View>
-              <View style={styles.subRatingBarTrack}>
+              <View style={[styles.subRatingBarTrack, { backgroundColor: colors.border }]}>
                 <View
                   style={[
                     styles.subRatingBarFill,
@@ -348,12 +374,12 @@ export default function VenueDetailScreen() {
                   ]}
                 />
               </View>
-              <Text style={styles.subRatingValueText}>
+              <Text style={[styles.subRatingValueText, { color: colors.text }]}>
                 {cat.value.toFixed(1)}
               </Text>
             </View>
           ))}
-        </View>
+        </GlassView>
 
         {/* ============================
             INFO SECTION
@@ -361,18 +387,18 @@ export default function VenueDetailScreen() {
         <View style={styles.infoSection}>
           {/* Address */}
           <View style={styles.infoRow}>
-            <View style={styles.infoIconCircle}>
+            <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
               <Ionicons name="location" size={16} color={Colors.primary} />
             </View>
-            <Text style={styles.infoText}>{venue.address}</Text>
+            <Text style={[styles.infoText, { color: colors.text }]}>{venue.address}</Text>
           </View>
 
           {/* Price */}
           <View style={styles.infoRow}>
-            <View style={styles.infoIconCircle}>
+            <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
               <Ionicons name="cash" size={16} color={Colors.accent} />
             </View>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: colors.text }]}>
               {priceLabel} &middot; {priceDesc}
             </Text>
           </View>
@@ -380,14 +406,14 @@ export default function VenueDetailScreen() {
           {/* Phone */}
           {venue.phone && (
             <View style={styles.infoRow}>
-              <View style={styles.infoIconCircle}>
+              <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
                 <Ionicons
                   name="call"
                   size={16}
                   color={Colors.primaryDark}
                 />
               </View>
-              <Text style={styles.infoText}>{venue.phone}</Text>
+              <Text style={[styles.infoText, { color: colors.text }]}>{venue.phone}</Text>
             </View>
           )}
 
@@ -395,7 +421,7 @@ export default function VenueDetailScreen() {
           {venue.tags && venue.tags.length > 0 && (
             <View style={styles.tagContainer}>
               {venue.tags.map((tag) => (
-                <View key={tag} style={styles.tagPill}>
+                <View key={tag} style={[styles.tagPill, { backgroundColor: colors.accentSoft }]}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}
@@ -423,6 +449,110 @@ export default function VenueDetailScreen() {
         </View>
 
         {/* ============================
+            EDITORIAL REVIEW SECTION
+        ============================ */}
+        {venue.editorial_rating != null && (
+          <View style={styles.editorialSection}>
+            <View style={styles.editorialHeader}>
+              <View style={styles.editorialBadge}>
+                <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
+              </View>
+              <Text style={[styles.editorialTitle, { color: colors.text }]}>OgrenciNeredeYer Degerlendirmesi</Text>
+            </View>
+
+            <GlassView style={[styles.editorialCard, Platform.OS === 'ios' && styles.editorialCardGlass, { backgroundColor: colors.card, borderColor: colors.primarySoft }]} fallbackColor={colors.card}>
+              {/* Score circle */}
+              <View style={styles.editorialScoreRow}>
+                <View style={[styles.editorialScoreCircle, { backgroundColor: colors.primarySoft }]}>
+                  <Text style={styles.editorialScoreNumber}>{venue.editorial_rating}</Text>
+                  <Text style={styles.editorialScoreMax}>/10</Text>
+                </View>
+                <View style={styles.editorialScoreInfo}>
+                  <Text style={[styles.editorialScoreLabel, { color: colors.textSecondary }]}>Ekip Puani</Text>
+                  <View style={[styles.editorialScoreBar, { backgroundColor: colors.border }]}>
+                    <View
+                      style={[
+                        styles.editorialScoreBarFill,
+                        { width: `${(venue.editorial_rating / 10) * 100}%` },
+                      ]}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Editorial note */}
+              {venue.editorial_note && (
+                <View style={[styles.editorialNoteContainer, { borderTopColor: colors.border }]}>
+                  <Ionicons name="chatbox-ellipses" size={16} color={Colors.primary} />
+                  <Text style={[styles.editorialNoteText, { color: colors.text }]}>{venue.editorial_note}</Text>
+                </View>
+              )}
+            </GlassView>
+          </View>
+        )}
+
+        {/* ============================
+            SOCIAL VIDEOS SECTION
+        ============================ */}
+        {venueVideos.length > 0 && (
+          <View style={styles.videosSection}>
+            <View style={styles.videosSectionHeader}>
+              <View style={styles.videosSectionTitleRow}>
+                <Ionicons name="videocam" size={20} color={Colors.primary} />
+                <Text style={[styles.videosSectionTitle, { color: colors.text }]}>Sosyal Medya</Text>
+              </View>
+              <Text style={styles.videosSectionCount}>{venueVideos.length} video</Text>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.videosScroll}
+            >
+              {venueVideos.map((video) => {
+                const platform = getPlatformInfo(video.platform);
+                return (
+                  <TouchableOpacity
+                    key={video.id}
+                    style={[styles.videoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => openVideo(video.video_url)}
+                    activeOpacity={0.85}
+                  >
+                    {/* Thumbnail */}
+                    <View style={styles.videoThumbnailContainer}>
+                      <Image
+                        source={{ uri: video.thumbnail_url }}
+                        style={styles.videoThumbnail}
+                      />
+                      {/* Play overlay */}
+                      <View style={styles.videoPlayOverlay}>
+                        <Ionicons name="play" size={24} color="#FFFFFF" />
+                      </View>
+                      {/* Platform badge */}
+                      <View style={[styles.videoPlatformBadge, { backgroundColor: platform.color }]}>
+                        <Ionicons name={platform.icon} size={12} color="#FFFFFF" />
+                      </View>
+                    </View>
+
+                    {/* Info */}
+                    <View style={styles.videoInfo}>
+                      <Text style={[styles.videoTitle, { color: colors.text }]} numberOfLines={2}>
+                        {video.title}
+                      </Text>
+                      {video.author && (
+                        <Text style={styles.videoAuthor} numberOfLines={1}>
+                          @{video.author}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ============================
             PUAN VER SECTION
         ============================ */}
         <View style={styles.rateSection}>
@@ -443,16 +573,16 @@ export default function VenueDetailScreen() {
 
           {/* Expandable rating form */}
           {showRatingForm && (
-            <View style={styles.rateFormContainer}>
+            <View style={[styles.rateFormContainer, { backgroundColor: colors.backgroundSecondary }]}>
               {/* Taste */}
-              <View style={styles.rateFormRow}>
+              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.rateFormLabel}>
                   <Ionicons
                     name="restaurant"
                     size={18}
                     color={Colors.primary}
                   />
-                  <Text style={styles.rateFormLabelText}>Lezzet</Text>
+                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
                 </View>
                 <StarRating
                   rating={ratingTaste}
@@ -463,14 +593,14 @@ export default function VenueDetailScreen() {
               </View>
 
               {/* Value */}
-              <View style={styles.rateFormRow}>
+              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.rateFormLabel}>
                   <Ionicons
                     name="pricetag"
                     size={18}
                     color={Colors.accent}
                   />
-                  <Text style={styles.rateFormLabelText}>
+                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>
                     Fiyat/Performans
                   </Text>
                 </View>
@@ -483,14 +613,14 @@ export default function VenueDetailScreen() {
               </View>
 
               {/* Friendliness */}
-              <View style={styles.rateFormRow}>
+              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
                 <View style={styles.rateFormLabel}>
                   <Ionicons
                     name="people"
                     size={18}
                     color={Colors.verified}
                   />
-                  <Text style={styles.rateFormLabelText}>
+                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>
                     Öğrenci Dostu
                   </Text>
                 </View>
@@ -504,9 +634,9 @@ export default function VenueDetailScreen() {
 
               {/* Comment input */}
               <TextInput
-                style={styles.rateCommentInput}
+                style={[styles.rateCommentInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                 placeholder="Deneyimini paylaş..."
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 multiline
                 value={ratingComment}
                 onChangeText={setRatingComment}
@@ -540,7 +670,7 @@ export default function VenueDetailScreen() {
             REVIEWS LIST
         ============================ */}
         <View style={styles.reviewsSection}>
-          <Text style={styles.reviewsSectionTitle}>
+          <Text style={[styles.reviewsSectionTitle, { color: colors.text }]}>
             Değerlendirmeler ({reviews.length})
           </Text>
 
@@ -551,10 +681,10 @@ export default function VenueDetailScreen() {
                 size={48}
                 color={Colors.border}
               />
-              <Text style={styles.noReviewsTitle}>
+              <Text style={[styles.noReviewsTitle, { color: colors.text }]}>
                 Henüz değerlendirme yok
               </Text>
-              <Text style={styles.noReviewsSubtitle}>
+              <Text style={[styles.noReviewsSubtitle, { color: colors.textSecondary }]}>
                 İlk değerlendirmeyi sen yap!
               </Text>
             </View>
@@ -811,6 +941,193 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
+  // ---- EDITORIAL SECTION ----
+  editorialSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xxl,
+  },
+  editorialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  editorialBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editorialTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  editorialCard: {
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.primarySoft,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  editorialScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  editorialScoreCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  editorialScoreNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: Colors.primary,
+  },
+  editorialScoreMax: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.textTertiary,
+    marginTop: 8,
+  },
+  editorialScoreInfo: {
+    flex: 1,
+    gap: Spacing.sm,
+  },
+  editorialScoreLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  editorialScoreBar: {
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  editorialScoreBarFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 4,
+  },
+  editorialNoteContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  editorialNoteText: {
+    flex: 1,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+
+  // ---- SOCIAL VIDEOS SECTION ----
+  videosSection: {
+    paddingTop: Spacing.xxl,
+  },
+  videosSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  videosSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  videosSectionTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  videosSectionCount: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+  videosScroll: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  videoCard: {
+    width: 140,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 180,
+    position: 'relative',
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  videoPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  videoPlatformBadge: {
+    position: 'absolute',
+    top: Spacing.sm,
+    left: Spacing.sm,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoInfo: {
+    padding: Spacing.sm,
+    gap: 2,
+  },
+  videoTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.text,
+    lineHeight: 16,
+  },
+  videoAuthor: {
+    fontSize: FontSize.xs - 1,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+
   // ---- PUAN VER SECTION ----
   rateSection: {
     marginHorizontal: Spacing.lg,
@@ -972,5 +1289,25 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.text,
     lineHeight: 22,
+  },
+  heroCircleButtonGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  heroCircleButtonInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ratingCardGlass: {
+    borderWidth: 0,
+  },
+  editorialCardGlass: {
+    borderWidth: 0,
+  },
+  reviewCardGlass: {
+    borderWidth: 0,
   },
 });

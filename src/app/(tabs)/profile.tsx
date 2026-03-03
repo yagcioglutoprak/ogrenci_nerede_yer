@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,8 @@ import {
   FontSize,
 } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
+import GlassView from '../../components/ui/GlassView';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue, Post } from '../../types';
 import { supabase } from '../../lib/supabase';
 
@@ -31,6 +34,7 @@ type ProfileTab = 'favorites' | 'posts';
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
+  const colors = useThemeColors();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('favorites');
   const [favorites, setFavorites] = useState<Venue[]>([]);
@@ -115,14 +119,14 @@ export default function ProfileScreen() {
   // =============================================
   if (!user) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
         <View style={styles.loginPrompt}>
           <View style={styles.loginIconCircle}>
             <Ionicons name="person-outline" size={40} color="#FFFFFF" />
           </View>
 
-          <Text style={styles.loginTitle}>Hesabina Giris Yap</Text>
-          <Text style={styles.loginSubtitle}>
+          <Text style={[styles.loginTitle, { color: colors.text }]}>Hesabina Giris Yap</Text>
+          <Text style={[styles.loginSubtitle, { color: colors.textSecondary }]}>
             Favori mekanlarini kaydet, yorumlarini paylas{'\n'}ve topluluga katil!
           </Text>
 
@@ -139,7 +143,7 @@ export default function ProfileScreen() {
             onPress={() => router.push('/auth/register')}
             style={styles.registerRow}
           >
-            <Text style={styles.registerText}>
+            <Text style={[styles.registerText, { color: colors.textSecondary }]}>
               Hesabin yok mu?{' '}
               <Text style={styles.registerTextBold}>Kayit Ol</Text>
             </Text>
@@ -155,12 +159,12 @@ export default function ProfileScreen() {
   const GRID_ITEM_WIDTH = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.md) / 2;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
       {/* Header bar */}
-      <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>Profil</Text>
+      <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
         <TouchableOpacity
-          style={styles.settingsBtn}
+          style={[styles.settingsBtn, { backgroundColor: colors.backgroundSecondary }]}
           onPress={handleSignOut}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -173,53 +177,62 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Profile Header Card */}
-        <View style={styles.profileCard}>
+        <GlassView
+          style={[styles.profileCard, Platform.OS === 'ios' && styles.profileCardGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
+          fallbackColor={colors.background}
+        >
           <Avatar
             uri={user.avatar_url}
             name={user.full_name || user.username}
             size={72}
           />
-          <Text style={styles.profileName}>{user.full_name}</Text>
-          <Text style={styles.profileUsername}>@{user.username}</Text>
+          <Text style={[styles.profileName, { color: colors.text }]}>{user.full_name}</Text>
+          <Text style={[styles.profileUsername, { color: colors.textSecondary }]}>@{user.username}</Text>
 
           {user.university && (
-            <View style={styles.universityRow}>
+            <View style={[styles.universityRow, { backgroundColor: colors.backgroundSecondary }]}>
               <Ionicons name="school-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.universityText}>{user.university}</Text>
+              <Text style={[styles.universityText, { color: colors.textSecondary }]}>{user.university}</Text>
             </View>
           )}
 
           {user.bio && (
-            <Text style={styles.bioText}>{user.bio}</Text>
+            <Text style={[styles.bioText, { color: colors.text }]}>{user.bio}</Text>
           )}
 
           {/* XP Badge */}
-          <View style={styles.xpBadge}>
+          <View style={[styles.xpBadge, { backgroundColor: colors.accentSoft }]}>
             <Ionicons name="star" size={14} color={Colors.accent} />
             <Text style={styles.xpText}>{user.xp_points || 250} XP</Text>
           </View>
-        </View>
+        </GlassView>
 
         {/* Stats Row */}
-        <View style={styles.statsCard}>
+        <GlassView
+          style={[styles.statsCard, Platform.OS === 'ios' && styles.statsCardGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
+          fallbackColor={colors.background}
+        >
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.venues}</Text>
-            <Text style={styles.statLabel}>Kesif</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats.venues}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Kesif</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.reviews}</Text>
-            <Text style={styles.statLabel}>Yorum</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats.reviews}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Yorum</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.followers}</Text>
-            <Text style={styles.statLabel}>Takipci</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats.followers}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Takipci</Text>
           </View>
-        </View>
+        </GlassView>
 
         {/* Tab Switch */}
-        <View style={styles.tabContainer}>
+        <GlassView
+          style={[styles.tabContainer, Platform.OS === 'ios' && styles.tabContainerGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
+          fallbackColor={colors.background}
+        >
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'favorites' && styles.tabButtonActive]}
             onPress={() => setActiveTab('favorites')}
@@ -234,6 +247,7 @@ export default function ProfileScreen() {
               style={[
                 styles.tabText,
                 activeTab === 'favorites' && styles.tabTextActive,
+                activeTab !== 'favorites' && { color: colors.textSecondary },
               ]}
             >
               Favorilerim
@@ -253,12 +267,13 @@ export default function ProfileScreen() {
               style={[
                 styles.tabText,
                 activeTab === 'posts' && styles.tabTextActive,
+                activeTab !== 'posts' && { color: colors.textSecondary },
               ]}
             >
               Gonderilerim
             </Text>
           </TouchableOpacity>
-        </View>
+        </GlassView>
 
         {/* Content Area */}
         {loading ? (
@@ -268,11 +283,11 @@ export default function ProfileScreen() {
         ) : activeTab === 'favorites' ? (
           favorites.length === 0 ? (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconCircle}>
+              <View style={[styles.emptyIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
                 <Ionicons name="heart-outline" size={32} color={Colors.textTertiary} />
               </View>
-              <Text style={styles.emptyTitle}>Henuz favori mekanin yok</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>Henuz favori mekanin yok</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 Mekanlari kesfet ve favorilerine ekle!
               </Text>
             </View>
@@ -281,7 +296,7 @@ export default function ProfileScreen() {
               {favorites.map((venue) => (
                 <TouchableOpacity
                   key={venue.id}
-                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }]}
+                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
                   onPress={() => router.push(`/venue/${venue.id}`)}
                   activeOpacity={0.85}
                 >
@@ -292,7 +307,7 @@ export default function ProfileScreen() {
                         style={styles.gridImage}
                       />
                     ) : (
-                      <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
+                      <View style={[styles.gridImage, styles.gridImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
                         <Ionicons
                           name="restaurant-outline"
                           size={28}
@@ -302,12 +317,12 @@ export default function ProfileScreen() {
                     )}
                   </View>
                   <View style={styles.gridItemInfo}>
-                    <Text style={styles.gridItemName} numberOfLines={1}>
+                    <Text style={[styles.gridItemName, { color: colors.text }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                     <View style={styles.gridItemRating}>
                       <Ionicons name="star" size={12} color={Colors.star} />
-                      <Text style={styles.gridItemRatingText}>
+                      <Text style={[styles.gridItemRatingText, { color: colors.textSecondary }]}>
                         {venue.overall_rating.toFixed(1)}
                       </Text>
                     </View>
@@ -318,11 +333,11 @@ export default function ProfileScreen() {
           )
         ) : userPosts.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconCircle}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
               <Ionicons name="camera-outline" size={32} color={Colors.textTertiary} />
             </View>
-            <Text style={styles.emptyTitle}>Henuz gonderin yok</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Henuz gonderin yok</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
               Deneyimlerini paylasmaya basla!
             </Text>
           </View>
@@ -333,7 +348,7 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={post.id}
-                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }]}
+                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
                   activeOpacity={0.85}
                 >
                   <View style={styles.gridImageWrapper}>
@@ -343,7 +358,7 @@ export default function ProfileScreen() {
                         style={styles.gridImage}
                       />
                     ) : (
-                      <View style={[styles.gridImage, styles.gridImagePlaceholder]}>
+                      <View style={[styles.gridImage, styles.gridImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
                         <Ionicons
                           name="document-text-outline"
                           size={28}
@@ -359,7 +374,7 @@ export default function ProfileScreen() {
                     )}
                   </View>
                   <View style={styles.gridItemInfo}>
-                    <Text style={styles.gridItemCaption} numberOfLines={2}>
+                    <Text style={[styles.gridItemCaption, { color: colors.text }]} numberOfLines={2}>
                       {post.caption || 'Gonderi'}
                     </Text>
                   </View>
@@ -749,5 +764,18 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+
+  // =========================================
+  // LIQUID GLASS OVERRIDES (iOS)
+  // =========================================
+  profileCardGlass: {
+    borderWidth: 0,
+  },
+  statsCardGlass: {
+    borderWidth: 0,
+  },
+  tabContainerGlass: {
+    borderWidth: 0,
   },
 });

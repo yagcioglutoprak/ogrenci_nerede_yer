@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Spacing, BorderRadius } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import GlassView from './GlassView';
 
 type BadgeSize = 'sm' | 'md';
 type BadgeVariant = 'default' | 'verified';
@@ -23,12 +25,13 @@ export default function Badge({
   variant = 'default',
   style,
 }: BadgeProps) {
+  const colors = useThemeColors();
   const isSmall = size === 'sm';
   const isVerified = variant === 'verified';
 
   if (isVerified) {
     return (
-      <View style={[styles.container, styles.verifiedContainer, isSmall ? styles.containerSm : styles.containerMd, style]}>
+      <View style={[styles.container, styles.verifiedContainer, { backgroundColor: colors.verified }, isSmall ? styles.containerSm : styles.containerMd, style]}>
         <Ionicons
           name="checkmark-circle"
           size={isSmall ? 12 : 14}
@@ -50,13 +53,15 @@ export default function Badge({
   }
 
   return (
-    <View
+    <GlassView
       style={[
         styles.container,
         isSmall ? styles.containerSm : styles.containerMd,
-        { backgroundColor: hexToRgba(color, 0.12) },
+        Platform.OS !== 'ios' && { backgroundColor: hexToRgba(color, 0.12) },
         style,
       ]}
+      tintColor={color}
+      fallbackColor={hexToRgba(color, 0.12)}
     >
       {icon && (
         <Ionicons
@@ -76,7 +81,7 @@ export default function Badge({
       >
         {label}
       </Text>
-    </View>
+    </GlassView>
   );
 }
 

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -36,6 +37,7 @@ export default function Input({
   style,
   ...rest
 }: InputProps) {
+  const colors = useThemeColors();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecureVisible, setIsSecureVisible] = useState(false);
 
@@ -43,18 +45,18 @@ export default function Input({
   const showSecureToggle = secureTextEntry;
 
   const wrapperBorderColor = hasError
-    ? Colors.error
+    ? colors.error
     : isFocused
-      ? Colors.borderFocus
+      ? colors.borderFocus
       : 'transparent';
 
   const wrapperBackgroundColor = isFocused
-    ? Colors.background
-    : Colors.backgroundSecondary;
+    ? colors.background
+    : colors.backgroundSecondary;
 
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>}
 
       <View
         style={[
@@ -64,7 +66,7 @@ export default function Input({
             backgroundColor: wrapperBackgroundColor,
           },
           isFocused && styles.inputWrapperFocused,
-          hasError && styles.inputWrapperError,
+          hasError && [styles.inputWrapperError, { backgroundColor: colors.primarySoft }],
           multiline && styles.inputWrapperMultiline,
         ]}
       >
@@ -74,10 +76,10 @@ export default function Input({
             size={20}
             color={
               hasError
-                ? Colors.error
+                ? colors.error
                 : isFocused
-                  ? Colors.primary
-                  : Colors.textTertiary
+                  ? colors.primary
+                  : colors.textTertiary
             }
             style={styles.leadingIcon}
           />
@@ -86,10 +88,11 @@ export default function Input({
         <TextInput
           style={[
             styles.input,
+            { color: colors.text },
             multiline && styles.inputMultiline,
           ]}
           placeholder={placeholder}
-          placeholderTextColor={Colors.textTertiary}
+          placeholderTextColor={colors.textTertiary}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry && !isSecureVisible}
@@ -97,7 +100,7 @@ export default function Input({
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          selectionColor={Colors.primary}
+          selectionColor={colors.primary}
           {...rest}
         />
 
@@ -110,7 +113,7 @@ export default function Input({
             <Ionicons
               name={isSecureVisible ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={Colors.textTertiary}
+              color={colors.textTertiary}
             />
           </TouchableOpacity>
         )}
@@ -118,7 +121,7 @@ export default function Input({
 
       {hasError && (
         <View style={styles.errorRow}>
-          <Ionicons name="alert-circle" size={14} color={Colors.error} />
+          <Ionicons name="alert-circle" size={14} color={colors.error} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}

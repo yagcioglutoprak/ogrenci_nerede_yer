@@ -15,10 +15,12 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signInWithEmail, loading } = useAuthStore();
+  const colors = useThemeColors();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +47,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -61,7 +63,7 @@ export default function LoginScreen() {
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={28} color={Colors.text} />
+            <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
 
           {/* Brand Section */}
@@ -72,7 +74,7 @@ export default function LoginScreen() {
             </View>
 
             <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
-            <Text style={styles.brandSubtitle}>Lezzetli kesiflere basla!</Text>
+            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Lezzetli kesiflere basla!</Text>
           </View>
 
           {/* Form Section */}
@@ -106,7 +108,7 @@ export default function LoginScreen() {
 
             {/* Error Message */}
             {error ? (
-              <View style={styles.errorContainer}>
+              <View style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}>
                 <Ionicons name="alert-circle" size={18} color={Colors.error} />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
@@ -124,14 +126,14 @@ export default function LoginScreen() {
 
           {/* Divider */}
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>veya</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
           {/* Register Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Hesabin yok mu? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Hesabin yok mu? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/register')}>
               <Text style={styles.footerLink}>Kayit Ol</Text>
             </TouchableOpacity>

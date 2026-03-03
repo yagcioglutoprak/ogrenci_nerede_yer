@@ -3,20 +3,28 @@ import { supabase } from '../lib/supabase';
 import type { Venue, Review, VenueFilters } from '../types';
 import { MOCK_VENUES, MOCK_REVIEWS, MOCK_USERS } from '../lib/mockData';
 
+const PAGE_SIZE = 30;
+
 interface VenueState {
   venues: Venue[];
   selectedVenue: Venue | null;
   reviews: Review[];
   filters: VenueFilters;
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  error: string | null;
 
   fetchVenues: (region?: { lat: number; lng: number; radius: number }) => Promise<void>;
+  fetchMoreVenues: () => Promise<void>;
   fetchVenueById: (id: string) => Promise<void>;
   fetchReviews: (venueId: string) => Promise<void>;
+  searchVenues: (query: string) => Promise<void>;
   addVenue: (venue: Omit<Venue, 'id' | 'created_at' | 'avg_taste_rating' | 'avg_value_rating' | 'avg_friendliness_rating' | 'overall_rating' | 'total_reviews' | 'level'>) => Promise<{ data: Venue | null; error: string | null }>;
   addReview: (review: Omit<Review, 'id' | 'created_at'>) => Promise<{ error: string | null }>;
   toggleFavorite: (venueId: string, userId: string) => Promise<void>;
   setFilters: (filters: VenueFilters) => void;
+  clearError: () => void;
 }
 
 /**
@@ -37,6 +45,14 @@ function applyFiltersToMockVenues(venues: Venue[], filters: VenueFilters): Venue
   if (filters.tags && filters.tags.length > 0) {
     filtered = filtered.filter((v) => v.tags.some((t) => filters.tags!.includes(t)));
   }
+  if (filters.searchQuery && filters.searchQuery.trim()) {
+    const q = filters.searchQuery.toLowerCase();
+    filtered = filtered.filter(
+      (v) =>
+        v.name.toLowerCase().includes(q) ||
+        v.address.toLowerCase().includes(q),
+    );
+  }
 
   // Sort by rating descending (matches the Supabase query default)
   filtered.sort((a, b) => b.overall_rating - a.overall_rating);
@@ -50,33 +66,99 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   reviews: [],
   filters: {},
   loading: false,
+  loadingMore: false,
+  hasMore: true,
+  error: null,
 
   fetchVenues: async (region) => {
-    set({ loading: true });
-    let query = supabase.from('venues').select('*');
+    set({ loading: true, error: null });
 
-    const filters = get().filters;
+    try {
+      let query = supabase.from('venues').select('*');
+      const filters = get().filters;
 
-    if (filters.minRating) {
-      query = query.gte('overall_rating', filters.minRating);
-    }
-    if (filters.priceRange && filters.priceRange.length > 0) {
-      query = query.in('price_range', filters.priceRange);
-    }
-    if (filters.isVerified) {
-      query = query.eq('is_verified', true);
+      if (filters.minRating) {
+        query = query.gte('overall_rating', filters.minRating);
+      }
+      if (filters.priceRange && filters.priceRange.length > 0) {
+        query = query.in('price_range', filters.priceRange);
+      }
+      if (filters.isVerified) {
+        query = query.eq('is_verified', true);
+      }
+      if (filters.searchQuery && filters.searchQuery.trim()) {
+        query = query.or(
+          `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
+        );
+      }
+
+      const { data, error } = await query
+        .order('overall_rating', { ascending: false })
+        .range(0, PAGE_SIZE - 1);
+
+      if (!error && data && data.length > 0) {
+        set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
+      } else {
+        // Fallback to mock data when Supabase returns empty or error
+        const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
+        set({ venues: mockFiltered, hasMore: false });
+      }
+    } catch (err: any) {
+      const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, get().filters);
+      set({
+        venues: mockFiltered,
+        hasMore: false,
+        error: err?.message || 'Mekanlar yuklenirken hata olustu',
+      });
     }
 
-    const { data, error } = await query.order('overall_rating', { ascending: false }).limit(100);
-
-    if (!error && data && data.length > 0) {
-      set({ venues: data as Venue[] });
-    } else {
-      // Fallback to mock data when Supabase returns empty or error
-      const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
-      set({ venues: mockFiltered });
-    }
     set({ loading: false });
+  },
+
+  fetchMoreVenues: async () => {
+    const { venues, loadingMore, hasMore } = get();
+    if (loadingMore || !hasMore) return;
+
+    set({ loadingMore: true });
+    const from = venues.length;
+    const to = from + PAGE_SIZE - 1;
+
+    try {
+      let query = supabase.from('venues').select('*');
+      const filters = get().filters;
+
+      if (filters.minRating) {
+        query = query.gte('overall_rating', filters.minRating);
+      }
+      if (filters.priceRange && filters.priceRange.length > 0) {
+        query = query.in('price_range', filters.priceRange);
+      }
+      if (filters.isVerified) {
+        query = query.eq('is_verified', true);
+      }
+      if (filters.searchQuery && filters.searchQuery.trim()) {
+        query = query.or(
+          `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
+        );
+      }
+
+      const { data, error } = await query
+        .order('overall_rating', { ascending: false })
+        .range(from, to);
+
+      if (!error && data && data.length > 0) {
+        set({
+          venues: [...venues, ...(data as Venue[])],
+          hasMore: data.length >= PAGE_SIZE,
+        });
+      } else {
+        set({ hasMore: false });
+      }
+    } catch {
+      set({ hasMore: false });
+    }
+
+    set({ loadingMore: false });
   },
 
   fetchVenueById: async (id) => {
@@ -117,6 +199,50 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       set({ reviews: mockReviews as Review[] });
     }
+  },
+
+  searchVenues: async (query) => {
+    if (!query.trim()) {
+      await get().fetchVenues();
+      return;
+    }
+
+    set({ loading: true, error: null });
+
+    try {
+      const { data, error } = await supabase
+        .from('venues')
+        .select('*')
+        .or(`name.ilike.%${query}%,address.ilike.%${query}%`)
+        .order('overall_rating', { ascending: false })
+        .limit(20);
+
+      if (!error && data && data.length > 0) {
+        set({ venues: data as Venue[] });
+      } else {
+        // Fallback: search mock data
+        const q = query.toLowerCase();
+        const mockResults = MOCK_VENUES.filter(
+          (v) =>
+            v.name.toLowerCase().includes(q) ||
+            v.address.toLowerCase().includes(q),
+        );
+        set({ venues: mockResults });
+      }
+    } catch (err: any) {
+      const q = query.toLowerCase();
+      const mockResults = MOCK_VENUES.filter(
+        (v) =>
+          v.name.toLowerCase().includes(q) ||
+          v.address.toLowerCase().includes(q),
+      );
+      set({
+        venues: mockResults,
+        error: err?.message || 'Arama sirasinda hata olustu',
+      });
+    }
+
+    set({ loading: false });
   },
 
   addVenue: async (venue) => {
@@ -200,4 +326,6 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     set({ filters });
     get().fetchVenues();
   },
+
+  clearError: () => set({ error: null }),
 }));

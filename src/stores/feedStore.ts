@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { Post, Comment } from '../types';
+import type { Post, Comment, FeedCategory } from '../types';
 import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS } from '../lib/mockData';
+
+const PAGE_SIZE = 20;
 
 interface FeedState {
   posts: Post[];
@@ -9,14 +11,21 @@ interface FeedState {
   comments: Comment[];
   loading: boolean;
   refreshing: boolean;
+  loadingMore: boolean;
+  error: string | null;
+  category: FeedCategory;
+  hasMore: boolean;
 
   fetchPosts: () => Promise<void>;
+  fetchMorePosts: () => Promise<void>;
   fetchPostById: (id: string) => Promise<void>;
   fetchComments: (postId: string) => Promise<void>;
   createPost: (post: { user_id: string; venue_id?: string; caption: string; image_urls: string[] }) => Promise<{ error: string | null }>;
   toggleLike: (postId: string, userId: string) => Promise<void>;
   addComment: (postId: string, userId: string, text: string) => Promise<{ error: string | null }>;
   refreshFeed: () => Promise<void>;
+  setCategory: (category: FeedCategory) => void;
+  clearError: () => void;
 }
 
 /**
@@ -28,13 +37,39 @@ function buildMockPostsWithJoins(): Post[] {
       ? MOCK_VENUES.find((v) => v.id === post.venue_id)
       : undefined;
 
+    const mockLikes = Math.floor(Math.random() * 20);
+    const mockComments = MOCK_COMMENTS.filter((c) => c.post_id === post.id).length;
+
     return {
       ...post,
       user: MOCK_USERS.find((u) => u.id === post.user_id),
       venue: venue as Post['venue'],
       images: MOCK_POST_IMAGES.filter((img) => img.post_id === post.id).sort((a, b) => a.order - b.order),
+      likes_count: mockLikes,
+      comments_count: mockComments,
     };
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+/**
+ * Apply category sorting/filtering to mock posts client-side.
+ */
+function applyCategoryToMockPosts(posts: Post[], category: FeedCategory): Post[] {
+  const sorted = [...posts];
+  switch (category) {
+    case 'top':
+      sorted.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
+      break;
+    case 'new':
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      break;
+    case 'nearby':
+    case 'all':
+    default:
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      break;
+  }
+  return sorted;
 }
 
 /**
@@ -50,57 +85,128 @@ function buildMockCommentsWithUser(postId: string): Comment[] {
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 
+/**
+ * Build the Supabase query with category-based ordering.
+ */
+function buildCategoryQuery(category: FeedCategory) {
+  let query = supabase
+    .from('posts_with_counts')
+    .select(`
+      *,
+      user:users(*),
+      venue:venues(id, name, cover_image_url),
+      images:post_images(*)
+    `);
+
+  switch (category) {
+    case 'top':
+      query = query.order('likes_count', { ascending: false });
+      break;
+    case 'new':
+      query = query.order('created_at', { ascending: false });
+      break;
+    case 'nearby':
+    case 'all':
+    default:
+      query = query.order('created_at', { ascending: false });
+      break;
+  }
+
+  return query;
+}
+
 export const useFeedStore = create<FeedState>((set, get) => ({
   posts: [],
   selectedPost: null,
   comments: [],
   loading: false,
   refreshing: false,
+  loadingMore: false,
+  error: null,
+  category: 'all',
+  hasMore: true,
 
   fetchPosts: async () => {
-    set({ loading: true });
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        user:users(*),
-        venue:venues(id, name, cover_image_url),
-        images:post_images(*)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    set({ loading: true, error: null });
+    const { category } = get();
 
-    if (!error && data && data.length > 0) {
-      // Her post icin begeni ve yorum sayisini al
-      const postsWithCounts = await Promise.all(
-        data.map(async (post) => {
-          const [{ count: likesCount }, { count: commentsCount }] = await Promise.all([
-            supabase.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', post.id),
-            supabase.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', post.id),
-          ]);
-          return {
-            ...post,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-          };
-        })
-      );
-      set({ posts: postsWithCounts as Post[] });
-    } else {
-      // Fallback to mock data when Supabase returns empty or error
+    try {
+      const { data, error } = await buildCategoryQuery(category)
+        .range(0, PAGE_SIZE - 1);
+
+      if (!error && data && data.length > 0) {
+        set({
+          posts: data as Post[],
+          hasMore: data.length >= PAGE_SIZE,
+        });
+      } else {
+        // Fallback to mock data
+        const mockPosts = buildMockPostsWithJoins();
+        const sorted = applyCategoryToMockPosts(mockPosts, category);
+        set({
+          posts: sorted.slice(0, PAGE_SIZE) as Post[],
+          hasMore: sorted.length > PAGE_SIZE,
+        });
+      }
+    } catch (err: any) {
       const mockPosts = buildMockPostsWithJoins();
-      set({ posts: mockPosts as Post[] });
+      const sorted = applyCategoryToMockPosts(mockPosts, get().category);
+      set({
+        posts: sorted.slice(0, PAGE_SIZE) as Post[],
+        hasMore: sorted.length > PAGE_SIZE,
+        error: err?.message || 'Gonderiler yuklenirken hata olustu',
+      });
     }
+
     set({ loading: false });
+  },
+
+  fetchMorePosts: async () => {
+    const { posts, loadingMore, hasMore, category } = get();
+    if (loadingMore || !hasMore) return;
+
+    set({ loadingMore: true });
+    const from = posts.length;
+    const to = from + PAGE_SIZE - 1;
+
+    try {
+      const { data, error } = await buildCategoryQuery(category)
+        .range(from, to);
+
+      if (!error && data && data.length > 0) {
+        set({
+          posts: [...posts, ...(data as Post[])],
+          hasMore: data.length >= PAGE_SIZE,
+        });
+      } else if (error) {
+        // Mock data pagination
+        const allMock = applyCategoryToMockPosts(buildMockPostsWithJoins(), category);
+        const nextPage = allMock.slice(from, to + 1);
+        if (nextPage.length > 0) {
+          set({
+            posts: [...posts, ...nextPage],
+            hasMore: allMock.length > to + 1,
+          });
+        } else {
+          set({ hasMore: false });
+        }
+      } else {
+        set({ hasMore: false });
+      }
+    } catch {
+      set({ hasMore: false });
+    }
+
+    set({ loadingMore: false });
   },
 
   fetchPostById: async (id) => {
     const { data, error } = await supabase
-      .from('posts')
+      .from('posts_with_counts')
       .select(`
         *,
         user:users(*),
-        venue:venues(id, name),
+        venue:venues(id, name, cover_image_url),
         images:post_images(*)
       `)
       .eq('id', id)
@@ -212,6 +318,15 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       set({ comments: [...currentComments, newComment] });
     }
 
+    // Update local post comments_count
+    const posts = get().posts.map((p) => {
+      if (p.id === postId) {
+        return { ...p, comments_count: (p.comments_count || 0) + 1 };
+      }
+      return p;
+    });
+    set({ posts });
+
     return { error: error?.message || null };
   },
 
@@ -220,4 +335,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     await get().fetchPosts();
     set({ refreshing: false });
   },
+
+  setCategory: (category) => {
+    set({ category, posts: [], hasMore: true });
+    get().fetchPosts();
+  },
+
+  clearError: () => set({ error: null }),
 }));

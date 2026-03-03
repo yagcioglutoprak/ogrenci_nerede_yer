@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Image, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface AvatarProps {
   uri?: string | null;
@@ -15,6 +16,7 @@ export default function Avatar({
   size = 40,
   style,
 }: AvatarProps) {
+  const colors = useThemeColors();
   const [hasError, setHasError] = useState(false);
 
   const initials = getInitials(name);
@@ -28,7 +30,7 @@ export default function Avatar({
     height: size,
     borderRadius,
     borderWidth,
-    borderColor: Colors.background,
+    borderColor: colors.background,
   };
 
   if (uri && !hasError) {

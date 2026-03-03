@@ -35,6 +35,19 @@ export interface Venue {
   tags: string[];               // ['wifi', 'vejetaryen', 'kahvalti']
   created_by: string;
   created_at: string;
+  // Editorial (OgrenciNeredeYer team review)
+  editorial_rating?: number | null;   // 1-10 team rating
+  editorial_note?: string | null;     // Team written note
+}
+
+export interface SocialVideo {
+  id: string;
+  venue_id: string;
+  platform: 'youtube' | 'instagram' | 'tiktok';
+  video_url: string;
+  thumbnail_url: string;
+  title: string;
+  author?: string;
 }
 
 export interface Review {
@@ -144,4 +157,15 @@ export interface VenueFilters {
   tags?: string[];
   isVerified?: boolean;
   sortBy?: 'distance' | 'rating' | 'newest' | 'price';
+  searchQuery?: string;
+}
+
+// Feed category tipi
+export type FeedCategory = 'all' | 'nearby' | 'top' | 'new';
+
+// Pagination state tipi
+export interface PaginationState {
+  hasMore: boolean;
+  cursor: string | null;
+  pageSize: number;
 }

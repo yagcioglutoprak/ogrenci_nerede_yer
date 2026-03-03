@@ -15,10 +15,12 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { signUpWithEmail, loading } = useAuthStore();
+  const colors = useThemeColors();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -67,7 +69,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -83,7 +85,7 @@ export default function RegisterScreen() {
             onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={28} color={Colors.text} />
+            <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
 
           {/* Brand Section */}
@@ -93,7 +95,7 @@ export default function RegisterScreen() {
             </View>
 
             <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
-            <Text style={styles.brandSubtitle}>Yeni hesap olustur</Text>
+            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Yeni hesap olustur</Text>
           </View>
 
           {/* Form Section */}
@@ -158,7 +160,7 @@ export default function RegisterScreen() {
 
             {/* Error */}
             {error ? (
-              <View style={styles.errorContainer}>
+              <View style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}>
                 <Ionicons name="alert-circle" size={18} color={Colors.error} />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
@@ -176,14 +178,14 @@ export default function RegisterScreen() {
 
           {/* Divider */}
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>veya</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
           {/* Login Link */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Zaten hesabin var mi? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Zaten hesabin var mi? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/login')}>
               <Text style={styles.footerLink}>Giris Yap</Text>
             </TouchableOpacity>

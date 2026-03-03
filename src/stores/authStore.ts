@@ -7,6 +7,7 @@ interface AuthState {
   session: any | null;
   loading: boolean;
   initialized: boolean;
+  error: string | null;
 
   initialize: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -20,6 +21,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   loading: false,
   initialized: false,
+  error: null,
 
   initialize: async () => {
     try {
@@ -32,9 +34,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .eq('id', session.user.id)
           .single();
 
-        set({ session, user: profile, initialized: true });
+        set({ session, user: profile, initialized: true, error: null });
       } else {
-        set({ session: null, user: null, initialized: true });
+        set({ session: null, user: null, initialized: true, error: null });
       }
 
       // Auth state değişikliklerini dinle
@@ -50,24 +52,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ session: null, user: null });
         }
       });
-    } catch {
-      set({ initialized: true });
+    } catch (err: any) {
+      set({
+        initialized: true,
+        error: err?.message || 'Oturum baslatilirken hata olustu',
+      });
     }
   },
 
   signInWithEmail: async (email, password) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    set({ loading: false });
-    return { error: error?.message || null };
+    const errorMessage = error?.message || null;
+    set({ loading: false, error: errorMessage });
+    return { error: errorMessage };
   },
 
   signUpWithEmail: async (email, password, username) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
-      set({ loading: false });
+      set({ loading: false, error: error.message });
       return { error: error.message };
     }
 
@@ -82,18 +88,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (profileError) {
-        set({ loading: false });
+        set({ loading: false, error: profileError.message });
         return { error: profileError.message };
       }
     }
 
-    set({ loading: false });
+    set({ loading: false, error: null });
     return { error: null };
   },
 
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null });
+    set({ user: null, session: null, error: null });
   },
 
   updateProfile: async (updates) => {

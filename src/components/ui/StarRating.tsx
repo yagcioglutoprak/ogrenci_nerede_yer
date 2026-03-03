@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 type StarSize = 'sm' | 'md' | 'lg';
 
@@ -28,10 +29,13 @@ export default function StarRating({
   size = 'md',
   interactive = false,
   onRatingChange,
-  color = Colors.star,
-  emptyColor = Colors.starEmpty,
+  color,
+  emptyColor,
   gap = 2,
 }: StarRatingProps) {
+  const colors = useThemeColors();
+  const resolvedColor = color ?? colors.star;
+  const resolvedEmptyColor = emptyColor ?? colors.starEmpty;
   const starSize = typeof size === 'number' ? size : STAR_SIZES[size];
   const touchPadding = Math.max(4, Math.round(starSize * 0.3));
 
@@ -51,7 +55,7 @@ export default function StarRating({
         ? 'star-half'
         : 'star-outline';
 
-    const starColor = filled || halfFilled ? color : emptyColor;
+    const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
 
     const starIcon = (
       <Ionicons name={iconName} size={starSize} color={starColor} />

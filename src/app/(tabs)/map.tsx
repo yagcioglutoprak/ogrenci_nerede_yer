@@ -9,13 +9,18 @@ import {
   Modal,
   Platform,
   ScrollView,
+  FlatList,
+  Image,
 } from 'react-native';
+import GlassView from '../../components/ui/GlassView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import {
   Colors,
   DEFAULT_REGION,
@@ -26,11 +31,36 @@ import {
 } from '../../lib/constants';
 import type { Venue } from '../../types';
 
+// iOS 26 Liquid Glass — tier sistemi
+type MarkerTier = 'editorial' | 'efsane' | 'popular' | 'new_reviewed' | 'unreviewed';
+
+const getMarkerTier = (venue: Venue): MarkerTier => {
+  if (venue.editorial_rating != null || venue.is_verified) return 'editorial';
+  if (venue.total_reviews >= 50) return 'efsane';
+  if (venue.total_reviews >= 5) return 'popular';
+  if (venue.total_reviews > 0) return 'new_reviewed';
+  return 'unreviewed';
+};
+
+// Accent dot renkleri — kucuk renkli nokta ile tier gosterimi
+const TIER_DOT: Record<MarkerTier, string> = {
+  editorial: Colors.primary,
+  efsane: '#FFB800',
+  popular: Colors.accent,
+  new_reviewed: Colors.success,
+  unreviewed: Colors.textTertiary,
+};
+
+const getPriceSymbol = (priceRange: number) => '₺'.repeat(priceRange);
+
 export default function MapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
+  const colors = useThemeColors();
+  const isDark = useIsDarkMode();
 
-  const { venues, loading, fetchVenues, filters, setFilters } = useVenueStore();
+  const { venues, loading, error, fetchVenues, searchVenues, filters, setFilters, clearError } =
+    useVenueStore();
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -39,6 +69,7 @@ export default function MapScreen() {
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Filter state
   const [filterPrice, setFilterPrice] = useState<number[]>([]);
@@ -46,10 +77,22 @@ export default function MapScreen() {
 
   const hasActiveFilters = filterPrice.length > 0 || filterMinRating > 0;
 
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
   useEffect(() => {
     requestLocationPermission();
     fetchVenues();
   }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      searchVenues(debouncedSearch);
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  }, [debouncedSearch]);
 
   const requestLocationPermission = async () => {
     try {
@@ -58,41 +101,16 @@ export default function MapScreen() {
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        const coords = {
+        setUserLocation({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
-        };
-        setUserLocation(coords);
-        setRegion({
-          ...coords,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
         });
-        mapRef.current?.animateToRegion(
-          {
-            ...coords,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
-          },
-          1000,
-        );
+        // Harita her zaman Istanbul'da baslar, konum sadece "beni bul" butonu icin saklanir
       }
     } catch {
       // Konum alinamazsa Istanbul'a fallback
     }
   };
-
-  const filteredVenues = venues.filter((v) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        v.name.toLowerCase().includes(q) ||
-        v.address.toLowerCase().includes(q) ||
-        v.tags?.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    return true;
-  });
 
   const handleMarkerPress = (venue: Venue) => {
     mapRef.current?.animateToRegion(
@@ -108,6 +126,20 @@ export default function MapScreen() {
 
   const handleCalloutPress = (venue: Venue) => {
     router.push(`/venue/${venue.id}`);
+  };
+
+  const handleSelectSearchResult = (venue: Venue) => {
+    setSearchQuery(venue.name);
+    setShowSearchResults(false);
+    mapRef.current?.animateToRegion(
+      {
+        latitude: venue.latitude,
+        longitude: venue.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      800,
+    );
   };
 
   const applyFilters = () => {
@@ -150,22 +182,11 @@ export default function MapScreen() {
 
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        stars.push(
-          <Ionicons key={i} name="star" size={12} color={Colors.star} />,
-        );
+        stars.push(<Ionicons key={i} name="star" size={12} color={Colors.star} />);
       } else if (i === fullStars && hasHalf) {
-        stars.push(
-          <Ionicons key={i} name="star-half" size={12} color={Colors.star} />,
-        );
+        stars.push(<Ionicons key={i} name="star-half" size={12} color={Colors.star} />);
       } else {
-        stars.push(
-          <Ionicons
-            key={i}
-            name="star-outline"
-            size={12}
-            color={Colors.starEmpty}
-          />,
-        );
+        stars.push(<Ionicons key={i} name="star-outline" size={12} color={Colors.starEmpty} />);
       }
     }
     return stars;
@@ -182,9 +203,15 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
+        userInterfaceStyle={isDark ? 'dark' : 'light'}
         mapPadding={{ top: 100, right: 0, bottom: 80, left: 0 }}
       >
-        {filteredVenues.map((venue) => (
+        {venues.map((venue) => {
+          const tier = getMarkerTier(venue);
+          const dotColor = TIER_DOT[tier];
+          const isUnreviewed = tier === 'unreviewed';
+          const hasEditorial = venue.editorial_rating != null;
+          return (
           <Marker
             key={venue.id}
             coordinate={{
@@ -192,138 +219,212 @@ export default function MapScreen() {
               longitude: venue.longitude,
             }}
             onPress={() => handleMarkerPress(venue)}
+            tracksViewChanges={false}
           >
-            {/* Custom Marker */}
             <View style={styles.markerWrapper}>
-              <View
-                style={[
-                  styles.markerCircle,
-                  venue.is_verified && styles.markerVerified,
-                ]}
-              >
-                <Ionicons name="restaurant" size={14} color="#FFFFFF" />
+              {/* Liquid Glass kart */}
+              <View style={styles.markerGlass}>
+                <View style={styles.markerGlassInner}>
+                  {/* Ust satir: renkli dot + isim */}
+                  <View style={styles.markerHeader}>
+                    <View style={[styles.markerDot, { backgroundColor: dotColor }]} />
+                    <Text style={styles.markerName} numberOfLines={1}>
+                      {venue.name}
+                    </Text>
+                  </View>
+                  {/* Alt satir: puan + fiyat */}
+                  {!isUnreviewed ? (
+                    <View style={styles.markerMeta}>
+                      <Text style={styles.markerScore}>
+                        {venue.overall_rating.toFixed(1)}
+                      </Text>
+                      <View style={styles.markerMetaDivider} />
+                      <Text style={styles.markerPrice}>
+                        {getPriceSymbol(venue.price_range)}
+                      </Text>
+                      {hasEditorial && (
+                        <>
+                          <View style={styles.markerMetaDivider} />
+                          <Text style={styles.markerOny}>ÖNY {venue.editorial_rating}</Text>
+                        </>
+                      )}
+                    </View>
+                  ) : (
+                    <Text style={styles.markerNewLabel}>Yeni eklendi</Text>
+                  )}
+                </View>
               </View>
-              <View
-                style={[
-                  styles.markerArrow,
-                  venue.is_verified && styles.markerArrowVerified,
-                ]}
-              />
+              {/* Cam ok */}
+              <View style={styles.markerStem} />
+              <View style={styles.markerAnchor} />
             </View>
 
-            {/* Callout */}
             <Callout tooltip onPress={() => handleCalloutPress(venue)}>
               <View style={styles.calloutContainer}>
                 <View style={styles.callout}>
-                  <Text style={styles.calloutName} numberOfLines={1}>
-                    {venue.name}
-                  </Text>
-
-                  <View style={styles.calloutRatingRow}>
-                    <View style={styles.calloutStars}>
-                      {renderStars(venue.overall_rating)}
-                    </View>
-                    <Text style={styles.calloutRatingText}>
-                      {venue.overall_rating.toFixed(1)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.calloutFooter}>
-                    <View style={styles.calloutPriceBadge}>
-                      <Text style={styles.calloutPriceText}>
-                        {getPriceLabel(venue.price_range)}
-                      </Text>
-                    </View>
-                    <View style={styles.calloutDetailLink}>
-                      <Text style={styles.calloutDetailText}>Detaylar</Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={14}
-                        color={Colors.primary}
+                  <View style={styles.calloutBody}>
+                    {venue.cover_image_url && (
+                      <Image
+                        source={{ uri: venue.cover_image_url }}
+                        style={styles.calloutImage}
                       />
+                    )}
+                    <View style={styles.calloutInfo}>
+                      <Text style={styles.calloutName} numberOfLines={1}>{venue.name}</Text>
+                      <View style={styles.calloutRatingRow}>
+                        <View style={styles.calloutStars}>{renderStars(venue.overall_rating)}</View>
+                        <Text style={styles.calloutRatingText}>{venue.overall_rating.toFixed(1)}</Text>
+                      </View>
+                      <View style={styles.calloutBadges}>
+                        <View style={styles.calloutPriceBadge}>
+                          <Text style={styles.calloutPriceText}>{getPriceLabel(venue.price_range)}</Text>
+                        </View>
+                        {venue.editorial_rating != null && (
+                          <View style={styles.calloutOnyBadge}>
+                            <Text style={styles.calloutOnyLabel}>ÖNY</Text>
+                            <Text style={styles.calloutOnyScore}>{venue.editorial_rating}</Text>
+                            <Text style={styles.calloutOnyMax}>/10</Text>
+                          </View>
+                        )}
+                        <View style={styles.calloutDetailLink}>
+                          <Text style={styles.calloutDetailText}>Detaylar</Text>
+                          <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
+                        </View>
+                      </View>
                     </View>
                   </View>
                 </View>
               </View>
             </Callout>
           </Marker>
-        ))}
+          );
+        })}
       </MapView>
 
-      {/* Floating Search Bar */}
+      {/* Liquid Glass Search Bar */}
       <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
-        <View style={styles.searchBar}>
-          <Ionicons
-            name="search"
-            size={20}
-            color={Colors.textTertiary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Mekan veya semt ara..."
-            placeholderTextColor={Colors.textTertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            selectionColor={Colors.primary}
-          />
-          {searchQuery.length > 0 && (
+        <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]} effect="regular" interactive>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Mekan veya semt ara..."
+              placeholderTextColor={colors.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              selectionColor={Colors.primary}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery('');
+                  setShowSearchResults(false);
+                  fetchVenues();
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle-outline" size={18} color={colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+            <View style={styles.searchDivider} />
             <TouchableOpacity
-              onPress={() => setSearchQuery('')}
+              style={styles.filterButton}
+              onPress={() => setShowFilters(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
-                name="close-circle"
+                name={hasActiveFilters ? 'options' : 'options-outline'}
                 size={20}
-                color={Colors.textTertiary}
+                color={hasActiveFilters ? colors.primary : colors.textSecondary}
               />
+              {hasActiveFilters && <View style={styles.filterBadgeDot} />}
             </TouchableOpacity>
-          )}
-          <View style={styles.searchDivider} />
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowFilters(true)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          </View>
+        </GlassView>
+
+        {/* Search results dropdown */}
+        {showSearchResults && debouncedSearch.trim().length > 0 && (
+          <GlassView
+            style={[styles.searchDropdown, { borderColor: colors.glass.border }]}
+            effect="clear"
+            fallbackColor={isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.92)'}
           >
-            <Ionicons
-              name="options-outline"
-              size={22}
-              color={
-                hasActiveFilters ? Colors.primary : Colors.textSecondary
-              }
-            />
-            {hasActiveFilters && <View style={styles.filterBadgeDot} />}
-          </TouchableOpacity>
-        </View>
+            {venues.length === 0 ? (
+              <View style={styles.searchDropdownEmpty}>
+                <Text style={[styles.searchDropdownEmptyText, { color: colors.textTertiary }]}>Sonuc bulunamadi</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={venues.slice(0, 5)}
+                keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.searchDropdownItem}
+                    onPress={() => handleSelectSearchResult(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.searchDropdownIcon, { backgroundColor: colors.primarySoft }]}>
+                      <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
+                    </View>
+                    <View style={styles.searchDropdownInfo}>
+                      <Text style={[styles.searchDropdownName, { color: colors.text }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text style={[styles.searchDropdownAddr, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {item.address}
+                      </Text>
+                    </View>
+                    <View style={styles.searchDropdownRating}>
+                      <Ionicons name="star" size={12} color={Colors.star} />
+                      <Text style={[styles.searchDropdownRatingText, { color: colors.text }]}>
+                        {item.overall_rating.toFixed(1)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </GlassView>
+        )}
       </SafeAreaView>
 
-      {/* Loading Indicator */}
-      {loading && (
-        <View style={styles.loadingPill}>
-          <ActivityIndicator size="small" color={Colors.primary} />
-        </View>
-      )}
-
-      {/* My Location Button */}
-      {userLocation && (
-        <TouchableOpacity
-          style={styles.myLocationButton}
-          onPress={centerOnUser}
-          activeOpacity={0.8}
+      {/* Error banner — Liquid Glass on iOS */}
+      {error && (
+        <GlassView
+          style={styles.errorBanner}
+          fallbackColor={isDark ? colors.glass.background : 'rgba(255,255,255,0.88)'}
         >
-          <Ionicons name="locate" size={22} color={Colors.primary} />
-        </TouchableOpacity>
+          <Ionicons name="alert-circle" size={16} color={Colors.error} />
+          <Text style={[styles.errorBannerText, { color: colors.text }]}>{error}</Text>
+          <TouchableOpacity onPress={clearError}>
+            <Ionicons name="close" size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </GlassView>
       )}
 
-      {/* FAB - Mekan Ekle */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/(tabs)/add')}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="add" size={22} color="#FFFFFF" />
-        <Text style={styles.fabText}>Mekan Ekle</Text>
-      </TouchableOpacity>
+      {/* Loading Indicator — Liquid Glass on iOS */}
+      {loading && (
+        <GlassView
+          style={styles.loadingPill}
+          fallbackColor={isDark ? colors.glass.background : 'rgba(255,255,255,0.8)'}
+        >
+          <ActivityIndicator size="small" color={Colors.primary} />
+        </GlassView>
+      )}
+
+      {/* My Location — Liquid Glass */}
+      {userLocation && (
+        <GlassView style={[styles.myLocationBlur, { borderColor: colors.glass.border }]}>
+          <TouchableOpacity
+            style={styles.myLocationButton}
+            onPress={centerOnUser}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="location" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        </GlassView>
+      )}
 
       {/* Filter Bottom Sheet Modal */}
       <Modal
@@ -337,28 +438,22 @@ export default function MapScreen() {
           activeOpacity={1}
           onPress={() => setShowFilters(false)}
         >
-          <TouchableOpacity activeOpacity={1} style={styles.filterSheet}>
-            {/* Drag Handle */}
-            <View style={styles.filterHandle} />
+          <TouchableOpacity activeOpacity={1} style={[styles.filterSheet, { backgroundColor: colors.background }]}>
+            <GlassView style={styles.filterHandleArea} fallbackColor="transparent">
+              <View style={[styles.filterHandle, { backgroundColor: colors.border }]} />
+            </GlassView>
+            <Text style={[styles.filterTitle, { color: colors.text }]}>Filtreler</Text>
 
-            <Text style={styles.filterTitle}>Filtreler</Text>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              bounces={false}
-            >
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
               {/* Price Range */}
-              <Text style={styles.filterSectionTitle}>Fiyat Araligi</Text>
+              <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Fiyat Araligi</Text>
               <View style={styles.filterChipsRow}>
                 {PriceRanges.map((price) => {
                   const isActive = filterPrice.includes(price.value);
                   return (
                     <TouchableOpacity
                       key={price.value}
-                      style={[
-                        styles.filterChip,
-                        isActive && styles.filterChipActive,
-                      ]}
+                      style={[styles.filterChip, isActive && styles.filterChipActive, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
                       onPress={() => {
                         setFilterPrice((prev) =>
                           prev.includes(price.value)
@@ -368,20 +463,10 @@ export default function MapScreen() {
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          isActive && styles.filterChipTextActive,
-                        ]}
-                      >
+                      <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
                         {price.label}
                       </Text>
-                      <Text
-                        style={[
-                          styles.filterChipDesc,
-                          isActive && styles.filterChipDescActive,
-                        ]}
-                      >
+                      <Text style={[styles.filterChipDesc, isActive && styles.filterChipDescActive, !isActive && { color: colors.textSecondary }]}>
                         {price.description}
                       </Text>
                     </TouchableOpacity>
@@ -390,44 +475,27 @@ export default function MapScreen() {
               </View>
 
               {/* Min Rating */}
-              <Text style={styles.filterSectionTitle}>Minimum Puan</Text>
+              <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Minimum Puan</Text>
               <View style={styles.filterChipsRow}>
                 {[0, 2, 3, 3.5, 4, 4.5].map((rating) => {
                   const isActive = filterMinRating === rating;
                   return (
                     <TouchableOpacity
                       key={rating}
-                      style={[
-                        styles.filterChip,
-                        isActive && styles.filterChipActive,
-                      ]}
+                      style={[styles.filterChip, isActive && styles.filterChipActive, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
                       onPress={() => setFilterMinRating(rating)}
                       activeOpacity={0.7}
                     >
                       <View style={styles.ratingChipContent}>
                         {rating > 0 ? (
                           <>
-                            <Ionicons
-                              name="star"
-                              size={14}
-                              color={isActive ? '#FFFFFF' : Colors.star}
-                            />
-                            <Text
-                              style={[
-                                styles.filterChipText,
-                                isActive && styles.filterChipTextActive,
-                              ]}
-                            >
+                            <Ionicons name="star" size={14} color={isActive ? '#FFFFFF' : Colors.star} />
+                            <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
                               {rating}+
                             </Text>
                           </>
                         ) : (
-                          <Text
-                            style={[
-                              styles.filterChipText,
-                              isActive && styles.filterChipTextActive,
-                            ]}
-                          >
+                          <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
                             Hepsi
                           </Text>
                         )}
@@ -440,18 +508,10 @@ export default function MapScreen() {
 
             {/* Action Buttons */}
             <View style={styles.filterActions}>
-              <TouchableOpacity
-                style={styles.filterClearButton}
-                onPress={clearFilters}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.filterClearText}>Temizle</Text>
+              <TouchableOpacity style={[styles.filterClearButton, { borderColor: colors.border }]} onPress={clearFilters} activeOpacity={0.7}>
+                <Text style={[styles.filterClearText, { color: colors.textSecondary }]}>Temizle</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.filterApplyButton}
-                onPress={applyFilters}
-                activeOpacity={0.85}
-              >
+              <TouchableOpacity style={styles.filterApplyButton} onPress={applyFilters} activeOpacity={0.85}>
                 <Text style={styles.filterApplyText}>Uygula</Text>
               </TouchableOpacity>
             </View>
@@ -470,7 +530,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Floating Search Bar ──────────────────────────────────────
+  // Search Bar — Liquid Glass
   searchBarSafe: {
     position: 'absolute',
     top: 0,
@@ -480,33 +540,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,
   },
+  searchBarBlur: {
+    borderRadius: 22,
+    borderWidth: 0.5,
+    borderColor: Colors.glass.border,
+  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg,
-    height: 52,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    height: 44,
   },
   searchIcon: {
-    marginRight: Spacing.md,
+    marginRight: Spacing.sm,
   },
   searchInput: {
     flex: 1,
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm + 1,
     color: Colors.text,
     paddingVertical: 0,
+    letterSpacing: -0.1,
   },
   searchDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.borderLight,
-    marginHorizontal: Spacing.md,
+    width: 0.5,
+    height: 20,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    marginHorizontal: Spacing.sm,
   },
   filterButton: {
     padding: Spacing.xs,
@@ -516,65 +575,220 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 2,
     right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: Colors.primary,
-    borderWidth: 1.5,
-    borderColor: Colors.background,
   },
 
-  // ── Custom Map Markers ───────────────────────────────────────
+  // Search dropdown — Liquid Glass
+  searchDropdown: {
+    marginTop: Spacing.sm,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: Colors.glass.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    maxHeight: 250,
+  },
+  searchDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  searchDropdownIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchDropdownInfo: {
+    flex: 1,
+  },
+  searchDropdownName: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  searchDropdownAddr: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  searchDropdownRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  searchDropdownRatingText: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  searchDropdownEmpty: {
+    paddingVertical: Spacing.xl,
+    alignItems: 'center',
+  },
+  searchDropdownEmptyText: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+  },
+
+  // Error banner — Liquid Glass
+  errorBanner: {
+    position: 'absolute',
+    top: 120,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderRadius: 14,
+    padding: Spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.error,
+    borderWidth: 0.5,
+    borderColor: Colors.glass.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 5,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.text,
+  },
+
+  // Markers — Liquid Glass inspired
   markerWrapper: {
     alignItems: 'center',
   },
-  markerCircle: {
-    width: 28,
-    height: 28,
+  markerGlass: {
+    backgroundColor: 'rgba(255,255,255,0.82)',
     borderRadius: 14,
-    backgroundColor: Colors.primary,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.7)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    maxWidth: 150,
+  },
+  markerGlassInner: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  markerHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2.5,
-    borderColor: '#FFFFFF',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    gap: 5,
   },
-  markerVerified: {
-    backgroundColor: Colors.star,
+  markerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
-  markerArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 7,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: Colors.primary,
-    marginTop: -1,
+  markerName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(0,0,0,0.85)',
+    letterSpacing: -0.3,
+    flexShrink: 1,
   },
-  markerArrowVerified: {
-    borderTopColor: Colors.star,
+  markerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+    paddingLeft: 12,
+  },
+  markerScore: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(0,0,0,0.6)',
+    letterSpacing: -0.2,
+  },
+  markerMetaDivider: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  markerPrice: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(0,0,0,0.45)',
+  },
+  markerOny: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.primary,
+    letterSpacing: -0.2,
+  },
+  markerNewLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'rgba(0,0,0,0.35)',
+    marginTop: 2,
+    paddingLeft: 12,
+    letterSpacing: -0.2,
+  },
+  markerStem: {
+    width: 1.5,
+    height: 6,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  markerAnchor: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
 
-  // ── Callout ──────────────────────────────────────────────────
+  // Callout — Liquid Glass
   calloutContainer: {
-    minWidth: 180,
-    maxWidth: 240,
+    minWidth: 240,
+    maxWidth: 300,
   },
   callout: {
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    shadowColor: Colors.shadow,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
     elevation: 5,
+  },
+  calloutBody: {
+    flexDirection: 'row',
+  },
+  calloutImage: {
+    width: 72,
+    height: '100%' as any,
+    minHeight: 80,
+    backgroundColor: Colors.shimmer,
+  },
+  calloutInfo: {
+    flex: 1,
+    padding: Spacing.md,
   },
   calloutName: {
     fontSize: FontSize.md,
@@ -599,10 +813,11 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginLeft: Spacing.xs,
   },
-  calloutFooter: {
+  calloutBadges: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
   },
   calloutPriceBadge: {
     backgroundColor: Colors.primarySoft,
@@ -615,6 +830,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primary,
   },
+  calloutOnyBadge: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: Colors.accentSoft,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  calloutOnyLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: Colors.accent,
+    marginRight: 3,
+  },
+  calloutOnyScore: {
+    fontSize: FontSize.sm,
+    fontWeight: '800',
+    color: Colors.accent,
+  },
+  calloutOnyMax: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: Colors.accentLight,
+  },
   calloutDetailLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -626,65 +865,46 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // ── Loading ──────────────────────────────────────────────────
+  // Loading — Liquid Glass
   loadingPill: {
     position: 'absolute',
     top: 120,
     alignSelf: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.xl,
+    borderRadius: 20,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: Colors.glass.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  // ── My Location Button ───────────────────────────────────────
-  myLocationButton: {
+  // My Location — Liquid Glass
+  myLocationBlur: {
     position: 'absolute',
     right: Spacing.lg,
     bottom: 100,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.background,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 0.5,
+    borderColor: Colors.glass.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  myLocationButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
   },
 
-  // ── FAB ──────────────────────────────────────────────────────
-  fab: {
-    position: 'absolute',
-    left: Spacing.lg,
-    bottom: Spacing.xxl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.xxl,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md + 2,
-    gap: Spacing.sm,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  fabText: {
-    color: '#FFFFFF',
-    fontSize: FontSize.md,
-    fontWeight: '700',
-  },
-
-  // ── Filter Modal ─────────────────────────────────────────────
+  // Filter Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -699,13 +919,18 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     maxHeight: '70%',
   },
+  filterHandleArea: {
+    alignItems: 'center',
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    borderTopLeftRadius: BorderRadius.xxl,
+    borderTopRightRadius: BorderRadius.xxl,
+  },
   filterHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.border,
-    alignSelf: 'center',
-    marginBottom: Spacing.lg,
   },
   filterTitle: {
     fontSize: FontSize.xl,
@@ -760,7 +985,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
 
-  // ── Filter Actions ───────────────────────────────────────────
+  // Filter Actions
   filterActions: {
     flexDirection: 'row',
     gap: Spacing.md,

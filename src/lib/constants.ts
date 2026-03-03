@@ -55,6 +55,80 @@ export const Colors = {
   tabBarBg: '#FFFFFF',
   tabBarBorder: '#F0F0F3',
   shadow: '#1B1B1F',
+
+  // Glass effect colors (iOS 26 Liquid Glass / BlurView fallback)
+  glass: {
+    background: 'rgba(255,255,255,0.78)',
+    backgroundDark: 'rgba(0,0,0,0.3)',
+    border: 'rgba(255,255,255,0.5)',
+    borderDark: 'rgba(255,255,255,0.15)',
+  },
+} as const;
+
+type WidenStrings<T> = {
+  [K in keyof T]: T[K] extends string ? string : WidenStrings<T[K]>;
+};
+
+export type ThemeColors = WidenStrings<typeof Colors>;
+
+export const DarkColors: ThemeColors = {
+  // Brand colors stay identical
+  primary: '#E23744',
+  primaryDark: '#C62828',
+  primaryLight: '#FF5252',
+  primarySoft: 'rgba(226,55,68,0.15)',
+
+  accent: '#FF6B35',
+  accentDark: '#E55A2B',
+  accentLight: '#FF8F66',
+  accentSoft: 'rgba(255,107,53,0.15)',
+
+  gradientStart: '#E23744',
+  gradientEnd: '#FF6B35',
+
+  // Neutrals — dark surfaces
+  background: '#121212',
+  backgroundSecondary: '#1A1A1A',
+  surface: '#1E1E1E',
+  surfaceElevated: '#252525',
+  card: '#1E1E1E',
+
+  // Text — inverted
+  text: '#F0F0F5',
+  textSecondary: '#A0A0B0',
+  textTertiary: '#6C6C80',
+  textOnPrimary: '#FFFFFF',
+  textOnDark: '#FFFFFF',
+
+  // Borders — dark
+  border: '#2C2C2E',
+  borderLight: '#232325',
+  borderFocus: '#E23744',
+
+  // Semantic — brighter for dark bg
+  star: '#FFB800',
+  starEmpty: '#3A3A3E',
+  error: '#FF6B6B',
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  info: '#60A5FA',
+  verified: '#E23744',
+
+  // Misc
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  overlayLight: 'rgba(0, 0, 0, 0.4)',
+  shimmer: '#2A2A2E',
+  tabBarBg: '#121212',
+  tabBarBorder: '#232325',
+  shadow: '#000000',
+
+  // Glass effect — dark mode
+  glass: {
+    background: 'rgba(30,30,30,0.78)',
+    backgroundDark: 'rgba(0,0,0,0.5)',
+    border: 'rgba(255,255,255,0.12)',
+    borderDark: 'rgba(255,255,255,0.08)',
+  },
 } as const;
 
 // Fiyat aralıkları
@@ -97,8 +171,11 @@ export const BorderRadius = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  glass: 22,   // iOS 26 standard glass corner radius
   full: 9999,
 } as const;
+
+export const GlassBlur = 80; // Blur intensity for BlurView fallback
 
 export const FontSize = {
   xs: 11,

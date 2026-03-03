@@ -7,11 +7,15 @@ import {
   View,
   ViewStyle,
   StyleProp,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import type { ThemeColors } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import GlassView from './GlassView';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'glass';
 
 interface ButtonProps {
   title: string;
@@ -36,12 +40,41 @@ export default function Button({
   fullWidth = true,
   style,
 }: ButtonProps) {
+  const colors = useThemeColors();
   const isDisabled = disabled || loading;
-  const textColor = getTextColor(variant, isDisabled);
+  const textColor = getTextColor(variant, isDisabled, colors);
+
+  if (variant === 'glass' && Platform.OS === 'ios') {
+    return (
+      <GlassView style={[styles.glassWrapper, fullWidth && styles.fullWidth, style]}>
+        <TouchableOpacity
+          style={[styles.base, styles.glassInner]}
+          onPress={onPress}
+          disabled={isDisabled}
+          activeOpacity={0.75}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color={textColor} />
+          ) : (
+            <View style={styles.content}>
+              {icon && iconPosition === 'left' && (
+                <Ionicons name={icon} size={20} color={textColor} style={styles.iconLeft} />
+              )}
+              <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+              {icon && iconPosition === 'right' && (
+                <Ionicons name={icon} size={20} color={textColor} style={styles.iconRight} />
+              )}
+            </View>
+          )}
+        </TouchableOpacity>
+      </GlassView>
+    );
+  }
 
   const containerStyles: StyleProp<ViewStyle>[] = [
     styles.base,
     variantStyles[variant],
+    variant === 'outline' && { backgroundColor: colors.background },
     isDisabled && styles.disabled,
     variant === 'primary' && !isDisabled && styles.primaryShadow,
     variant === 'secondary' && !isDisabled && styles.secondaryShadow,
@@ -83,7 +116,7 @@ export default function Button({
   );
 }
 
-function getTextColor(variant: ButtonVariant, isDisabled: boolean): string {
+function getTextColor(variant: ButtonVariant, isDisabled: boolean, colors: ThemeColors): string {
   if (isDisabled) {
     if (variant === 'outline' || variant === 'ghost') {
       return Colors.textTertiary;
@@ -100,6 +133,8 @@ function getTextColor(variant: ButtonVariant, isDisabled: boolean): string {
       return Colors.primary;
     case 'ghost':
       return Colors.primary;
+    case 'glass':
+      return Colors.textOnPrimary;
   }
 }
 
@@ -117,6 +152,9 @@ const variantStyles = StyleSheet.create({
   },
   ghost: {
     backgroundColor: 'transparent',
+  },
+  glass: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
 });
 
@@ -164,5 +202,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 14,
     elevation: 6,
+  },
+  glassWrapper: {
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  glassInner: {
+    backgroundColor: 'transparent',
   },
 });

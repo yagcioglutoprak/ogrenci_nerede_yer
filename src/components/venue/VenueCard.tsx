@@ -7,13 +7,16 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, PriceRanges, VenueLevels } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue } from '../../types';
 import StarRating from '../ui/StarRating';
 import Badge from '../ui/Badge';
+import GlassView from '../ui/GlassView';
 
 interface VenueCardProps {
   venue: Venue;
@@ -22,24 +25,25 @@ interface VenueCardProps {
 }
 
 export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
+  const colors = useThemeColors();
   const priceLabel = PriceRanges.find((p) => p.value === venue.price_range)?.label ?? '₺';
   const levelInfo = VenueLevels.find((l) => l.level === venue.level);
 
   return (
     <TouchableOpacity
-      style={[styles.card, style]}
+      style={[styles.card, { backgroundColor: colors.card }, style]}
       onPress={() => onPress(venue)}
       activeOpacity={0.88}
     >
       {/* Cover Image with 16:10 ratio */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { backgroundColor: colors.backgroundSecondary }]}>
         {venue.cover_image_url ? (
           <Image
             source={{ uri: venue.cover_image_url }}
             style={styles.coverImage}
           />
         ) : (
-          <View style={styles.imagePlaceholder}>
+          <View style={[styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
             <Ionicons name="restaurant-outline" size={40} color={Colors.textTertiary} />
           </View>
         )}
@@ -51,9 +55,15 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
         />
 
         {/* Price tag - top-left red pill */}
-        <View style={styles.priceTag}>
-          <Text style={styles.priceText}>{priceLabel}</Text>
-        </View>
+        {Platform.OS === 'ios' ? (
+          <GlassView style={styles.priceTagGlass} fallbackColor="rgba(226, 55, 68, 0.85)" tintColor={Colors.primary}>
+            <Text style={styles.priceText}>{priceLabel}</Text>
+          </GlassView>
+        ) : (
+          <View style={styles.priceTag}>
+            <Text style={styles.priceText}>{priceLabel}</Text>
+          </View>
+        )}
 
         {/* Verified badge - top-right red circle with checkmark */}
         {venue.is_verified && (
@@ -67,7 +77,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
       <View style={styles.info}>
         {/* Name + Level Badge row */}
         <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
             {venue.name}
           </Text>
           {levelInfo && levelInfo.level >= 2 && (
@@ -86,7 +96,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
             size={14}
             color={Colors.textSecondary}
           />
-          <Text style={styles.address} numberOfLines={1}>
+          <Text style={[styles.address, { color: colors.textSecondary }]} numberOfLines={1}>
             {venue.address}
           </Text>
         </View>
@@ -94,10 +104,10 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
         {/* Rating row */}
         <View style={styles.ratingRow}>
           <StarRating rating={venue.overall_rating} size="sm" />
-          <Text style={styles.ratingValue}>
+          <Text style={[styles.ratingValue, { color: colors.text }]}>
             {venue.overall_rating.toFixed(1)}
           </Text>
-          <Text style={styles.reviewCount}>
+          <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
             ({venue.total_reviews} yorum)
           </Text>
         </View>
@@ -106,8 +116,8 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
         {venue.tags && venue.tags.length > 0 && (
           <View style={styles.tagsRow}>
             {venue.tags.slice(0, 3).map((tag) => (
-              <View key={tag} style={styles.tagChip}>
-                <Text style={styles.tagText}>{tag}</Text>
+              <View key={tag} style={[styles.tagChip, { backgroundColor: colors.backgroundSecondary }]}>
+                <Text style={[styles.tagText, { color: colors.textSecondary }]}>{tag}</Text>
               </View>
             ))}
             {venue.tags.length > 3 && (
@@ -163,6 +173,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
+  },
+  priceTagGlass: {
+    position: 'absolute',
+    top: Spacing.md,
+    left: Spacing.md,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    overflow: 'hidden',
   },
   priceText: {
     color: Colors.textOnPrimary,

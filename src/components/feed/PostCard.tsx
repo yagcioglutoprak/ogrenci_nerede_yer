@@ -7,13 +7,16 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
+  Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
+import GlassView from '../ui/GlassView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_HEIGHT = SCREEN_WIDTH;
@@ -35,6 +38,7 @@ export default function PostCard({
   onVenuePress,
   onUserPress,
 }: PostCardProps) {
+  const colors = useThemeColors();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const flatListRef = useRef<FlatList<PostImage>>(null);
 
@@ -49,7 +53,7 @@ export default function PostCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
       {/* Header: Avatar + Username + Venue + Time */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -69,7 +73,7 @@ export default function PostCard({
               onPress={() => post.user && onUserPress?.(post.user_id)}
               activeOpacity={0.7}
             >
-              <Text style={styles.username} numberOfLines={1}>
+              <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
                 {post.user?.username ?? 'Kullanici'}
               </Text>
             </TouchableOpacity>
@@ -88,12 +92,12 @@ export default function PostCard({
           </View>
         </View>
 
-        <Text style={styles.time}>{timeSince}</Text>
+        <Text style={[styles.time, { color: colors.textTertiary }]}>{timeSince}</Text>
       </View>
 
       {/* Image Carousel */}
       {images.length > 0 && (
-        <View style={styles.imageSection}>
+        <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
           <FlatList
             ref={flatListRef}
             data={images}
@@ -129,11 +133,11 @@ export default function PostCard({
 
           {/* Image counter */}
           {hasMultipleImages && (
-            <View style={styles.imageCounter}>
+            <GlassView style={styles.imageCounter} fallbackColor="rgba(0, 0, 0, 0.55)">
               <Text style={styles.imageCounterText}>
                 {activeImageIndex + 1}/{images.length}
               </Text>
-            </View>
+            </GlassView>
           )}
         </View>
       )}
@@ -149,7 +153,7 @@ export default function PostCard({
             <Ionicons
               name={post.is_liked ? 'heart' : 'heart-outline'}
               size={26}
-              color={post.is_liked ? Colors.primary : Colors.text}
+              color={post.is_liked ? Colors.primary : colors.text}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -157,7 +161,7 @@ export default function PostCard({
             onPress={() => onComment?.(post.id)}
             activeOpacity={0.5}
           >
-            <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
+            <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -166,13 +170,13 @@ export default function PostCard({
           onPress={() => onBookmark?.(post.id)}
           activeOpacity={0.5}
         >
-          <Ionicons name="bookmark-outline" size={24} color={Colors.text} />
+          <Ionicons name="bookmark-outline" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* Likes Count */}
       {(post.likes_count ?? 0) > 0 && (
-        <Text style={styles.likesCount}>
+        <Text style={[styles.likesCount, { color: colors.text }]}>
           {post.likes_count} begeni
         </Text>
       )}
@@ -180,7 +184,7 @@ export default function PostCard({
       {/* Caption */}
       {post.caption ? (
         <View style={styles.captionRow}>
-          <Text style={styles.caption} numberOfLines={3}>
+          <Text style={[styles.caption, { color: colors.text }]} numberOfLines={3}>
             <Text style={styles.captionUsername}>
               {post.user?.username ?? 'Kullanici'}
             </Text>
@@ -196,7 +200,7 @@ export default function PostCard({
           activeOpacity={0.6}
           style={styles.commentsRow}
         >
-          <Text style={styles.commentsLink}>
+          <Text style={[styles.commentsLink, { color: colors.textSecondary }]}>
             Tum yorumlari gor ({post.comments_count})
           </Text>
         </TouchableOpacity>
@@ -300,10 +304,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.md,
     right: Spacing.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     borderRadius: Spacing.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
+    overflow: 'hidden',
   },
   imageCounterText: {
     color: Colors.textOnDark,
