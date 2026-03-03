@@ -223,45 +223,45 @@ export default function MapScreen() {
           >
             <View style={styles.markerWrapper}>
               {/* Liquid Glass kart */}
-              <View style={styles.markerGlass}>
+              <View style={[styles.markerGlass, { backgroundColor: isDark ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.82)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
                 <View style={styles.markerGlassInner}>
                   {/* Ust satir: renkli dot + isim */}
                   <View style={styles.markerHeader}>
                     <View style={[styles.markerDot, { backgroundColor: dotColor }]} />
-                    <Text style={styles.markerName} numberOfLines={1}>
+                    <Text style={[styles.markerName, { color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)' }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                   </View>
                   {/* Alt satir: puan + fiyat */}
                   {!isUnreviewed ? (
                     <View style={styles.markerMeta}>
-                      <Text style={styles.markerScore}>
+                      <Text style={[styles.markerScore, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }]}>
                         {venue.overall_rating.toFixed(1)}
                       </Text>
-                      <View style={styles.markerMetaDivider} />
-                      <Text style={styles.markerPrice}>
+                      <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+                      <Text style={[styles.markerPrice, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }]}>
                         {getPriceSymbol(venue.price_range)}
                       </Text>
                       {hasEditorial && (
                         <>
-                          <View style={styles.markerMetaDivider} />
+                          <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
                           <Text style={styles.markerOny}>ÖNY {venue.editorial_rating}</Text>
                         </>
                       )}
                     </View>
                   ) : (
-                    <Text style={styles.markerNewLabel}>Yeni eklendi</Text>
+                    <Text style={[styles.markerNewLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)' }]}>Yeni eklendi</Text>
                   )}
                 </View>
               </View>
               {/* Cam ok */}
-              <View style={styles.markerStem} />
-              <View style={styles.markerAnchor} />
+              <View style={[styles.markerStem, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
+              <View style={[styles.markerAnchor, { backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)', borderColor: isDark ? 'rgba(60,60,60,0.9)' : 'rgba(255,255,255,0.9)' }]} />
             </View>
 
             <Callout tooltip onPress={() => handleCalloutPress(venue)}>
               <View style={styles.calloutContainer}>
-                <View style={styles.callout}>
+                <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
                   <View style={styles.calloutBody}>
                     {venue.cover_image_url && (
                       <Image
@@ -270,17 +270,17 @@ export default function MapScreen() {
                       />
                     )}
                     <View style={styles.calloutInfo}>
-                      <Text style={styles.calloutName} numberOfLines={1}>{venue.name}</Text>
+                      <Text style={[styles.calloutName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
                       <View style={styles.calloutRatingRow}>
                         <View style={styles.calloutStars}>{renderStars(venue.overall_rating)}</View>
-                        <Text style={styles.calloutRatingText}>{venue.overall_rating.toFixed(1)}</Text>
+                        <Text style={[styles.calloutRatingText, { color: colors.text }]}>{venue.overall_rating.toFixed(1)}</Text>
                       </View>
                       <View style={styles.calloutBadges}>
-                        <View style={styles.calloutPriceBadge}>
+                        <View style={[styles.calloutPriceBadge, { backgroundColor: colors.primarySoft }]}>
                           <Text style={styles.calloutPriceText}>{getPriceLabel(venue.price_range)}</Text>
                         </View>
                         {venue.editorial_rating != null && (
-                          <View style={styles.calloutOnyBadge}>
+                          <View style={[styles.calloutOnyBadge, { backgroundColor: colors.accentSoft }]}>
                             <Text style={styles.calloutOnyLabel}>ÖNY</Text>
                             <Text style={styles.calloutOnyScore}>{venue.editorial_rating}</Text>
                             <Text style={styles.calloutOnyMax}>/10</Text>
