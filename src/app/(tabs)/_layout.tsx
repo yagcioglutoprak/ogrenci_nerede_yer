@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,12 +11,18 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+  interpolate,
 } from 'react-native-reanimated';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
 // ---------------------------------------------------------------------------
-// Tab definitions shared across platforms
+// Tab definitions
 // ---------------------------------------------------------------------------
 
 interface TabDef {
@@ -29,13 +35,101 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { name: 'map', title: 'Harita', iconFocused: 'map', iconOutline: 'map-outline' as IoniconsName },
-  { name: 'feed', title: 'Kesfet', iconFocused: 'compass', iconOutline: 'compass-outline' as IoniconsName },
+  { name: 'feed', title: 'Keşfet', iconFocused: 'compass', iconOutline: 'compass-outline' as IoniconsName },
   { name: 'add', title: '', iconFocused: 'add', iconOutline: 'add', isAdd: true },
   { name: 'profile', title: 'Profil', iconFocused: 'person', iconOutline: 'person-outline' as IoniconsName },
 ];
 
+const SPRING_CONFIG = { damping: 15, stiffness: 180, mass: 0.7 };
+const ADD_BUTTON_SIZE = 56;
+const ADD_BUTTON_LIFT = 22;
+
 // ---------------------------------------------------------------------------
-// Animated tab item for iOS glass tab bar
+// Elevated center "+" button with gradient & glow
+// ---------------------------------------------------------------------------
+
+function AddButton({ isFocused, onPress, onLongPress, isDark }: {
+  isFocused: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+  isDark: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const ringScale = useSharedValue(1);
+  const ringOpacity = useSharedValue(0);
+  const rotation = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (isFocused) {
+      rotation.value = withSpring(45, { damping: 12, stiffness: 150 });
+      scale.value = withSpring(1.08, SPRING_CONFIG);
+      ringOpacity.value = withTiming(0, { duration: 200 });
+    } else {
+      rotation.value = withSpring(0, { damping: 12, stiffness: 150 });
+      scale.value = withSpring(1, SPRING_CONFIG);
+      // Subtle pulse ring when not focused
+      ringOpacity.value = withDelay(500, withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 1500, easing: Easing.out(Easing.ease) }),
+          withTiming(0, { duration: 1500, easing: Easing.in(Easing.ease) }),
+        ),
+        -1,
+        false,
+      ));
+      ringScale.value = withDelay(500, withRepeat(
+        withSequence(
+          withTiming(1.5, { duration: 1500, easing: Easing.out(Easing.ease) }),
+          withTiming(1, { duration: 0 }),
+        ),
+        -1,
+        false,
+      ));
+    }
+  }, [isFocused, rotation, scale, ringOpacity, ringScale]);
+
+  const buttonAnim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
+  }));
+
+  const pulseRingAnim = useAnimatedStyle(() => ({
+    opacity: ringOpacity.value,
+    transform: [{ scale: ringScale.value }],
+  }));
+
+  return (
+    <View style={iosStyles.addButtonArea}>
+      {/* Pulse ring */}
+      <Animated.View
+        style={[
+          iosStyles.pulseRing,
+          pulseRingAnim,
+          { borderColor: Colors.primary },
+        ]}
+      />
+      <Pressable
+        onPress={onPress}
+        onLongPress={onLongPress}
+        accessibilityRole="button"
+        accessibilityLabel="Ekle"
+        accessibilityState={isFocused ? { selected: true } : {}}
+      >
+        <Animated.View style={buttonAnim}>
+          <LinearGradient
+            colors={[Colors.gradientStart, Colors.gradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={iosStyles.addGradient}
+          >
+            <Ionicons name="add" size={30} color="#FFFFFF" />
+          </LinearGradient>
+        </Animated.View>
+      </Pressable>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Regular tab item with animated indicator
 // ---------------------------------------------------------------------------
 
 interface GlassTabItemProps {
@@ -44,44 +138,28 @@ interface GlassTabItemProps {
   onPress: () => void;
   onLongPress: () => void;
   color: string;
+  isDark: boolean;
 }
 
-const SPRING_CONFIG = { damping: 18, stiffness: 200, mass: 0.8 };
-
-function GlassTabItem({ tab, isFocused, onPress, onLongPress, color }: GlassTabItemProps) {
-  const scale = useSharedValue(isFocused ? 1 : 0.85);
-  const opacity = useSharedValue(isFocused ? 1 : 0);
+function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark }: GlassTabItemProps) {
+  const scale = useSharedValue(isFocused ? 1 : 0);
+  const iconY = useSharedValue(isFocused ? -2 : 0);
 
   React.useEffect(() => {
-    scale.value = withSpring(isFocused ? 1 : 0.85, SPRING_CONFIG);
-    opacity.value = withSpring(isFocused ? 1 : 0, SPRING_CONFIG);
-  }, [isFocused, scale, opacity]);
+    scale.value = withSpring(isFocused ? 1 : 0, SPRING_CONFIG);
+    iconY.value = withSpring(isFocused ? -2 : 0, SPRING_CONFIG);
+  }, [isFocused, scale, iconY]);
 
-  const indicatorStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: scale.value,
     transform: [{ scale: scale.value }],
   }));
 
-  if (tab.isAdd) {
-    return (
-      <Pressable
-        key={tab.name}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        accessibilityRole="button"
-        accessibilityState={isFocused ? { selected: true } : {}}
-        style={iosStyles.tabItem}
-      >
-        <GlassView
-          style={iosStyles.addCircle}
-          effect="clear"
-          tintColor={Colors.primary}
-        >
-          <Ionicons name="add" size={26} color={Colors.primary} />
-        </GlassView>
-      </Pressable>
-    );
-  }
+  const iconAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: iconY.value }],
+  }));
+
+  if (tab.isAdd) return null; // handled separately
 
   return (
     <Pressable
@@ -93,36 +171,74 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color }: GlassTabI
       style={iosStyles.tabItem}
     >
       <View style={iosStyles.tabItemInner}>
-        {/* Active pill indicator behind icon */}
-        <Animated.View style={[iosStyles.activePill, indicatorStyle]} />
-        <Ionicons
-          name={isFocused ? tab.iconFocused : tab.iconOutline}
-          size={22}
-          color={color}
-        />
+        <Animated.View style={iconAnimStyle}>
+          <Ionicons
+            name={isFocused ? tab.iconFocused : tab.iconOutline}
+            size={23}
+            color={color}
+          />
+        </Animated.View>
         {tab.title ? (
           <Text
             style={[
               iosStyles.label,
-              { color },
+              { color, fontWeight: isFocused ? '700' : '500' },
             ]}
             numberOfLines={1}
           >
             {tab.title}
           </Text>
         ) : null}
+        {/* Active dot indicator */}
+        <Animated.View
+          style={[
+            iosStyles.activeDot,
+            { backgroundColor: Colors.primary },
+            dotStyle,
+          ]}
+        />
       </View>
     </Pressable>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Custom floating glass tab bar (iOS only)
+// Custom floating glass tab bar (iOS)
 // ---------------------------------------------------------------------------
 
 function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+  const isDark = useIsDarkMode();
+
+  // Split tabs: left side, center (add), right side
+  const leftTabs = TABS.filter((t) => !t.isAdd).slice(0, 2);
+  const addTab = TABS.find((t) => t.isAdd)!;
+  const rightTabs = TABS.filter((t) => !t.isAdd).slice(2);
+
+  const findRouteIndex = (name: string) =>
+    state.routes.findIndex((r: any) => r.name === name);
+
+  const handlePress = (name: string) => {
+    const idx = findRouteIndex(name);
+    const route = state.routes[idx];
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: route.key,
+      canPreventDefault: true,
+    });
+    if (state.index !== idx && !event.defaultPrevented) {
+      navigation.navigate(route.name, route.params);
+    }
+  };
+
+  const handleLongPress = (name: string) => {
+    const idx = findRouteIndex(name);
+    navigation.emit({
+      type: 'tabLongPress',
+      target: state.routes[idx].key,
+    });
+  };
 
   return (
     <View
@@ -132,43 +248,57 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       ]}
       pointerEvents="box-none"
     >
-      <GlassView style={[iosStyles.glassBar, { borderColor: colors.glass.border }]} effect="regular">
+      {/* Elevated add button — sits above the glass bar */}
+      <View style={iosStyles.addButtonPositioner}>
+        <AddButton
+          isFocused={state.index === findRouteIndex(addTab.name)}
+          onPress={() => handlePress(addTab.name)}
+          onLongPress={() => handleLongPress(addTab.name)}
+          isDark={isDark}
+        />
+      </View>
+
+      {/* Glass bar */}
+      <GlassView
+        style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
+        effect="regular"
+      >
         <View style={iosStyles.tabRow}>
-          {state.routes.map((route: any, index: number) => {
-            const tab = TABS.find((t) => t.name === route.name);
-            if (!tab) return null;
-
-            const isFocused = state.index === index;
-            const { options } = descriptors[route.key];
-
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
-              }
-            };
-
-            const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
-            };
-
+          {/* Left tabs */}
+          {leftTabs.map((tab) => {
+            const idx = findRouteIndex(tab.name);
+            const isFocused = state.index === idx;
             const color = isFocused ? colors.primary : colors.textTertiary;
-
             return (
               <GlassTabItem
-                key={route.key}
+                key={tab.name}
                 tab={tab}
                 isFocused={isFocused}
-                onPress={onPress}
-                onLongPress={onLongPress}
+                onPress={() => handlePress(tab.name)}
+                onLongPress={() => handleLongPress(tab.name)}
                 color={color}
+                isDark={isDark}
+              />
+            );
+          })}
+
+          {/* Center spacer for elevated button */}
+          <View style={iosStyles.centerSpacer} />
+
+          {/* Right tabs */}
+          {rightTabs.map((tab) => {
+            const idx = findRouteIndex(tab.name);
+            const isFocused = state.index === idx;
+            const color = isFocused ? colors.primary : colors.textTertiary;
+            return (
+              <GlassTabItem
+                key={tab.name}
+                tab={tab}
+                isFocused={isFocused}
+                onPress={() => handlePress(tab.name)}
+                onLongPress={() => handleLongPress(tab.name)}
+                color={color}
+                isDark={isDark}
               />
             );
           })}
@@ -307,17 +437,51 @@ const iosStyles = StyleSheet.create({
     left: Spacing.lg,
     right: Spacing.lg,
   },
+  addButtonPositioner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: -ADD_BUTTON_LIFT,
+    zIndex: 10,
+  },
+  addButtonArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: ADD_BUTTON_SIZE + 20,
+    height: ADD_BUTTON_SIZE + 20,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
+    borderRadius: ADD_BUTTON_SIZE / 2,
+    borderWidth: 2,
+  },
+  addGradient: {
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
+    borderRadius: ADD_BUTTON_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 12,
+  },
   glassBar: {
-    borderRadius: BorderRadius.glass,
+    borderRadius: BorderRadius.xxl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.glass.border,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.sm + 2,
+    paddingHorizontal: Spacing.sm,
   },
   tabRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
+  },
+  centerSpacer: {
+    width: ADD_BUTTON_SIZE + 8,
   },
   tabItem: {
     flex: 1,
@@ -329,31 +493,18 @@ const iosStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    minHeight: 36,
+    minHeight: 40,
+    gap: 3,
   },
-  activePill: {
-    position: 'absolute',
-    width: 44,
-    height: 32,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: 'rgba(226, 55, 68, 0.15)',
-    top: -5,
+  activeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   label: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-    marginTop: 2,
-  },
-  addCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.glass.border,
-    overflow: 'hidden',
+    letterSpacing: 0.3,
+    marginTop: 1,
   },
 });
 
