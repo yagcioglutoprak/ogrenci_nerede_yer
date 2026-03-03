@@ -248,16 +248,6 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       ]}
       pointerEvents="box-none"
     >
-      {/* Elevated add button — sits above the glass bar */}
-      <View style={iosStyles.addButtonPositioner}>
-        <AddButton
-          isFocused={state.index === findRouteIndex(addTab.name)}
-          onPress={() => handlePress(addTab.name)}
-          onLongPress={() => handleLongPress(addTab.name)}
-          isDark={isDark}
-        />
-      </View>
-
       {/* Glass bar */}
       <GlassView
         style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
@@ -282,8 +272,15 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
             );
           })}
 
-          {/* Center spacer for elevated button */}
-          <View style={iosStyles.centerSpacer} />
+          {/* Center — elevated add button */}
+          <View style={iosStyles.centerSpacer}>
+            <AddButton
+              isFocused={state.index === findRouteIndex(addTab.name)}
+              onPress={() => handlePress(addTab.name)}
+              onLongPress={() => handleLongPress(addTab.name)}
+              isDark={isDark}
+            />
+          </View>
 
           {/* Right tabs */}
           {rightTabs.map((tab) => {
@@ -437,11 +434,11 @@ const iosStyles = StyleSheet.create({
     left: Spacing.lg,
     right: Spacing.lg,
   },
-  addButtonPositioner: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: -ADD_BUTTON_LIFT,
-    zIndex: 10,
+  centerSpacer: {
+    width: ADD_BUTTON_SIZE + 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -(ADD_BUTTON_LIFT + 10),
   },
   addButtonArea: {
     alignItems: 'center',
@@ -477,11 +474,8 @@ const iosStyles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-around',
-  },
-  centerSpacer: {
-    width: ADD_BUTTON_SIZE + 8,
   },
   tabItem: {
     flex: 1,
