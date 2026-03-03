@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
@@ -16,6 +17,11 @@ export default function RootLayout() {
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const [ready, setReady] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -38,9 +44,10 @@ export default function RootLayout() {
     init().then(() => clearTimeout(timeout));
   }, []);
 
-  if (!ready && !initialized) {
+  if ((!ready && !initialized) || !fontsLoaded) {
     return (
       <View style={[styles.splash, { backgroundColor: colors.background }]}>
+        <Image source={require('../../assets/logo.png')} style={styles.splashLogo} resizeMode="contain" />
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
@@ -83,5 +90,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.background,
+  },
+  splashLogo: {
+    width: 120,
+    height: 120,
+    marginBottom: 24,
   },
 });

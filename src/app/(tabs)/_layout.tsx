@@ -42,7 +42,8 @@ const TABS: TabDef[] = [
 
 const SPRING_CONFIG = { damping: 15, stiffness: 180, mass: 0.7 };
 const ADD_BUTTON_SIZE = 56;
-const ADD_BUTTON_LIFT = 22;
+const ADD_BUTTON_LIFT = 18;
+const CENTER_SPACER_WIDTH = ADD_BUTTON_SIZE + 4;
 
 // ---------------------------------------------------------------------------
 // Elevated center "+" button with gradient & glow
@@ -54,58 +55,8 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
   onLongPress: () => void;
   isDark: boolean;
 }) {
-  const scale = useSharedValue(1);
-  const ringScale = useSharedValue(1);
-  const ringOpacity = useSharedValue(0);
-  const rotation = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (isFocused) {
-      rotation.value = withSpring(45, { damping: 12, stiffness: 150 });
-      scale.value = withSpring(1.08, SPRING_CONFIG);
-      ringOpacity.value = withTiming(0, { duration: 200 });
-    } else {
-      rotation.value = withSpring(0, { damping: 12, stiffness: 150 });
-      scale.value = withSpring(1, SPRING_CONFIG);
-      // Subtle pulse ring when not focused
-      ringOpacity.value = withDelay(500, withRepeat(
-        withSequence(
-          withTiming(0.6, { duration: 1500, easing: Easing.out(Easing.ease) }),
-          withTiming(0, { duration: 1500, easing: Easing.in(Easing.ease) }),
-        ),
-        -1,
-        false,
-      ));
-      ringScale.value = withDelay(500, withRepeat(
-        withSequence(
-          withTiming(1.5, { duration: 1500, easing: Easing.out(Easing.ease) }),
-          withTiming(1, { duration: 0 }),
-        ),
-        -1,
-        false,
-      ));
-    }
-  }, [isFocused, rotation, scale, ringOpacity, ringScale]);
-
-  const buttonAnim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
-  }));
-
-  const pulseRingAnim = useAnimatedStyle(() => ({
-    opacity: ringOpacity.value,
-    transform: [{ scale: ringScale.value }],
-  }));
-
   return (
     <View style={iosStyles.addButtonArea}>
-      {/* Pulse ring */}
-      <Animated.View
-        style={[
-          iosStyles.pulseRing,
-          pulseRingAnim,
-          { borderColor: Colors.primary },
-        ]}
-      />
       <Pressable
         onPress={onPress}
         onLongPress={onLongPress}
@@ -113,7 +64,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
         accessibilityLabel="Ekle"
         accessibilityState={isFocused ? { selected: true } : {}}
       >
-        <Animated.View style={buttonAnim}>
+        <View style={isFocused ? { transform: [{ rotate: '45deg' }] } : {}}>
           <LinearGradient
             colors={[Colors.gradientStart, Colors.gradientEnd]}
             start={{ x: 0, y: 0 }}
@@ -122,7 +73,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
           >
             <Ionicons name="add" size={30} color="#FFFFFF" />
           </LinearGradient>
-        </Animated.View>
+        </View>
       </Pressable>
     </View>
   );
@@ -240,6 +191,23 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     });
   };
 
+  const renderTab = (tab: TabDef) => {
+    const idx = findRouteIndex(tab.name);
+    const isFocused = state.index === idx;
+    const color = isFocused ? colors.primary : colors.textTertiary;
+    return (
+      <GlassTabItem
+        key={tab.name}
+        tab={tab}
+        isFocused={isFocused}
+        onPress={() => handlePress(tab.name)}
+        onLongPress={() => handleLongPress(tab.name)}
+        color={color}
+        isDark={isDark}
+      />
+    );
+  };
+
   return (
     <View
       style={[
@@ -248,57 +216,27 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       ]}
       pointerEvents="box-none"
     >
+      {/* + button overlay — absolutely centered, outside GlassView */}
+      <View style={iosStyles.addButtonOverlay} pointerEvents="box-none">
+        <AddButton
+          isFocused={state.index === findRouteIndex(addTab.name)}
+          onPress={() => handlePress(addTab.name)}
+          onLongPress={() => handleLongPress(addTab.name)}
+          isDark={isDark}
+        />
+      </View>
+
       {/* Glass bar */}
       <GlassView
         style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
         effect="regular"
       >
         <View style={iosStyles.tabRow}>
-          {/* Left tabs */}
-          {leftTabs.map((tab) => {
-            const idx = findRouteIndex(tab.name);
-            const isFocused = state.index === idx;
-            const color = isFocused ? colors.primary : colors.textTertiary;
-            return (
-              <GlassTabItem
-                key={tab.name}
-                tab={tab}
-                isFocused={isFocused}
-                onPress={() => handlePress(tab.name)}
-                onLongPress={() => handleLongPress(tab.name)}
-                color={color}
-                isDark={isDark}
-              />
-            );
-          })}
-
-          {/* Center — elevated add button */}
-          <View style={iosStyles.centerSpacer}>
-            <AddButton
-              isFocused={state.index === findRouteIndex(addTab.name)}
-              onPress={() => handlePress(addTab.name)}
-              onLongPress={() => handleLongPress(addTab.name)}
-              isDark={isDark}
-            />
-          </View>
-
-          {/* Right tabs */}
-          {rightTabs.map((tab) => {
-            const idx = findRouteIndex(tab.name);
-            const isFocused = state.index === idx;
-            const color = isFocused ? colors.primary : colors.textTertiary;
-            return (
-              <GlassTabItem
-                key={tab.name}
-                tab={tab}
-                isFocused={isFocused}
-                onPress={() => handlePress(tab.name)}
-                onLongPress={() => handleLongPress(tab.name)}
-                color={color}
-                isDark={isDark}
-              />
-            );
-          })}
+          {leftTabs.map(renderTab)}
+          <View style={iosStyles.centerSpacer} />
+          {rightTabs.map(renderTab)}
+          {/* Dummy tab to balance the right side symmetrically with the left side */}
+          <View style={iosStyles.tabItem} pointerEvents="none" />
         </View>
       </GlassView>
     </View>
@@ -434,11 +372,13 @@ const iosStyles = StyleSheet.create({
     left: Spacing.lg,
     right: Spacing.lg,
   },
-  centerSpacer: {
-    width: ADD_BUTTON_SIZE + 16,
+  addButtonOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: -ADD_BUTTON_LIFT,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -(ADD_BUTTON_LIFT + 10),
+    zIndex: 10,
   },
   addButtonArea: {
     alignItems: 'center',
@@ -474,8 +414,17 @@ const iosStyles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  centerSpacer: {
+    width: ADD_BUTTON_SIZE + 8,
+  },
+  tabSide: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
   },
   tabItem: {
     flex: 1,

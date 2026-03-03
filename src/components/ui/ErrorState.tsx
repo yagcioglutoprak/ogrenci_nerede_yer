@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface ErrorStateProps {
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
 });

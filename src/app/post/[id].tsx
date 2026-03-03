@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFeedStore } from '../../stores/feedStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Comment, PostImage } from '../../types';
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   headerUsername: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
 
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   // Likes
   likesCount: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     paddingHorizontal: Spacing.lg,
     marginTop: Spacing.xs,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   captionUsername: {
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
   },
 
   // Comments header
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   },
   commentsTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
 
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   commentUsername: {
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
   },
   commentTime: {
     fontSize: FontSize.xs,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   },
   commentSendText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.primary,
   },
   commentSendTextDisabled: {

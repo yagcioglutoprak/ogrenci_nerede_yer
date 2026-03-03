@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Image, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Colors } from '../../lib/constants';
+import { Colors, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface AvatarProps {
@@ -79,11 +79,11 @@ function getInitials(name: string): string {
 function getWarmColorFromName(name: string): string {
   const warmPalette = [
     '#E23744', // rich red
-    '#FF6B35', // warm orange
+    '#F5A623', // golden amber
     '#C62828', // deep red
-    '#E55A2B', // dark orange
+    '#D4900E', // dark amber
     '#FF5252', // light red
-    '#FF8F66', // light orange
+    '#F7BC5A', // light amber
     '#D84315', // burnt orange
     '#E53935', // medium red
     '#FF7043', // coral orange
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   initials: {
     color: Colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     letterSpacing: 0.5,
   },
 });

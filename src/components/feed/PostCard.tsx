@@ -12,7 +12,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize } from '../../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     letterSpacing: -0.1,
   },
@@ -292,13 +292,17 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.40)',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
   dotActive: {
-    backgroundColor: Colors.primary,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    width: 18,
+    height: 6,
+    borderRadius: 3,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
   },
   imageCounter: {
     position: 'absolute',
@@ -336,7 +340,7 @@ const styles = StyleSheet.create({
   // Likes
   likesCount: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     paddingHorizontal: Spacing.lg,
     marginTop: Spacing.xs,
@@ -354,7 +358,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   captionUsername: {
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     letterSpacing: -0.1,
   },
 

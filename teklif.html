@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proje Teklifi — Öğrenci Nerede Yer?</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E23744;
+    --red-dark: #C62828;
+    --red-soft: #FFF0F0;
+    --orange: #FF6B35;
+    --orange-soft: #FFF3ED;
+    --gold: #FFB800;
+    --bg: #FAFAF8;
+    --text: #1B1B1F;
+    --text2: #6C6C80;
+    --text3: #A0A0B0;
+    --white: #FFFFFF;
+    --border: #EEEFF2;
+    --green: #16A34A;
+    --green-soft: #ECFDF5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===================== HERO ===================== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 24px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(165deg, #FFF5F3 0%, #FAFAF8 40%, #FFF8F0 100%);
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    right: -120px;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(226,55,68,0.06) 0%, transparent 70%);
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -80px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 70%);
+    animation: float 10s ease-in-out infinite reverse;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.05); }
+  }
+
+  .hero-emoji {
+    font-size: 72px;
+    margin-bottom: 24px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(40px, 7vw, 72px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--red), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text2);
+    font-weight: 400;
+    max-width: 440px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-date {
+    margin-top: 32px;
+    font-size: 14px;
+    color: var(--text3);
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text3);
+    font-size: 13px;
+    font-weight: 500;
+    animation: pulse-down 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-down {
+    0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 1; transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ===================== LAYOUT ===================== */
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  section {
+    padding: 80px 0;
+  }
+
+  section + section {
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+  }
+
+  .section-label .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .section-desc {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* ===================== CARDS ===================== */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(27,27,31,0.06);
+    border-color: transparent;
+  }
+
+  .feature-card .emoji {
+    font-size: 32px;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .feature-card.full {
+    grid-column: 1 / -1;
+  }
+
+  /* ===================== PRICING ===================== */
+  .price-box {
+    background: linear-gradient(135deg, #1B1B1F 0%, #2D2D35 100%);
+    border-radius: 24px;
+    padding: 48px 40px;
+    color: var(--white);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .price-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at top right, rgba(226,55,68,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom left, rgba(255,107,53,0.1) 0%, transparent 60%);
+  }
+
+  .price-box * { position: relative; z-index: 1; }
+
+  .price-box .label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 12px;
+  }
+
+  .price-box .amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 64px;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .price-box .amount small {
+    font-size: 28px;
+    opacity: 0.6;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .price-box .note {
+    font-size: 15px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+  }
+
+  .price-includes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 32px;
+    text-align: left;
+  }
+
+  .price-includes .item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.8);
+  }
+
+  .price-includes .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(22,163,74,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #4ADE80;
+    flex-shrink: 0;
+  }
+
+  /* ===================== TIMELINE ===================== */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .timeline-item:last-child { border-bottom: none; }
+
+  .timeline-step {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .timeline-step.s1 { background: var(--red-soft); color: var(--red); }
+  .timeline-step.s2 { background: var(--orange-soft); color: var(--orange); }
+  .timeline-step.s3 { background: var(--green-soft); color: var(--green); }
+
+  .timeline-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .timeline-content p {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .timeline-amount {
+    font-size: 20px;
+    font-weight: 800;
+    margin-top: 8px;
+    color: var(--text);
+  }
+
+  /* ===================== SHARE BOX ===================== */
+  .share-box {
+    background: linear-gradient(135deg, var(--orange-soft) 0%, var(--red-soft) 100%);
+    border-radius: 24px;
+    padding: 40px;
+    border: 1px solid rgba(226,55,68,0.1);
+  }
+
+  .share-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .share-box > p {
+    color: var(--text2);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  .share-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .share-table tr {
+    border-bottom: 1px solid rgba(226,55,68,0.1);
+  }
+
+  .share-table tr:last-child { border-bottom: none; }
+
+  .share-table td {
+    padding: 14px 0;
+    font-size: 15px;
+  }
+
+  .share-table td:first-child {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .share-table td:last-child {
+    text-align: right;
+    font-weight: 800;
+    color: var(--red);
+    font-size: 17px;
+  }
+
+  /* ===================== TERMS ===================== */
+  .terms-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .terms-list li {
+    display: flex;
+    gap: 16px;
+    padding: 20px 24px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .terms-list li .num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--red-soft);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* ===================== SIGNATURE ===================== */
+  .sig-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 40px;
+    margin-top: 40px;
+  }
+
+  .sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 36px;
+  }
+
+  .sig-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sig-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .sig-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .sig-role {
+    font-size: 14px;
+    color: var(--text2);
+  }
+
+  .sig-line {
+    margin-top: 32px;
+    border-top: 2px dashed var(--border);
+    padding-top: 12px;
+    font-size: 13px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+
+  /* ===================== FOOTER ===================== */
+  .footer {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  .footer .hearts {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  /* ===================== PRINT ===================== */
+  @media print {
+    .hero { min-height: auto; padding: 40px 24px; }
+    .scroll-hint { display: none; }
+    section { padding: 40px 0; }
+    .feature-card:hover { transform: none; box-shadow: none; }
+    body { background: white; }
+  }
+
+  /* ===================== MOBILE ===================== */
+  @media (max-width: 600px) {
+    .feature-grid { grid-template-columns: 1fr; }
+    .price-includes { grid-template-columns: 1fr; }
+    .price-box { padding: 36px 24px; }
+    .price-box .amount { font-size: 48px; }
+    .share-box { padding: 28px 20px; }
+    .sig-grid { grid-template-columns: 1fr; gap: 32px; }
+    .sig-section { padding: 32px 24px; }
+    h2 { font-size: 28px; }
+    .terms-list li { padding: 16px 18px; font-size: 14px; }
+  }
+
+  /* ===================== ANIMATIONS ===================== */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== HERO ========== -->
+<div class="hero">
+  <div class="hero-emoji">🍽️</div>
+  <h1><span>Öğrenci Nerede Yer?</span></h1>
+  <p class="hero-sub">
+    Proje teklifi & anlaşma şartları<br>
+    Arkadaşlar arası, ama işimiz profesyonel 🤝
+  </p>
+  <div class="hero-date">Mart 2026</div>
+  <div class="scroll-hint">
+    Aşağı kaydır ↓
+  </div>
+</div>
+
+<!-- ========== NE YAPILACAK ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Kapsam</div>
+    <h2>Ne yapılacak?</h2>
+    <p class="section-desc">
+      Üniversite öğrencileri için bir mobil uygulama. Uygun fiyatlı restoranları 
+      keşfet, fotoğraf paylaş, puan ver. Hem iPhone hem Android'de çalışır.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="emoji">🗺️</span>
+        <h3>İnteraktif Harita</h3>
+        <p>Yakınındaki mekanları haritada gör, filtrele, ara</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📸</span>
+        <h3>Sosyal Feed</h3>
+        <p>Fotoğraf paylaş, beğen, yorum yap — Instagram gibi</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">⭐</span>
+        <h3>Puan & Yorum</h3>
+        <p>Lezzet, fiyat, öğrenci dostu — 3 ayrı puanlama</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">👤</span>
+        <h3>Profil & Hesap</h3>
+        <p>Kayıt ol, giriş yap, favorilerini kaydet</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔔</span>
+        <h3>Bildirimler</h3>
+        <p>"Yorumun beğenildi" gibi anlık bildirimler</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🚀</span>
+        <h3>Mağaza Yayını</h3>
+        <p>App Store + Google Play'e yükleme, indirilmeye hazır</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FİYAT ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Fiyat</div>
+    <h2>Ne kadar?</h2>
+    <p class="section-desc">
+      Arkadaşlık fiyatı — piyasa değerinin çok altında tutulmuştur.
+    </p>
+
+    <div class="price-box">
+      <div class="label">Tek Seferlik Yapım Ücreti</div>
+      <div class="amount">25.000<small>₺</small></div>
+      <div class="note">Mağazalara yükleme dahil</div>
+
+      <div class="price-includes">
+        <div class="item"><span class="check">✓</span> iPhone uygulaması</div>
+        <div class="item"><span class="check">✓</span> Android uygulaması</div>
+        <div class="item"><span class="check">✓</span> Veritabanı kurulumu</div>
+        <div class="item"><span class="check">✓</span> Kullanıcı hesap sistemi</div>
+        <div class="item"><span class="check">✓</span> Bildirim altyapısı</div>
+        <div class="item"><span class="check">✓</span> Fotoğraf yükleme</div>
+        <div class="item"><span class="check">✓</span> App Store yayını</div>
+        <div class="item"><span class="check">✓</span> Google Play yayını</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ÖDEME PLANI ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Ödeme</div>
+    <h2>Nasıl ödenir?</h2>
+    <p class="section-desc">
+      3 taksitte, işin ilerleyişine göre.
+    </p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-step s1">1</div>
+        <div class="timeline-content">
+          <h3>Projeye başlarken</h3>
+          <p>Anlaşma imzalandığında, işe başlama ödemesi</p>
+          <div class="timeline-amount">10.000₺</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-step s2">2</div>
+        <div class="timeline-content">
+          <h3>Uygulama gösterildiğinde</h3>
+          <p>Harita, mekanlar ve feed çalışır halde gösterildiğinde</p>
+          <div class="timeline-amount">8.000₺</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-step s3">3</div>
+        <div class="timeline-content">
+          <h3>Mağazalarda yayınlandığında</h3>
+          <p>App Store ve Google Play'den indirilebilir hale geldiğinde</p>
+          <div class="timeline-amount">7.000₺</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== GELİR PAYI ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Ortaklık</div>
+    <h2>Bakım = gelir payı</h2>
+    <p class="section-desc">
+      Aylık bakım ücreti yerine, uygulama para kazandığında ben de kazanıyorum. 
+      Siz kazanmazsanız ben de kazanmam — adil bir sistem.
+    </p>
+
+    <div class="share-box">
+      <h3>%12 Gelir Payı 📊</h3>
+      <p>Uygulama gelir ürettiği sürece, 3 yıl boyunca geçerlidir.</p>
+
+      <table class="share-table">
+        <tr>
+          <td>🎯 Reklam geliri</td>
+          <td>%12</td>
+        </tr>
+        <tr>
+          <td>💎 Premium üyelik geliri</td>
+          <td>%12</td>
+        </tr>
+        <tr>
+          <td>🤝 Restoran anlaşma geliri</td>
+          <td>%12</td>
+        </tr>
+        <tr>
+          <td>💰 Uygulama satışı (exit)</td>
+          <td>%10</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ========== BAKIM ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Bakım</div>
+    <h2>Yayından sonra ne olur?</h2>
+    <p class="section-desc">
+      Uygulama yayınlandıktan sonra da ilgilenmeye devam ediyorum.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="emoji">🐛</span>
+        <h3>Hata Düzeltme</h3>
+        <p>Kullanıcılar sorun bildirirse düzeltirim</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📱</span>
+        <h3>Güncelleme</h3>
+        <p>iPhone/Android yeni sürümüne uyum sağlarım</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔒</span>
+        <h3>Güvenlik</h3>
+        <p>Güvenlik açıkları çıkarsa kapatırım</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">☁️</span>
+        <h3>Sunucu</h3>
+        <p>Sunucu maliyetleri size ait (~800₺/ay)</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; padding: 20px 24px; background: var(--orange-soft); border-radius: 14px; font-size: 14px; color: var(--text2); line-height: 1.6;">
+      <strong style="color: var(--orange);">📌 Not:</strong> Aylık bakım kapsamı en fazla <strong>8 saat</strong> iş içerir. 
+      Bunun üstündeki işler (yeni özellik ekleme vs.) ayrıca fiyatlandırılır.
+    </div>
+  </div>
+</section>
+
+<!-- ========== ŞARTLAR ========== -->
+<section>
+  <div class="container fade-up">
+    <div class="section-label"><span class="dot"></span> Şartlar</div>
+    <h2>Kurallarımız</h2>
+    <p class="section-desc">
+      Arkadaşız ama işimiz net olsun, kimse mağdur olmasın.
+    </p>
+
+    <ul class="terms-list">
+      <li>
+        <span class="num">1</span>
+        <span>Gelir raporu her ayın ilk haftası benimle paylaşılır. Şeffaflık her şeyden önemli.</span>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <span>Gelir payı anlaşması yayın tarihinden itibaren <strong>3 yıl</strong> geçerlidir.</span>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <span>Kaynak kodu, son ödeme yapılana kadar bende kalır. Son ödemeyle birlikte tüm haklar size geçer.</span>
+      </li>
+      <li>
+        <span class="num">4</span>
+        <span>Ödeme planına uyulmazsa proje durdurulur. Yapılan ödemeler iade edilmez.</span>
+      </li>
+      <li>
+        <span class="num">5</span>
+        <span>Apple Developer (yıllık ~3.200₺) ve Google Play (tek seferlik ~800₺) hesap ücretleri size aittir.</span>
+      </li>
+      <li>
+        <span class="num">6</span>
+        <span>Sunucu maliyeti (Supabase Pro ~800₺/ay) size aittir. Ben kurulumu yaparım.</span>
+      </li>
+      <li>
+        <span class="num">7</span>
+        <span>Tahmini teslim süresi <strong>6-8 hafta</strong>. Gecikmelerde bilgilendirme yapılır.</span>
+      </li>
+    </ul>
+
+    <!-- İMZA -->
+    <div class="sig-section">
+      <h3 style="font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 4px;">Anlaştık mı? 🤝</h3>
+      <p style="color: var(--text2); font-size: 15px;">İki taraf da onaylarsa bu anlaşma geçerlidir.</p>
+
+      <div class="sig-grid">
+        <div class="sig-block">
+          <span class="sig-label">Geliştirici</span>
+          <span class="sig-name">Toprak Yağcıoğlu</span>
+          <span class="sig-role">Full-Stack Developer</span>
+          <div class="sig-line">İmza: ___________________</div>
+        </div>
+        <div class="sig-block">
+          <span class="sig-label">Müşteri</span>
+          <span class="sig-name">_____________________</span>
+          <span class="sig-role">Proje Sahibi</span>
+          <div class="sig-line">İmza: ___________________</div>
+        </div>
+      </div>
+
+      <p style="text-align: center; margin-top: 32px; color: var(--text3); font-size: 13px;">
+        Tarih: ___ / ___ / 2026 &nbsp;&nbsp;•&nbsp;&nbsp; Yer: ___________________
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<div class="footer">
+  <div class="hearts">🍔🍕🥙</div>
+  <p>Haydi güzel bir şey yapalım birlikte.</p>
+</div>
+
+<!-- ========== SCROLL ANIMATION ========== -->
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

@@ -20,6 +20,7 @@ import {
   Spacing,
   BorderRadius,
   FontSize,
+  FontFamily,
 } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
           onPress={handleSignOut}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="settings-outline" size={22} color={Colors.textTertiary} />
+          <Ionicons name="settings-outline" size={22} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
 
@@ -191,7 +192,7 @@ export default function ProfileScreen() {
 
           {user.university && (
             <View style={[styles.universityRow, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="school-outline" size={14} color={Colors.textSecondary} />
+              <Ionicons name="school-outline" size={14} color={colors.textSecondary} />
               <Text style={[styles.universityText, { color: colors.textSecondary }]}>{user.university}</Text>
             </View>
           )}
@@ -213,16 +214,19 @@ export default function ProfileScreen() {
           fallbackColor={colors.background}
         >
           <View style={styles.statItem}>
+            <Ionicons name="compass-outline" size={18} color={Colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.venues}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Kesif</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
+            <Ionicons name="chatbubble-outline" size={18} color={Colors.accent} style={{ marginBottom: 4 }} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.reviews}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Yorum</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
+            <Ionicons name="people-outline" size={18} color={Colors.verified} style={{ marginBottom: 4 }} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.followers}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Takipci</Text>
           </View>
@@ -241,7 +245,7 @@ export default function ProfileScreen() {
             <Ionicons
               name={activeTab === 'favorites' ? 'heart' : 'heart-outline'}
               size={18}
-              color={activeTab === 'favorites' ? Colors.primary : Colors.textSecondary}
+              color={activeTab === 'favorites' ? Colors.primary : colors.textSecondary}
             />
             <Text
               style={[
@@ -261,7 +265,7 @@ export default function ProfileScreen() {
             <Ionicons
               name={activeTab === 'posts' ? 'grid' : 'grid-outline'}
               size={18}
-              color={activeTab === 'posts' ? Colors.primary : Colors.textSecondary}
+              color={activeTab === 'posts' ? Colors.primary : colors.textSecondary}
             />
             <Text
               style={[
@@ -284,7 +288,7 @@ export default function ProfileScreen() {
           favorites.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={[styles.emptyIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-                <Ionicons name="heart-outline" size={32} color={Colors.textTertiary} />
+                <Ionicons name="heart-outline" size={32} color={colors.textTertiary} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>Henuz favori mekanin yok</Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
@@ -311,7 +315,7 @@ export default function ProfileScreen() {
                         <Ionicons
                           name="restaurant-outline"
                           size={28}
-                          color={Colors.textTertiary}
+                          color={colors.textTertiary}
                         />
                       </View>
                     )}
@@ -334,7 +338,7 @@ export default function ProfileScreen() {
         ) : userPosts.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-              <Ionicons name="camera-outline" size={32} color={Colors.textTertiary} />
+              <Ionicons name="camera-outline" size={32} color={colors.textTertiary} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Henuz gonderin yok</Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
@@ -362,7 +366,7 @@ export default function ProfileScreen() {
                         <Ionicons
                           name="document-text-outline"
                           size={28}
-                          color={Colors.textTertiary}
+                          color={colors.textTertiary}
                         />
                       </View>
                     )}
@@ -410,7 +414,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     letterSpacing: -0.5,
   },
@@ -453,7 +457,7 @@ const styles = StyleSheet.create({
   },
   loginTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
@@ -482,7 +486,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
   registerRow: {
@@ -494,7 +498,7 @@ const styles = StyleSheet.create({
   },
   registerTextBold: {
     color: Colors.primary,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
   },
 
   // =========================================
@@ -518,7 +522,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     marginTop: Spacing.md,
     letterSpacing: -0.3,
@@ -566,7 +570,7 @@ const styles = StyleSheet.create({
   },
   xpText: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.accent,
   },
 
@@ -596,7 +600,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
   },
   statLabel: {
@@ -645,7 +649,7 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: Colors.primary,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
   },
 
   // =========================================
@@ -677,7 +681,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   emptySubtitle: {
@@ -729,7 +733,7 @@ const styles = StyleSheet.create({
   },
   gridItemName: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   gridItemRating: {

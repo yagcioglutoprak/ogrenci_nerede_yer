@@ -16,6 +16,7 @@ import {
   BorderRadius,
   FontSize,
   PriceRanges,
+  FontFamily,
 } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import ImageGrid from './ImageGrid';
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.md,
   },
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   },
   pricePillLabel: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   pricePillLabelActive: {
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },

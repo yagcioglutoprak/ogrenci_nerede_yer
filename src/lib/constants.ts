@@ -1,6 +1,6 @@
 // ==========================================
 // Öğrenci Nerede Yer? - Design System
-// Palette: White / Red / Orange (Food Theme)
+// Palette: White / Red / Golden Amber (Food Theme)
 // ==========================================
 
 export const Colors = {
@@ -10,15 +10,15 @@ export const Colors = {
   primaryLight: '#FF5252',     // Lighter red for highlights
   primarySoft: '#FFF0F0',      // Very soft red tint for backgrounds
 
-  // Accent - Warm Orange (energy, food warmth)
-  accent: '#FF6B35',           // Vibrant warm orange
-  accentDark: '#E55A2B',
-  accentLight: '#FF8F66',
-  accentSoft: '#FFF3ED',       // Soft orange tint
+  // Accent - Golden Amber (energy, food warmth)
+  accent: '#F5A623',           // Vibrant golden amber
+  accentDark: '#D4900E',
+  accentLight: '#F7BC5A',
+  accentSoft: '#FEF6E7',       // Soft amber tint
 
   // Gradient pair
   gradientStart: '#E23744',    // Red
-  gradientEnd: '#FF6B35',      // Orange
+  gradientEnd: '#F5A623',      // Golden Amber
 
   // Neutrals - Clean whites and grays
   background: '#FFFFFF',
@@ -78,13 +78,13 @@ export const DarkColors: ThemeColors = {
   primaryLight: '#FF5252',
   primarySoft: 'rgba(226,55,68,0.15)',
 
-  accent: '#FF6B35',
-  accentDark: '#E55A2B',
-  accentLight: '#FF8F66',
-  accentSoft: 'rgba(255,107,53,0.15)',
+  accent: '#F5A623',
+  accentDark: '#D4900E',
+  accentLight: '#F7BC5A',
+  accentSoft: 'rgba(245,166,35,0.15)',
 
   gradientStart: '#E23744',
-  gradientEnd: '#FF6B35',
+  gradientEnd: '#F5A623',
 
   // Neutrals — dark surfaces
   background: '#121212',
@@ -131,6 +131,35 @@ export const DarkColors: ThemeColors = {
   },
 } as const;
 
+// ==========================================
+// Dynamic Rating Colors
+// Color-coded feedback based on score value
+// ==========================================
+export const RatingColors = {
+  excellent: '#22C55E',    // Bright green — 4.5+
+  good: '#84CC16',         // Lime green — 4.0–4.4
+  average: '#EAB308',      // Amber — 3.0–3.9
+  belowAverage: '#F97316', // Orange — 2.0–2.9
+  poor: '#EF4444',         // Red — below 2.0
+} as const;
+
+/** Returns a color based on the rating value (0–maxRating scale) */
+export function getRatingColor(rating: number, maxRating: number = 5): string {
+  const normalized = rating / maxRating;
+  if (normalized >= 0.9) return RatingColors.excellent;
+  if (normalized >= 0.8) return RatingColors.good;
+  if (normalized >= 0.6) return RatingColors.average;
+  if (normalized >= 0.4) return RatingColors.belowAverage;
+  return RatingColors.poor;
+}
+
+// Sub-rating category accent colors (distinct per axis)
+export const CategoryColors = {
+  taste: '#E23744',        // Red — appetite, flavor
+  value: '#F59E0B',        // Amber — money, price-performance
+  friendliness: '#14B8A6', // Teal — welcoming, student-friendly
+} as const;
+
 // Fiyat aralıkları
 export const PriceRanges = [
   { label: '₺', value: 1, description: '0-50₺' },
@@ -149,7 +178,7 @@ export const RatingCategories = [
 // Mekan seviyeleri
 export const VenueLevels = [
   { level: 1, name: 'Yeni', minReviews: 0, color: '#A0A0B0' },
-  { level: 2, name: 'Popüler', minReviews: 5, color: '#FF6B35' },
+  { level: 2, name: 'Popüler', minReviews: 5, color: '#F5A623' },
   { level: 3, name: 'Öğrenci Onaylı', minReviews: 15, color: '#E23744' },
   { level: 4, name: 'Efsane', minReviews: 50, color: '#FFB800' },
 ] as const;
@@ -186,6 +215,11 @@ export const FontSize = {
   xxl: 24,
   xxxl: 32,
   display: 40,
+} as const;
+
+export const FontFamily = {
+  heading: 'Nunito_800ExtraBold',
+  headingBold: 'Nunito_700Bold',
 } as const;
 
 // Supabase config

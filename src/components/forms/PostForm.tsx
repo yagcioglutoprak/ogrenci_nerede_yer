@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import ImageGrid from './ImageGrid';
 import type { User } from '../../types';
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.md,
   },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },

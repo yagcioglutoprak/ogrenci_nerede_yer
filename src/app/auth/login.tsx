@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -12,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -70,7 +71,7 @@ export default function LoginScreen() {
           <View style={styles.brandSection}>
             {/* Red circle with restaurant icon */}
             <View style={styles.logoCircle}>
-              <Ionicons name="restaurant" size={48} color={Colors.textOnPrimary} />
+              <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
 
             <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
@@ -184,10 +185,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 10,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 70,
+    height: 70,
   },
   brandName: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.primary,
     letterSpacing: -0.5,
     marginBottom: Spacing.xs,
@@ -256,7 +262,7 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.primary,
   },
 });

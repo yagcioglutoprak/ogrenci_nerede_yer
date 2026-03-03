@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, PriceRanges, VenueLevels } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, PriceRanges, VenueLevels, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue } from '../../types';
-import StarRating from '../ui/StarRating';
+import RatingBar from '../ui/RatingBar';
 import Badge from '../ui/Badge';
 import GlassView from '../ui/GlassView';
 
@@ -44,7 +44,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
           />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-            <Ionicons name="restaurant-outline" size={40} color={Colors.textTertiary} />
+            <Ionicons name="restaurant-outline" size={40} color={colors.textTertiary} />
           </View>
         )}
 
@@ -94,7 +94,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
           <Ionicons
             name="location-outline"
             size={14}
-            color={Colors.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={[styles.address, { color: colors.textSecondary }]} numberOfLines={1}>
             {venue.address}
@@ -103,10 +103,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
 
         {/* Rating row */}
         <View style={styles.ratingRow}>
-          <StarRating rating={venue.overall_rating} size="sm" />
-          <Text style={[styles.ratingValue, { color: colors.text }]}>
-            {venue.overall_rating.toFixed(1)}
-          </Text>
+          <RatingBar rating={venue.overall_rating} size="sm" autoColor barWidth={80} />
           <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
             ({venue.total_reviews} yorum)
           </Text>
@@ -116,12 +113,12 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
         {venue.tags && venue.tags.length > 0 && (
           <View style={styles.tagsRow}>
             {venue.tags.slice(0, 3).map((tag) => (
-              <View key={tag} style={[styles.tagChip, { backgroundColor: colors.backgroundSecondary }]}>
-                <Text style={[styles.tagText, { color: colors.textSecondary }]}>{tag}</Text>
+              <View key={tag} style={[styles.tagChip, { backgroundColor: colors.accentSoft }]}>
+                <Text style={[styles.tagText, { color: Colors.accent }]}>{tag}</Text>
               </View>
             ))}
             {venue.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{venue.tags.length - 3}</Text>
+              <Text style={[styles.moreTagsText, { color: colors.textTertiary }]}>+{venue.tags.length - 3}</Text>
             )}
           </View>
         )}
@@ -186,7 +183,7 @@ const styles = StyleSheet.create({
   priceText: {
     color: Colors.textOnPrimary,
     fontSize: FontSize.sm,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     letterSpacing: 0.5,
   },
   verifiedBadge: {
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     flex: 1,
     letterSpacing: -0.2,
@@ -239,7 +236,7 @@ const styles = StyleSheet.create({
   },
   ratingValue: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   reviewCount: {

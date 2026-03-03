@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   FlatList,
   StyleSheet,
   ActivityIndicator,
@@ -16,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import PostCard from '../../components/feed/PostCard';
 import ErrorState from '../../components/ui/ErrorState';
@@ -200,7 +201,10 @@ export default function FeedScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.primaryDark }]}>Ogrenci Nerede Yer?</Text>
+        <View style={styles.headerBrand}>
+          <Image source={require('../../../assets/logo.png')} style={styles.headerLogo} resizeMode="contain" />
+          <Text style={[styles.headerTitle, { color: colors.primaryDark }]}>Keşfet</Text>
+        </View>
         <TouchableOpacity
           style={[styles.headerIconButton, { backgroundColor: colors.backgroundSecondary }]}
           onPress={() => {}}
@@ -284,9 +288,18 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.primaryDark,
     letterSpacing: -0.5,
+  },
+  headerBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
   },
   headerIconButton: {
     width: 40,
@@ -372,7 +385,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSize.xxl - 2,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
@@ -399,7 +412,7 @@ const styles = StyleSheet.create({
   },
   emptyButtonText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
 

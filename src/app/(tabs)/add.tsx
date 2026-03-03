@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import VenueForm from '../../components/forms/VenueForm';
 import PostForm from '../../components/forms/PostForm';
 import GlassView from '../../components/ui/GlassView';
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     letterSpacing: -0.5,
   },
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   authTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   authButtonText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
 });

@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../lib/supabase';
 import { MOCK_USERS, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { User, Post } from '../../types';
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
 
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     marginTop: Spacing.md,
     letterSpacing: -0.3,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   followButtonText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
   followButtonTextActive: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
   },
   statLabel: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
 
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
 

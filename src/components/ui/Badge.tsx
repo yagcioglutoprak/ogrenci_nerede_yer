@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Spacing, BorderRadius } from '../../lib/constants';
+import { Colors, FontSize, Spacing, BorderRadius, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import GlassView from './GlassView';
 
@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
   },
   verifiedLabel: {
     color: Colors.textOnPrimary,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
   },
 });

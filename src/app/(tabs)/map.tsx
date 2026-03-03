@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   Image,
 } from 'react-native';
 import GlassView from '../../components/ui/GlassView';
+import RatingBar from '../../components/ui/RatingBar';
+import CircleRating from '../../components/ui/CircleRating';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -28,8 +30,59 @@ import {
   Spacing,
   BorderRadius,
   FontSize,
+  FontFamily,
 } from '../../lib/constants';
 import type { Venue } from '../../types';
+
+// ── Clustering types ──
+interface ClusterGroup {
+  id: string;
+  latitude: number;
+  longitude: number;
+  venues: Venue[];
+}
+type ClusterItem =
+  | { type: 'venue'; venue: Venue }
+  | { type: 'cluster'; cluster: ClusterGroup };
+
+// ── Grid-based clustering ──
+const CLUSTER_ZOOM_THRESHOLD = 0.012;
+
+function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
+  if (region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
+    return venues.map((v) => ({ type: 'venue' as const, venue: v }));
+  }
+
+  const cellSize = region.latitudeDelta / 4;
+  const buckets = new Map<string, Venue[]>();
+
+  for (const v of venues) {
+    const cellX = Math.floor(v.latitude / cellSize);
+    const cellY = Math.floor(v.longitude / cellSize);
+    const key = `${cellX}_${cellY}`;
+    const bucket = buckets.get(key);
+    if (bucket) {
+      bucket.push(v);
+    } else {
+      buckets.set(key, [v]);
+    }
+  }
+
+  const items: ClusterItem[] = [];
+  for (const [key, group] of buckets) {
+    if (group.length === 1) {
+      items.push({ type: 'venue', venue: group[0] });
+    } else {
+      const lat = group.reduce((s, v) => s + v.latitude, 0) / group.length;
+      const lng = group.reduce((s, v) => s + v.longitude, 0) / group.length;
+      items.push({
+        type: 'cluster',
+        cluster: { id: `cluster_${key}`, latitude: lat, longitude: lng, venues: group },
+      });
+    }
+  }
+  return items;
+}
 
 // iOS 26 Liquid Glass — tier sistemi
 type MarkerTier = 'editorial' | 'efsane' | 'popular' | 'new_reviewed' | 'unreviewed';
@@ -78,6 +131,36 @@ export default function MapScreen() {
   const hasActiveFilters = filterPrice.length > 0 || filterMinRating > 0;
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // ── Memoized clusters ──
+  const clusteredItems = useMemo(
+    () => clusterVenues(venues, region),
+    [venues, region],
+  );
+
+  const handleClusterPress = useCallback(
+    (cluster: ClusterGroup) => {
+      // Compute bounding box of cluster venues
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      for (const v of cluster.venues) {
+        if (v.latitude < minLat) minLat = v.latitude;
+        if (v.latitude > maxLat) maxLat = v.latitude;
+        if (v.longitude < minLng) minLng = v.longitude;
+        if (v.longitude > maxLng) maxLng = v.longitude;
+      }
+      const pad = 0.002;
+      mapRef.current?.animateToRegion(
+        {
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: Math.max(maxLat - minLat + pad, 0.005),
+          longitudeDelta: Math.max(maxLng - minLng + pad, 0.005),
+        },
+        600,
+      );
+    },
+    [],
+  );
 
   useEffect(() => {
     requestLocationPermission();
@@ -176,20 +259,9 @@ export default function MapScreen() {
   };
 
   const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalf = rating - fullStars >= 0.5;
-
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<Ionicons key={i} name="star" size={12} color={Colors.star} />);
-      } else if (i === fullStars && hasHalf) {
-        stars.push(<Ionicons key={i} name="star-half" size={12} color={Colors.star} />);
-      } else {
-        stars.push(<Ionicons key={i} name="star-outline" size={12} color={Colors.starEmpty} />);
-      }
-    }
-    return stars;
+    return (
+      <RatingBar rating={rating} size="sm" color={Colors.primary} showValue={false} barWidth={60} />
+    );
   };
 
   return (
@@ -206,7 +278,26 @@ export default function MapScreen() {
         userInterfaceStyle={isDark ? 'dark' : 'light'}
         mapPadding={{ top: 100, right: 0, bottom: 80, left: 0 }}
       >
-        {venues.map((venue) => {
+        {clusteredItems.map((item) => {
+          if (item.type === 'cluster') {
+            const { cluster } = item;
+            const count = cluster.venues.length;
+            const size = Math.min(40 + count * 2, 56);
+            return (
+              <Marker
+                key={cluster.id}
+                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                onPress={() => handleClusterPress(cluster)}
+                tracksViewChanges={false}
+              >
+                <View style={[styles.clusterBubble, { width: size, height: size, borderRadius: size / 2 }]}>
+                  <Text style={styles.clusterText}>{count}</Text>
+                </View>
+              </Marker>
+            );
+          }
+
+          const venue = item.venue;
           const tier = getMarkerTier(venue);
           const dotColor = TIER_DOT[tier];
           const isUnreviewed = tier === 'unreviewed';
@@ -225,14 +316,18 @@ export default function MapScreen() {
               {/* Liquid Glass kart */}
               <View style={[styles.markerGlass, { backgroundColor: isDark ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.82)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
                 <View style={styles.markerGlassInner}>
-                  {/* Ust satir: renkli dot + isim */}
+                  {/* Ust satir: logo/dot + isim */}
                   <View style={styles.markerHeader}>
-                    <View style={[styles.markerDot, { backgroundColor: dotColor }]} />
+                    {hasEditorial ? (
+                      <Image source={require('../../../assets/logo.png')} style={styles.markerLogo} resizeMode="contain" />
+                    ) : (
+                      <View style={[styles.markerDot, { backgroundColor: dotColor }]} />
+                    )}
                     <Text style={[styles.markerName, { color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)' }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                   </View>
-                  {/* Alt satir: puan + fiyat */}
+                  {/* Alt satir: puan + fiyat + editorial score */}
                   {!isUnreviewed ? (
                     <View style={styles.markerMeta}>
                       <Text style={[styles.markerScore, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }]}>
@@ -245,7 +340,8 @@ export default function MapScreen() {
                       {hasEditorial && (
                         <>
                           <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-                          <Text style={styles.markerOny}>ÖNY {venue.editorial_rating}</Text>
+                          <Image source={require('../../../assets/logo.png')} style={styles.markerMetaLogo} resizeMode="contain" />
+                          <Text style={styles.markerOnyScore}>{venue.editorial_rating}</Text>
                         </>
                       )}
                     </View>
@@ -272,6 +368,7 @@ export default function MapScreen() {
                     <View style={styles.calloutInfo}>
                       <Text style={[styles.calloutName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
                       <View style={styles.calloutRatingRow}>
+                        <Image source={require('../../../assets/logo.png')} style={styles.calloutLogoIcon} resizeMode="contain" />
                         <View style={styles.calloutStars}>{renderStars(venue.overall_rating)}</View>
                         <Text style={[styles.calloutRatingText, { color: colors.text }]}>{venue.overall_rating.toFixed(1)}</Text>
                       </View>
@@ -280,11 +377,7 @@ export default function MapScreen() {
                           <Text style={styles.calloutPriceText}>{getPriceLabel(venue.price_range)}</Text>
                         </View>
                         {venue.editorial_rating != null && (
-                          <View style={[styles.calloutOnyBadge, { backgroundColor: colors.accentSoft }]}>
-                            <Text style={styles.calloutOnyLabel}>ÖNY</Text>
-                            <Text style={styles.calloutOnyScore}>{venue.editorial_rating}</Text>
-                            <Text style={styles.calloutOnyMax}>/10</Text>
-                          </View>
+                          <CircleRating score={venue.editorial_rating} size="sm" color={Colors.accent} />
                         )}
                         <View style={styles.calloutDetailLink}>
                           <Text style={styles.calloutDetailText}>Detaylar</Text>
@@ -717,7 +810,7 @@ const styles = StyleSheet.create({
   },
   markerScore: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: 'rgba(0,0,0,0.6)',
     letterSpacing: -0.2,
   },
@@ -732,11 +825,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(0,0,0,0.45)',
   },
-  markerOny: {
+  markerLogo: {
+    width: 14,
+    height: 14,
+  },
+  markerMetaLogo: {
+    width: 11,
+    height: 11,
+  },
+  markerOnyScore: {
     fontSize: 10,
-    fontWeight: '700',
-    color: Colors.primary,
+    fontFamily: FontFamily.heading,
+    color: Colors.accent,
     letterSpacing: -0.2,
+    marginLeft: 1,
   },
   markerNewLabel: {
     fontSize: 10,
@@ -792,7 +894,7 @@ const styles = StyleSheet.create({
   },
   calloutName: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
@@ -827,7 +929,7 @@ const styles = StyleSheet.create({
   },
   calloutPriceText: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.primary,
   },
   calloutOnyBadge: {
@@ -840,13 +942,13 @@ const styles = StyleSheet.create({
   },
   calloutOnyLabel: {
     fontSize: 9,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.accent,
     marginRight: 3,
   },
   calloutOnyScore: {
     fontSize: FontSize.sm,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.accent,
   },
   calloutOnyMax: {
@@ -863,6 +965,15 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.primary,
+  },
+  calloutEditorialBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  calloutLogoIcon: {
+    width: 22,
+    height: 22,
   },
 
   // Loading — Liquid Glass
@@ -934,13 +1045,13 @@ const styles = StyleSheet.create({
   },
   filterTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     marginBottom: Spacing.xl,
   },
   filterSectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.md,
     marginTop: Spacing.sm,
@@ -1020,7 +1131,25 @@ const styles = StyleSheet.create({
   },
   filterApplyText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
+  },
+
+  // Cluster marker styles
+  clusterBubble: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  clusterText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.heading,
+    fontSize: 15,
+    letterSpacing: -0.3,
   },
 });

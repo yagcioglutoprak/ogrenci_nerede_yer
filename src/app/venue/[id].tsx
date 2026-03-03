@@ -28,8 +28,11 @@ import {
   Spacing,
   BorderRadius,
   FontSize,
+  FontFamily,
 } from '../../lib/constants';
 import StarRating from '../../components/ui/StarRating';
+import RatingBar from '../../components/ui/RatingBar';
+import CircleRating from '../../components/ui/CircleRating';
 import Avatar from '../../components/ui/Avatar';
 import type { Review, SocialVideo } from '../../types';
 import GlassView from '../../components/ui/GlassView';
@@ -171,7 +174,7 @@ export default function VenueDetailScreen() {
     ).toFixed(1);
 
     return (
-      <GlassView key={item.id} style={[styles.reviewCard, Platform.OS === 'ios' && styles.reviewCardGlass, { backgroundColor: colors.card, borderColor: colors.border }]} fallbackColor={colors.card}>
+      <GlassView key={item.id} style={[styles.reviewCard, Platform.OS === 'ios' && styles.reviewCardGlass, { backgroundColor: colors.card, borderColor: colors.border, borderLeftColor: Colors.primary, borderLeftWidth: 3 }]} fallbackColor={colors.card}>
         {/* Header: avatar + name + date */}
         <View style={styles.reviewHeader}>
           <Avatar
@@ -191,26 +194,14 @@ export default function VenueDetailScreen() {
               })}
             </Text>
           </View>
-          <View style={[styles.reviewScoreBadge, { backgroundColor: colors.primarySoft }]}>
-            <Ionicons name="star" size={12} color={Colors.star} />
-            <Text style={[styles.reviewScoreText, { color: colors.text }]}>{avg}</Text>
-          </View>
+          <CircleRating score={parseFloat(avg)} maxScore={5} size="sm" autoColor />
         </View>
 
         {/* Mini inline ratings */}
         <View style={styles.reviewMiniRatings}>
-          <View style={styles.reviewMiniItem}>
-            <Ionicons name="restaurant" size={12} color={Colors.primary} />
-            <StarRating rating={item.taste_rating} size="sm" />
-          </View>
-          <View style={styles.reviewMiniItem}>
-            <Ionicons name="pricetag" size={12} color={Colors.accent} />
-            <StarRating rating={item.value_rating} size="sm" />
-          </View>
-          <View style={styles.reviewMiniItem}>
-            <Ionicons name="people" size={12} color={Colors.verified} />
-            <StarRating rating={item.friendliness_rating} size="sm" />
-          </View>
+          <RatingBar rating={item.taste_rating} size="sm" icon="restaurant" color={Colors.primary} />
+          <RatingBar rating={item.value_rating} size="sm" icon="pricetag" color={Colors.accent} />
+          <RatingBar rating={item.friendliness_rating} size="sm" icon="people" color={Colors.verified} />
         </View>
 
         {/* Comment */}
@@ -321,13 +312,11 @@ export default function VenueDetailScreen() {
             RATING OVERVIEW CARD
         ============================ */}
         <GlassView style={[styles.ratingCard, Platform.OS === 'ios' && styles.ratingCardGlass, { backgroundColor: colors.card }]} fallbackColor={colors.card}>
-          {/* Top row: big number + stars */}
+          {/* Top row: big circle + bar */}
           <View style={styles.ratingCardTop}>
-            <Text style={[styles.ratingBigNumber, { color: colors.text }]}>
-              {venue.overall_rating.toFixed(1)}
-            </Text>
+            <CircleRating score={parseFloat(venue.overall_rating.toFixed(1))} maxScore={5} size="lg" autoColor />
             <View style={styles.ratingCardStarsCol}>
-              <StarRating rating={venue.overall_rating} size="md" />
+              <RatingBar rating={venue.overall_rating} size="lg" color={Colors.primary} showValue={false} barWidth={120} />
               <Text style={[styles.ratingCardReviewCount, { color: colors.textSecondary }]}>
                 {venue.total_reviews} değerlendirme
               </Text>
@@ -369,7 +358,7 @@ export default function VenueDetailScreen() {
                     styles.subRatingBarFill,
                     {
                       width: ratingBarWidth(cat.value) as any,
-                      backgroundColor: Colors.primary,
+                      backgroundColor: cat.color,
                     },
                   ]}
                 />
@@ -457,26 +446,16 @@ export default function VenueDetailScreen() {
               <View style={styles.editorialBadge}>
                 <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
               </View>
-              <Text style={[styles.editorialTitle, { color: colors.text }]}>OgrenciNeredeYer Degerlendirmesi</Text>
+              <Text style={[styles.editorialTitle, { color: colors.text }]}>Ekip Değerlendirmesi</Text>
             </View>
 
             <GlassView style={[styles.editorialCard, Platform.OS === 'ios' && styles.editorialCardGlass, { backgroundColor: colors.card, borderColor: colors.primarySoft }]} fallbackColor={colors.card}>
               {/* Score circle */}
               <View style={styles.editorialScoreRow}>
-                <View style={[styles.editorialScoreCircle, { backgroundColor: colors.primarySoft }]}>
-                  <Text style={styles.editorialScoreNumber}>{venue.editorial_rating}</Text>
-                  <Text style={styles.editorialScoreMax}>/10</Text>
-                </View>
+                <CircleRating score={venue.editorial_rating} size="lg" autoColor />
                 <View style={styles.editorialScoreInfo}>
                   <Text style={[styles.editorialScoreLabel, { color: colors.textSecondary }]}>Ekip Puani</Text>
-                  <View style={[styles.editorialScoreBar, { backgroundColor: colors.border }]}>
-                    <View
-                      style={[
-                        styles.editorialScoreBarFill,
-                        { width: `${(venue.editorial_rating / 10) * 100}%` },
-                      ]}
-                    />
-                  </View>
+                  <RatingBar rating={venue.editorial_rating} maxRating={10} size="md" color={Colors.accent} showValue={false} />
                 </View>
               </View>
 
@@ -557,18 +536,24 @@ export default function VenueDetailScreen() {
         ============================ */}
         <View style={styles.rateSection}>
           <TouchableOpacity
-            style={styles.rateToggleButton}
             onPress={handleToggleRatingForm}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <Ionicons
-              name={showRatingForm ? 'chevron-up' : 'star-outline'}
-              size={20}
-              color={Colors.primary}
-            />
-            <Text style={styles.rateToggleText}>
-              {showRatingForm ? 'Kapat' : 'Puan Ver'}
-            </Text>
+            <LinearGradient
+              colors={showRatingForm ? [colors.backgroundSecondary, colors.backgroundSecondary] : [Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.rateToggleButton}
+            >
+              <Ionicons
+                name={showRatingForm ? 'chevron-up' : 'star-outline'}
+                size={20}
+                color={showRatingForm ? Colors.primary : '#FFFFFF'}
+              />
+              <Text style={[styles.rateToggleText, { color: showRatingForm ? Colors.primary : '#FFFFFF' }]}>
+                {showRatingForm ? 'Kapat' : 'Puan Ver'}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           {/* Expandable rating form */}
@@ -770,7 +755,7 @@ const styles = StyleSheet.create({
   },
   heroName: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: '#FFFFFF',
     flex: 1,
     textShadowColor: 'rgba(0,0,0,0.4)',
@@ -802,7 +787,7 @@ const styles = StyleSheet.create({
   },
   levelPillText: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
@@ -828,7 +813,7 @@ const styles = StyleSheet.create({
   },
   ratingBigNumber: {
     fontSize: FontSize.display,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.text,
     letterSpacing: -1,
   },
@@ -875,7 +860,7 @@ const styles = StyleSheet.create({
   },
   subRatingValueText: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     width: 30,
     textAlign: 'right',
@@ -962,7 +947,7 @@ const styles = StyleSheet.create({
   },
   editorialTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   editorialCard: {
@@ -993,7 +978,7 @@ const styles = StyleSheet.create({
   },
   editorialScoreNumber: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: FontFamily.heading,
     color: Colors.primary,
   },
   editorialScoreMax: {
@@ -1057,7 +1042,7 @@ const styles = StyleSheet.create({
   },
   videosSectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   videosSectionCount: {
@@ -1138,15 +1123,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
     borderRadius: BorderRadius.md,
     paddingVertical: Spacing.md + 2,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   rateToggleText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.primary,
+    fontFamily: FontFamily.headingBold,
   },
   rateFormContainer: {
     marginTop: Spacing.lg,
@@ -1199,7 +1186,7 @@ const styles = StyleSheet.create({
   },
   rateSubmitText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
 
@@ -1210,7 +1197,7 @@ const styles = StyleSheet.create({
   },
   reviewsSectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
     marginBottom: Spacing.lg,
   },
@@ -1252,7 +1239,7 @@ const styles = StyleSheet.create({
   },
   reviewUsername: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   reviewDate: {
@@ -1271,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   reviewScoreText: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   reviewMiniRatings: {

@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import type { ThemeColors } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import GlassView from './GlassView';
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.headingBold,
     letterSpacing: 0.2,
   },
   iconLeft: {

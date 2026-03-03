@@ -74,7 +74,7 @@ Supabase project ref: `fcuwuokxtptshksjvles`. Credentials are in `.env`.
 
 ## Design System
 
-**Palette**: White background + Red (#E23744) primary + Orange (#FF6B35) accent. Food-themed, modern, and polished.
+**Palette**: White background + Red (#E23744) primary + Golden Amber (#F5A623) accent. Food-themed, modern, and polished.
 
 All design tokens live in `src/lib/constants.ts`:
 - `Colors` - primary, accent, gradients, neutrals, semantic colors
