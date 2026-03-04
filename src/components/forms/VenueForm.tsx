@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useVenueStore } from '../../stores/venueStore';
+import { uploadImages } from '../../lib/imageUpload';
 import {
   Colors,
   Spacing,
@@ -40,6 +41,7 @@ export default function VenueForm({ user }: VenueFormProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const resetForm = () => {
     setName('');
@@ -66,6 +68,21 @@ export default function VenueForm({ user }: VenueFormProps) {
     }
 
     setSubmitting(true);
+
+    // Upload images to Supabase Storage before creating venue
+    let coverImageUrl: string | null = null;
+    if (images.length > 0) {
+      setUploading(true);
+      try {
+        const uploadedUrls = await uploadImages(images, 'venues');
+        coverImageUrl = uploadedUrls[0] || null;
+      } catch {
+        // Fallback to local URI if upload fails entirely
+        coverImageUrl = images[0];
+      }
+      setUploading(false);
+    }
+
     const { error } = await addVenue({
       name: name.trim(),
       description: description.trim() || null,
@@ -77,7 +94,7 @@ export default function VenueForm({ user }: VenueFormProps) {
       is_verified: false,
       youtube_video_url: null,
       phone: null,
-      cover_image_url: images.length > 0 ? images[0] : null,
+      cover_image_url: coverImageUrl,
       created_by: user.id,
     });
     setSubmitting(false);
@@ -196,7 +213,10 @@ export default function VenueForm({ user }: VenueFormProps) {
         activeOpacity={0.8}
       >
         {submitting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
+          <>
+            <ActivityIndicator size="small" color="#FFFFFF" />
+            {uploading && <Text style={styles.submitBtnText}>Yukluyor...</Text>}
+          </>
         ) : (
           <>
             <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
