@@ -35,8 +35,9 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { name: 'map', title: 'Harita', iconFocused: 'map', iconOutline: 'map-outline' as IoniconsName },
-  { name: 'feed', title: 'Keşfet', iconFocused: 'compass', iconOutline: 'compass-outline' as IoniconsName },
+  { name: 'feed', title: 'Akis', iconFocused: 'chatbubbles', iconOutline: 'chatbubbles-outline' as IoniconsName },
   { name: 'add', title: '', iconFocused: 'add', iconOutline: 'add', isAdd: true },
+  { name: 'discover', title: 'Kesfet', iconFocused: 'compass', iconOutline: 'compass-outline' as IoniconsName },
   { name: 'profile', title: 'Profil', iconFocused: 'person', iconOutline: 'person-outline' as IoniconsName },
 ];
 
@@ -235,8 +236,6 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
           {leftTabs.map(renderTab)}
           <View style={iosStyles.centerSpacer} />
           {rightTabs.map(renderTab)}
-          {/* Dummy tab to balance the right side symmetrically with the left side */}
-          <View style={iosStyles.tabItem} pointerEvents="none" />
         </View>
       </GlassView>
     </View>
@@ -302,11 +301,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="feed"
         options={{
-          title: 'Kesfet',
+          title: 'Akis',
           tabBarIcon: ({ color, focused }) => (
             <View style={androidStyles.tabIconWrap}>
               <Ionicons
-                name={focused ? 'compass' : ('compass-outline' as IoniconsName)}
+                name={focused ? 'chatbubbles' : ('chatbubbles-outline' as IoniconsName)}
                 size={22}
                 color={color}
               />
@@ -336,6 +335,26 @@ export default function TabLayout() {
             </View>
           ),
           tabBarLabel: () => null,
+        }}
+      />
+
+      {/* ---- Discover ---- */}
+      <Tabs.Screen
+        name="discover"
+        options={{
+          title: 'Kesfet',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={androidStyles.tabIconWrap}>
+              <Ionicons
+                name={focused ? 'compass' : ('compass-outline' as IoniconsName)}
+                size={22}
+                color={color}
+              />
+              {focused && (
+                <View style={[androidStyles.activeIndicator, { backgroundColor: color }]} />
+              )}
+            </View>
+          ),
         }}
       />
 
