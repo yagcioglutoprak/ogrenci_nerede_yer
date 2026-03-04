@@ -248,6 +248,7 @@ export default function FeedScreen() {
               onAnswer={handleAnswer}
               onUserPress={handleUserPress}
               onVenuePress={handleVenuePress}
+              onPress={() => router.push(`/post/${item.id}`)}
             />
           );
           break;

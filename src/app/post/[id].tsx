@@ -23,9 +23,11 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
-import type { Comment, PostImage } from '../../types';
+import type { Comment, PostImage, RecommendationAnswer } from '../../types';
+import { MOCK_RECOMMENDATION_ANSWERS, MOCK_USERS, MOCK_VENUES } from '../../lib/mockData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const QUESTION_COLOR = '#8B5CF6';
 
 function getRelativeTime(dateString: string): string {
   const now = new Date();
@@ -110,6 +112,180 @@ export default function PostDetailScreen() {
     );
   }
 
+  // ── Question-type post: dedicated answer layout ──
+  if (post.post_type === 'question') {
+    const answers: RecommendationAnswer[] = MOCK_RECOMMENDATION_ANSWERS
+      .filter((a) => a.post_id === post.id)
+      .map((a) => ({
+        ...a,
+        user: MOCK_USERS.find((u) => u.id === a.user_id),
+        venue: a.venue_id ? MOCK_VENUES.find((v) => v.id === a.venue_id) : undefined,
+      }))
+      .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0));
+
+    const renderAnswer = ({ item }: { item: RecommendationAnswer }) => (
+      <View style={[qStyles.answerItem, { borderBottomColor: colors.borderLight }]}>
+        <View style={qStyles.answerLeft}>
+          <Avatar
+            uri={item.user?.avatar_url}
+            name={item.user?.full_name ?? item.user?.username ?? '?'}
+            size={36}
+          />
+        </View>
+        <View style={qStyles.answerContent}>
+          <Text style={[qStyles.answerUsername, { color: colors.text }]}>
+            {item.user?.username ?? 'Kullanici'}
+          </Text>
+          <Text style={[qStyles.answerText, { color: colors.text }]}>
+            {item.text}
+          </Text>
+          {item.venue && (
+            <TouchableOpacity
+              style={[qStyles.venuePill, { backgroundColor: colors.backgroundSecondary }]}
+              activeOpacity={0.7}
+              onPress={() => router.push(`/venue/${item.venue_id}`)}
+            >
+              <Ionicons name="location" size={12} color={QUESTION_COLOR} />
+              <Text style={[qStyles.venueText, { color: QUESTION_COLOR }]} numberOfLines={1}>
+                {item.venue.name}
+              </Text>
+              {item.venue.overall_rating != null && (
+                <>
+                  <Ionicons name="star" size={10} color="#F5A623" />
+                  <Text style={qStyles.venueRating}>{item.venue.overall_rating.toFixed(1)}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+          <Text style={[qStyles.answerTime, { color: colors.textTertiary }]}>
+            {getRelativeTime(item.created_at)}
+          </Text>
+        </View>
+        <View style={qStyles.upvoteBox}>
+          <TouchableOpacity activeOpacity={0.6}>
+            <Ionicons name="arrow-up-circle" size={28} color={QUESTION_COLOR} />
+          </TouchableOpacity>
+          <Text style={[qStyles.upvoteCount, { color: QUESTION_COLOR }]}>{item.upvotes ?? 0}</Text>
+        </View>
+      </View>
+    );
+
+    const renderQuestionHeader = () => (
+      <View>
+        {/* Question card */}
+        <View style={[qStyles.questionCard, { backgroundColor: colors.background }]}>
+          <View style={qStyles.questionHeader}>
+            <Avatar
+              uri={post.user?.avatar_url}
+              name={post.user?.full_name ?? post.user?.username ?? '?'}
+              size={40}
+            />
+            <View style={qStyles.questionHeaderText}>
+              <Text style={[qStyles.questionUsername, { color: colors.text }]}>
+                {post.user?.username ?? 'Kullanici'}
+              </Text>
+              <Text style={[qStyles.questionTime, { color: colors.textTertiary }]}>
+                {getRelativeTime(post.created_at)}
+              </Text>
+            </View>
+            <View style={qStyles.questionBadge}>
+              <Ionicons name="help-circle" size={12} color="#FFFFFF" />
+              <Text style={qStyles.questionBadgeText}>Soru</Text>
+            </View>
+          </View>
+          <Text style={[qStyles.questionText, { color: colors.text }]}>
+            {post.caption}
+          </Text>
+        </View>
+
+        {/* Answers header */}
+        <View style={[qStyles.answersHeader, { borderBottomColor: colors.borderLight }]}>
+          <Ionicons name="chatbubbles" size={18} color={QUESTION_COLOR} />
+          <Text style={[qStyles.answersTitle, { color: colors.text }]}>
+            {answers.length} Yanit
+          </Text>
+        </View>
+      </View>
+    );
+
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+        >
+          {/* Header bar */}
+          <View style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {/* Answers list */}
+          <FlatList
+            data={answers}
+            keyExtractor={(item) => item.id}
+            renderItem={renderAnswer}
+            ListHeaderComponent={renderQuestionHeader}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyComments}>
+                <Ionicons name="chatbubbles-outline" size={36} color={Colors.border} />
+                <Text style={[styles.emptyCommentsText, { color: colors.text }]}>Henuz yanit yok</Text>
+                <Text style={[styles.emptyCommentsSubtext, { color: colors.textSecondary }]}>Ilk yaniti sen ver!</Text>
+              </View>
+            }
+          />
+
+          {/* Answer input bar */}
+          <View style={[styles.commentBar, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
+            <Avatar
+              uri={user?.avatar_url}
+              name={user?.full_name ?? user?.username ?? '?'}
+              size={32}
+            />
+            <TextInput
+              ref={commentInputRef}
+              style={[styles.commentInput, { color: colors.text }]}
+              placeholder="Yanitini yaz..."
+              placeholderTextColor={colors.textTertiary}
+              value={commentText}
+              onChangeText={setCommentText}
+              selectionColor={QUESTION_COLOR}
+            />
+            <TouchableOpacity
+              onPress={handleSubmitComment}
+              disabled={!commentText.trim() || submitting}
+              activeOpacity={0.7}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color={QUESTION_COLOR} />
+              ) : (
+                <Text
+                  style={[
+                    styles.commentSendText,
+                    { color: QUESTION_COLOR },
+                    !commentText.trim() && styles.commentSendTextDisabled,
+                  ]}
+                >
+                  Gonder
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Regular post detail (existing code below) ──
   const images = post.images ?? [];
 
   const renderComment = ({ item }: { item: Comment }) => (
@@ -492,5 +668,125 @@ const styles = StyleSheet.create({
   },
   commentSendTextDisabled: {
     color: Colors.textTertiary,
+  },
+});
+
+// ── Question-specific styles ──
+const qStyles = StyleSheet.create({
+  headerTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+  },
+  questionCard: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  questionHeaderText: {
+    flex: 1,
+    gap: 2,
+  },
+  questionUsername: {
+    fontSize: 15,
+    fontFamily: FontFamily.headingBold,
+  },
+  questionTime: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+  },
+  questionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: QUESTION_COLOR,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  questionBadgeText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    color: '#FFFFFF',
+  },
+  questionText: {
+    fontSize: FontSize.xl,
+    fontFamily: FontFamily.headingBold,
+    lineHeight: 28,
+  },
+  answersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  answersTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+  },
+  answerItem: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    gap: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  answerLeft: {
+    paddingTop: 2,
+  },
+  answerContent: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  answerUsername: {
+    fontSize: 14,
+    fontFamily: FontFamily.headingBold,
+  },
+  answerText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.body,
+    lineHeight: 22,
+  },
+  venuePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 1,
+    borderRadius: BorderRadius.full,
+    marginTop: Spacing.xs,
+  },
+  venueText: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+    maxWidth: 180,
+  },
+  venueRating: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    color: '#F5A623',
+  },
+  answerTime: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+    marginTop: 2,
+  },
+  upvoteBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    minWidth: 36,
+  },
+  upvoteCount: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
   },
 });

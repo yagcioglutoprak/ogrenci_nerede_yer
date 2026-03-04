@@ -38,6 +38,10 @@ export interface Venue {
   // Editorial (OgrenciNeredeYer team review)
   editorial_rating?: number | null;   // 1-10 team rating
   editorial_note?: string | null;     // Team written note
+  // Source & Google Places integration
+  source?: 'google_places' | 'ony';   // default 'ony'
+  google_rating?: number;              // Google's rating (1-5)
+  google_place_id?: string;            // Google Places API ID
 }
 
 export interface SocialVideo {

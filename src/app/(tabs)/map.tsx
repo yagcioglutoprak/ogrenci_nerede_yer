@@ -32,6 +32,7 @@ import {
   FontSize,
   FontFamily,
 } from '../../lib/constants';
+import { MOCK_GOOGLE_PLACES_VENUES } from '../../lib/mockData';
 import type { Venue } from '../../types';
 
 // ── Clustering types ──
@@ -49,14 +50,28 @@ type ClusterItem =
 const CLUSTER_ZOOM_THRESHOLD = 0.012;
 
 function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
+  // Only cluster non-google_places venues
+  const onyVenues = venues.filter((v) => v.source !== 'google_places');
+  const googleVenues = venues.filter((v) => v.source === 'google_places');
+
+  const items: ClusterItem[] = [];
+
+  // Google Places venues are never clustered (they're tiny dots)
+  for (const v of googleVenues) {
+    items.push({ type: 'venue' as const, venue: v });
+  }
+
   if (region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
-    return venues.map((v) => ({ type: 'venue' as const, venue: v }));
+    for (const v of onyVenues) {
+      items.push({ type: 'venue' as const, venue: v });
+    }
+    return items;
   }
 
   const cellSize = region.latitudeDelta / 4;
   const buckets = new Map<string, Venue[]>();
 
-  for (const v of venues) {
+  for (const v of onyVenues) {
     const cellX = Math.floor(v.latitude / cellSize);
     const cellY = Math.floor(v.longitude / cellSize);
     const key = `${cellX}_${cellY}`;
@@ -68,7 +83,6 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
     }
   }
 
-  const items: ClusterItem[] = [];
   for (const [key, group] of buckets) {
     if (group.length === 1) {
       items.push({ type: 'venue', venue: group[0] });
@@ -84,24 +98,13 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
   return items;
 }
 
-// iOS 26 Liquid Glass — tier sistemi
-type MarkerTier = 'editorial' | 'efsane' | 'popular' | 'new_reviewed' | 'unreviewed';
+// 3-tier marker system
+type MarkerTier = 'google_places' | 'unreviewed' | 'reviewed';
 
 const getMarkerTier = (venue: Venue): MarkerTier => {
-  if (venue.editorial_rating != null || venue.is_verified) return 'editorial';
-  if (venue.total_reviews >= 50) return 'efsane';
-  if (venue.total_reviews >= 5) return 'popular';
-  if (venue.total_reviews > 0) return 'new_reviewed';
+  if (venue.source === 'google_places') return 'google_places';
+  if (venue.total_reviews > 0) return 'reviewed';
   return 'unreviewed';
-};
-
-// Accent dot renkleri — kucuk renkli nokta ile tier gosterimi
-const TIER_DOT: Record<MarkerTier, string> = {
-  editorial: Colors.primary,
-  efsane: '#FFB800',
-  popular: Colors.accent,
-  new_reviewed: Colors.success,
-  unreviewed: Colors.textTertiary,
 };
 
 const getPriceSymbol = (priceRange: number) => '₺'.repeat(priceRange);
@@ -132,10 +135,16 @@ export default function MapScreen() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  // ── Merge ONY venues with Google Places ──
+  const allVenues = useMemo(
+    () => [...venues, ...MOCK_GOOGLE_PLACES_VENUES],
+    [venues],
+  );
+
   // ── Memoized clusters ──
   const clusteredItems = useMemo(
-    () => clusterVenues(venues, region),
-    [venues, region],
+    () => clusterVenues(allVenues, region),
+    [allVenues, region],
   );
 
   const handleClusterPress = useCallback(
@@ -299,8 +308,86 @@ export default function MapScreen() {
 
           const venue = item.venue;
           const tier = getMarkerTier(venue);
-          const dotColor = TIER_DOT[tier];
-          const isUnreviewed = tier === 'unreviewed';
+
+          // ── Tier 1: Google Places — tiny grey dot ──
+          if (tier === 'google_places') {
+            return (
+              <Marker
+                key={venue.id}
+                coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+                tracksViewChanges={false}
+              >
+                <View style={styles.greyDot} />
+
+                <Callout tooltip onPress={() => handleCalloutPress(venue)}>
+                  <View style={styles.calloutContainer}>
+                    <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
+                      <View style={styles.greyDotCallout}>
+                        <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
+                          {venue.name}
+                        </Text>
+                        {venue.google_rating != null && (
+                          <View style={styles.greyDotCalloutRating}>
+                            <Ionicons name="logo-google" size={12} color="#4285F4" />
+                            <Text style={[styles.greyDotCalloutScore, { color: colors.textSecondary }]}>
+                              {venue.google_rating.toFixed(1)}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.greyDotCalloutCta}>
+                          <Ionicons name="add-circle" size={14} color={Colors.primary} />
+                          <Text style={styles.greyDotCalloutCtaText}>Ilk degerlendirmeyi yap!</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          }
+
+          // ── Tier 2: Unreviewed ONY venue — muted pill ──
+          if (tier === 'unreviewed') {
+            return (
+              <Marker
+                key={venue.id}
+                coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+                onPress={() => handleMarkerPress(venue)}
+                tracksViewChanges={false}
+              >
+                <View style={styles.markerWrapper}>
+                  <View style={[styles.mutedPill, { backgroundColor: isDark ? 'rgba(40,40,40,0.75)' : 'rgba(245,245,245,0.85)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                    <Text style={[styles.mutedPillText, { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1}>
+                      {venue.name}
+                    </Text>
+                  </View>
+                  <View style={[styles.mutedStem, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
+                  <View style={[styles.mutedAnchor, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)', borderColor: isDark ? 'rgba(60,60,60,0.9)' : 'rgba(255,255,255,0.9)' }]} />
+                </View>
+
+                <Callout tooltip onPress={() => handleCalloutPress(venue)}>
+                  <View style={styles.calloutContainer}>
+                    <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
+                      <View style={styles.greyDotCallout}>
+                        <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
+                          {venue.name}
+                        </Text>
+                        <Text style={[styles.mutedCalloutAddr, { color: colors.textTertiary }]} numberOfLines={1}>
+                          {venue.address}
+                        </Text>
+                        <View style={styles.greyDotCalloutCta}>
+                          <Ionicons name="star-outline" size={14} color={Colors.primary} />
+                          <Text style={styles.greyDotCalloutCtaText}>Degerlendir</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          }
+
+          // ── Tier 3: Reviewed ONY venue — full liquid glass card ──
           const hasEditorial = venue.editorial_rating != null;
           return (
           <Marker
@@ -313,44 +400,40 @@ export default function MapScreen() {
             tracksViewChanges={false}
           >
             <View style={styles.markerWrapper}>
-              {/* Liquid Glass kart */}
+              {/* Liquid Glass card */}
               <View style={[styles.markerGlass, { backgroundColor: isDark ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.82)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
                 <View style={styles.markerGlassInner}>
-                  {/* Ust satir: logo/dot + isim */}
+                  {/* Top row: dot + name */}
                   <View style={styles.markerHeader}>
                     {hasEditorial ? (
                       <Image source={require('../../../assets/logo.png')} style={styles.markerLogo} resizeMode="contain" />
                     ) : (
-                      <View style={[styles.markerDot, { backgroundColor: dotColor }]} />
+                      <View style={[styles.markerDot, { backgroundColor: Colors.primary }]} />
                     )}
                     <Text style={[styles.markerName, { color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)' }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                   </View>
-                  {/* Alt satir: puan + fiyat + editorial score */}
-                  {!isUnreviewed ? (
-                    <View style={styles.markerMeta}>
-                      <Text style={[styles.markerScore, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }]}>
-                        {venue.overall_rating.toFixed(1)}
-                      </Text>
-                      <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-                      <Text style={[styles.markerPrice, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }]}>
-                        {getPriceSymbol(venue.price_range)}
-                      </Text>
-                      {hasEditorial && (
-                        <>
-                          <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-                          <Image source={require('../../../assets/logo.png')} style={styles.markerMetaLogo} resizeMode="contain" />
-                          <Text style={styles.markerOnyScore}>{venue.editorial_rating}</Text>
-                        </>
-                      )}
-                    </View>
-                  ) : (
-                    <Text style={[styles.markerNewLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)' }]}>Yeni eklendi</Text>
-                  )}
+                  {/* Bottom row: rating + price + editorial */}
+                  <View style={styles.markerMeta}>
+                    <Text style={[styles.markerScore, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }]}>
+                      {venue.overall_rating.toFixed(1)}
+                    </Text>
+                    <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+                    <Text style={[styles.markerPrice, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }]}>
+                      {getPriceSymbol(venue.price_range)}
+                    </Text>
+                    {hasEditorial && (
+                      <>
+                        <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
+                        <Image source={require('../../../assets/logo.png')} style={styles.markerMetaLogo} resizeMode="contain" />
+                        <Text style={styles.markerOnyScore}>{venue.editorial_rating}</Text>
+                      </>
+                    )}
+                  </View>
                 </View>
               </View>
-              {/* Cam ok */}
+              {/* Stem */}
               <View style={[styles.markerStem, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
               <View style={[styles.markerAnchor, { backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)', borderColor: isDark ? 'rgba(60,60,60,0.9)' : 'rgba(255,255,255,0.9)' }]} />
             </View>
@@ -491,7 +574,7 @@ export default function MapScreen() {
           <Ionicons name="alert-circle" size={16} color={Colors.error} />
           <Text style={[styles.errorBannerText, { color: colors.text }]}>{error}</Text>
           <TouchableOpacity onPress={clearError}>
-            <Ionicons name="close" size={18} color={Colors.textSecondary} />
+            <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </GlassView>
       )}
@@ -840,14 +923,78 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginLeft: 1,
   },
-  markerNewLabel: {
+  // Tier 1: Grey dot (Google Places)
+  greyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#9CA3AF',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  greyDotCallout: {
+    padding: Spacing.md,
+    gap: Spacing.xs,
+    minWidth: 180,
+  },
+  greyDotCalloutName: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+  },
+  greyDotCalloutRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  greyDotCalloutScore: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+  greyDotCalloutCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  greyDotCalloutCtaText: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.primary,
+  },
+
+  // Tier 2: Muted pill (unreviewed ONY venue)
+  mutedPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 0.5,
+    maxWidth: 120,
+  },
+  mutedPillText: {
     fontSize: 10,
     fontWeight: '500',
-    color: 'rgba(0,0,0,0.35)',
-    marginTop: 2,
-    paddingLeft: 12,
     letterSpacing: -0.2,
   },
+  mutedStem: {
+    width: 1,
+    height: 4,
+  },
+  mutedAnchor: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    borderWidth: 1,
+  },
+  mutedCalloutAddr: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+  },
+
   markerStem: {
     width: 1.5,
     height: 6,
