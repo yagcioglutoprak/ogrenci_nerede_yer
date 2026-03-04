@@ -28,6 +28,8 @@ interface FeedState {
   fetchAnswers: (postId: string) => Promise<RecommendationAnswer[]>;
   submitAnswer: (postId: string, userId: string, text: string, venueId?: string) => Promise<RecommendationAnswer | null>;
   upvoteAnswer: (answerId: string, userId: string) => Promise<boolean | null>;
+  toggleBookmark: (postId: string, userId: string) => Promise<boolean | null>;
+  checkBookmark: (postId: string, userId: string) => Promise<boolean>;
   refreshFeed: () => Promise<void>;
   setCategory: (category: FeedCategory) => void;
   clearError: () => void;
@@ -476,6 +478,41 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       }
     } catch {
       return null;
+    }
+  },
+
+  toggleBookmark: async (postId: string, userId: string) => {
+    try {
+      const { data: existing } = await supabase
+        .from('bookmarks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('post_id', postId)
+        .single();
+
+      if (existing) {
+        await supabase.from('bookmarks').delete().eq('user_id', userId).eq('post_id', postId);
+        return false;
+      } else {
+        await supabase.from('bookmarks').insert({ user_id: userId, post_id: postId });
+        return true;
+      }
+    } catch {
+      return null;
+    }
+  },
+
+  checkBookmark: async (postId: string, userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('bookmarks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('post_id', postId)
+        .single();
+      return !!data;
+    } catch {
+      return false;
     }
   },
 

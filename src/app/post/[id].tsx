@@ -61,6 +61,7 @@ export default function PostDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const commentInputRef = useRef<TextInput>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
   const [answers, setAnswers] = useState<RecommendationAnswer[]>([]);
   const [upvotedAnswers, setUpvotedAnswers] = useState<Set<string>>(new Set());
 
@@ -70,6 +71,12 @@ export default function PostDetailScreen() {
       fetchComments(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (post && user) {
+      useFeedStore.getState().checkBookmark(post.id, user.id).then(setIsBookmarked);
+    }
+  }, [post, user]);
 
   useEffect(() => {
     if (post?.post_type === 'question') {
@@ -392,8 +399,16 @@ export default function PostDetailScreen() {
             <Ionicons name="share-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.actionButton} activeOpacity={0.5}>
-          <Ionicons name="bookmark-outline" size={24} color={colors.text} />
+        <TouchableOpacity
+          style={styles.actionButton}
+          activeOpacity={0.5}
+          onPress={async () => {
+            if (!user) { router.push('/auth/login'); return; }
+            const result = await useFeedStore.getState().toggleBookmark(post.id, user.id);
+            if (result !== null) setIsBookmarked(result);
+          }}
+        >
+          <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 

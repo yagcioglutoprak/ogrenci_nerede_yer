@@ -86,6 +86,8 @@ export default function RootLayout() {
         name="auth/register"
         options={{ presentation: 'modal' }}
       />
+      <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="profile/edit" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </>
   );

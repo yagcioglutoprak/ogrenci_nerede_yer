@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEventStore } from '../../stores/eventStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -30,7 +31,9 @@ export default function EventForm({ user }: EventFormProps) {
   const [description, setDescription] = useState('');
   const [venueId, setVenueId] = useState<string | null>(null);
   const [venueSearchQuery, setVenueSearchQuery] = useState('');
-  const [dateTime, setDateTime] = useState('');
+  const [eventDate, setEventDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [maxAttendees, setMaxAttendees] = useState('10');
   const [isPublic, setIsPublic] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +49,9 @@ export default function EventForm({ user }: EventFormProps) {
     setDescription('');
     setVenueId(null);
     setVenueSearchQuery('');
-    setDateTime('');
+    setEventDate(new Date());
+    setShowDatePicker(false);
+    setShowTimePicker(false);
     setMaxAttendees('10');
     setIsPublic(true);
   };
@@ -63,10 +68,6 @@ export default function EventForm({ user }: EventFormProps) {
       Alert.alert('Hata', 'Bulusma basligi zorunludur.');
       return;
     }
-    if (!dateTime.trim()) {
-      Alert.alert('Hata', 'Tarih ve saat zorunludur.');
-      return;
-    }
 
     setSubmitting(true);
     const { error } = await createEvent({
@@ -77,7 +78,7 @@ export default function EventForm({ user }: EventFormProps) {
       location_name: selectedVenue?.name || undefined,
       latitude: selectedVenue?.latitude || undefined,
       longitude: selectedVenue?.longitude || undefined,
-      event_date: dateTime.trim(),
+      event_date: eventDate.toISOString(),
       max_attendees: parseInt(maxAttendees, 10) || 10,
       is_public: isPublic,
     });
@@ -194,17 +195,41 @@ export default function EventForm({ user }: EventFormProps) {
       {/* Date & Time */}
       <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarih ve Saat</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+          onPress={() => setShowDatePicker(true)}
+        >
           <Ionicons name="calendar-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-          <TextInput
-            style={[styles.textInput, { color: colors.text }]}
-            placeholder="2026-03-10 20:00"
-            placeholderTextColor={colors.textTertiary}
-            value={dateTime}
-            onChangeText={setDateTime}
-            selectionColor={colors.primary}
+          <Text style={[styles.textInput, { color: colors.text }]}>
+            {eventDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {' '}
+            {eventDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={eventDate}
+            mode="date"
+            minimumDate={new Date()}
+            onChange={(_, date) => {
+              setShowDatePicker(false);
+              if (date) {
+                setEventDate(date);
+                setShowTimePicker(true);
+              }
+            }}
           />
-        </View>
+        )}
+        {showTimePicker && (
+          <DateTimePicker
+            value={eventDate}
+            mode="time"
+            onChange={(_, date) => {
+              setShowTimePicker(false);
+              if (date) setEventDate(date);
+            }}
+          />
+        )}
       </View>
 
       {/* Max Attendees */}

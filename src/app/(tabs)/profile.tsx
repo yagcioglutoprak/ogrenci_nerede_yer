@@ -348,7 +348,7 @@ export default function ProfileScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
         <TouchableOpacity
           style={[styles.settingsBtn, { backgroundColor: colors.backgroundSecondary }]}
-          onPress={handleSignOut}
+          onPress={() => router.push('/settings')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="settings-outline" size={22} color={colors.textTertiary} />
@@ -579,6 +579,7 @@ export default function ProfileScreen() {
                     >
                       <TouchableOpacity
                         style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
+                        onPress={() => router.push(`/post/${post.id}`)}
                         activeOpacity={0.85}
                       >
                         <View style={styles.gridImageWrapper}>
