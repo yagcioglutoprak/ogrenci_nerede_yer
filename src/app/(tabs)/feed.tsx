@@ -145,13 +145,38 @@ export default function FeedScreen() {
 
   const handleJoinEvent = useCallback(
     (eventId: string) => {
-      if (user) {
-        joinEvent(eventId, user.id);
-      } else {
+      if (!user) {
         router.push('/auth/login');
+        return;
       }
+      // Optimistic update: add user to attendees locally
+      const updatedPosts = posts.map((p) => {
+        if (p.event && p.event.id === eventId) {
+          const alreadyJoined = p.event.attendees?.some((a) => a.user_id === user.id);
+          if (alreadyJoined) return p;
+          const newAttendee = {
+            event_id: eventId,
+            user_id: user.id,
+            status: 'confirmed' as const,
+            joined_at: new Date().toISOString(),
+            user,
+          };
+          return {
+            ...p,
+            event: {
+              ...p.event,
+              attendees: [...(p.event.attendees || []), newAttendee],
+              attendee_count: (p.event.attendee_count ?? 0) + 1,
+            },
+          };
+        }
+        return p;
+      });
+      useFeedStore.setState({ posts: updatedPosts });
+      // Also fire the store action (fire-and-forget)
+      joinEvent(eventId, user.id);
     },
-    [user],
+    [user, posts],
   );
 
   const handleAnswer = useCallback((postId: string) => {
@@ -195,9 +220,11 @@ export default function FeedScreen() {
               <EventCard
                 post={item}
                 event={item.event}
+                currentUserId={user?.id}
                 onJoin={handleJoinEvent}
                 onUserPress={handleUserPress}
                 onVenuePress={handleVenuePress}
+                onPress={() => router.push(`/event/${item.event!.id}`)}
               />
             );
           } else {

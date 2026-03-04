@@ -3,7 +3,7 @@ import { View, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
+import { useFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
@@ -19,6 +19,9 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,
   });
@@ -66,6 +69,10 @@ export default function RootLayout() {
       <Stack.Screen
         name="post/[id]"
         options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="event/[id]"
+        options={{ animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="user/[id]"

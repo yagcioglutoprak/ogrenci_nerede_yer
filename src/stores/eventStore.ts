@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Event, EventAttendee, EventMessage } from '../types';
-import { MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_USERS, MOCK_VENUES } from '../lib/mockData';
+import { MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_EVENT_MESSAGES, MOCK_USERS, MOCK_VENUES } from '../lib/mockData';
 
 /**
  * Build fully-joined mock events (with creator, venue, attendees data attached).
@@ -393,14 +393,26 @@ export const useEventStore = create<EventState>((set, get) => ({
         .eq('event_id', eventId)
         .order('created_at', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         set({ messages: data as EventMessage[] });
       } else {
-        // Mesajlar icin mock data yok, bos dizi set et
-        set({ messages: [] });
+        // Fallback to mock data
+        const mockMessages = MOCK_EVENT_MESSAGES
+          .filter((m) => m.event_id === eventId)
+          .map((m) => ({
+            ...m,
+            user: MOCK_USERS.find((u) => u.id === m.user_id),
+          }));
+        set({ messages: mockMessages });
       }
     } catch {
-      set({ messages: [] });
+      const mockMessages = MOCK_EVENT_MESSAGES
+        .filter((m) => m.event_id === eventId)
+        .map((m) => ({
+          ...m,
+          user: MOCK_USERS.find((u) => u.id === m.user_id),
+        }));
+      set({ messages: mockMessages });
     }
   },
 

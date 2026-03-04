@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,21 +10,36 @@ import {
   Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Pressable,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Colors, Spacing, FontSize, FontFamily, BorderRadius } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
 import GlassView from '../ui/GlassView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const IMAGE_HEIGHT = SCREEN_WIDTH;
+const CARD_MARGIN = Spacing.lg;
+const IMAGE_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
+const IMAGE_HEIGHT = IMAGE_WIDTH * 0.75; // 4:3 ratio instead of 1:1
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PostCardProps {
   post: Post;
   onLike?: (postId: string) => void;
   onComment?: (postId: string) => void;
+  onShare?: (postId: string) => void;
   onBookmark?: (postId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onUserPress?: (userId: string) => void;
@@ -34,6 +49,7 @@ export default function PostCard({
   post,
   onLike,
   onComment,
+  onShare,
   onBookmark,
   onVenuePress,
   onUserPress,
@@ -42,19 +58,56 @@ export default function PostCard({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const flatListRef = useRef<FlatList<PostImage>>(null);
 
+  // Like button bounce animation
+  const likeScale = useSharedValue(1);
+  const likeAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
+  // Bookmark animation
+  const bookmarkScale = useSharedValue(1);
+  const bookmarkAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bookmarkScale.value }],
+  }));
+
   const images = post.images ?? [];
   const hasMultipleImages = images.length > 1;
   const timeSince = getRelativeTime(post.created_at);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
+    const index = Math.round(offsetX / IMAGE_WIDTH);
     setActiveImageIndex(index);
   };
 
+  const handleLike = useCallback(() => {
+    likeScale.value = withSequence(
+      withSpring(1.35, { damping: 4, stiffness: 400 }),
+      withSpring(0.85, { damping: 4, stiffness: 400 }),
+      withSpring(1, { damping: 8, stiffness: 300 }),
+    );
+    onLike?.(post.id);
+  }, [post.id, onLike]);
+
+  const handleBookmark = useCallback(() => {
+    bookmarkScale.value = withSequence(
+      withSpring(1.3, { damping: 4, stiffness: 400 }),
+      withSpring(1, { damping: 8, stiffness: 300 }),
+    );
+    onBookmark?.(post.id);
+  }, [post.id, onBookmark]);
+
+  const handleShare = useCallback(async () => {
+    const venueName = post.venue?.name ? ` @ ${post.venue.name}` : '';
+    const message = `${post.caption || ''}${venueName}\n\nOgrenci Nerede Yer? uygulamasinda kesfet!`;
+    try {
+      await Share.share({ message: message.trim() });
+    } catch {}
+  }, [post]);
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
-      {/* Header: Avatar + Username + Venue + Time */}
+    <View style={[styles.card, { backgroundColor: colors.background }]}>
+      {/* Header: Avatar + Username + Time */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => post.user && onUserPress?.(post.user_id)}
@@ -63,148 +116,181 @@ export default function PostCard({
           <Avatar
             uri={post.user?.avatar_url}
             name={post.user?.full_name ?? post.user?.username ?? '?'}
-            size={36}
+            size={38}
           />
         </TouchableOpacity>
 
         <View style={styles.headerText}>
-          <View style={styles.headerNameRow}>
-            <TouchableOpacity
-              onPress={() => post.user && onUserPress?.(post.user_id)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
-                {post.user?.username ?? 'Kullanici'}
-              </Text>
-            </TouchableOpacity>
-            {post.venue && (
-              <TouchableOpacity
-                onPress={() => post.venue && onVenuePress?.(post.venue.id)}
-                activeOpacity={0.6}
-                style={styles.venueRow}
-              >
-                <Ionicons name="location" size={11} color={Colors.primary} />
-                <Text style={styles.venueLink} numberOfLines={1}>
-                  {post.venue.name}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        <Text style={[styles.time, { color: colors.textTertiary }]}>{timeSince}</Text>
-      </View>
-
-      {/* Image Carousel */}
-      {images.length > 0 && (
-        <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
-          <FlatList
-            ref={flatListRef}
-            data={images}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            renderItem={({ item }) => (
-              <Image
-                source={{ uri: item.image_url }}
-                style={styles.postImage}
-                resizeMode="cover"
-              />
-            )}
-          />
-
-          {/* Pagination dots */}
-          {hasMultipleImages && (
-            <View style={styles.pagination}>
-              {images.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.dot,
-                    index === activeImageIndex && styles.dotActive,
-                  ]}
-                />
-              ))}
-            </View>
-          )}
-
-          {/* Image counter */}
-          {hasMultipleImages && (
-            <GlassView style={styles.imageCounter} fallbackColor="rgba(0, 0, 0, 0.55)">
-              <Text style={styles.imageCounterText}>
-                {activeImageIndex + 1}/{images.length}
-              </Text>
-            </GlassView>
-          )}
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      <View style={styles.actions}>
-        <View style={styles.actionsLeft}>
           <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onLike?.(post.id)}
-            activeOpacity={0.5}
+            onPress={() => post.user && onUserPress?.(post.user_id)}
+            activeOpacity={0.7}
           >
-            <Ionicons
-              name={post.is_liked ? 'heart' : 'heart-outline'}
-              size={26}
-              color={post.is_liked ? Colors.primary : colors.text}
-            />
+            <Text style={[styles.username, { color: colors.text }]} numberOfLines={1}>
+              {post.user?.username ?? 'Kullanici'}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onComment?.(post.id)}
-            activeOpacity={0.5}
-          >
-            <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
-          </TouchableOpacity>
+          <Text style={[styles.time, { color: colors.textTertiary }]}>{timeSince}</Text>
         </View>
 
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onBookmark?.(post.id)}
-          activeOpacity={0.5}
+          style={[styles.moreButton, { backgroundColor: colors.backgroundSecondary }]}
+          activeOpacity={0.6}
         >
-          <Ionicons name="bookmark-outline" size={24} color={colors.text} />
+          <Ionicons name="ellipsis-horizontal" size={16} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
 
-      {/* Likes Count */}
-      {(post.likes_count ?? 0) > 0 && (
-        <Text style={[styles.likesCount, { color: colors.text }]}>
-          {post.likes_count} begeni
-        </Text>
+      {/* Image Carousel — rounded, with margins */}
+      {images.length > 0 && (
+        <View style={styles.imageWrapper}>
+          <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
+            <FlatList
+              ref={flatListRef}
+              data={images}
+              keyExtractor={(item) => item.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              snapToInterval={IMAGE_WIDTH}
+              decelerationRate="fast"
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item.image_url }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              )}
+            />
+
+            {/* Venue tag — glass pill overlaid on image bottom */}
+            {post.venue && (
+              <TouchableOpacity
+                onPress={() => post.venue && onVenuePress?.(post.venue.id)}
+                activeOpacity={0.8}
+                style={styles.venuePillWrapper}
+              >
+                {Platform.OS === 'ios' ? (
+                  <GlassView style={styles.venuePillGlass} fallbackColor="rgba(0,0,0,0.55)">
+                    <Ionicons name="location" size={12} color="#FFFFFF" />
+                    <Text style={styles.venuePillText} numberOfLines={1}>
+                      {post.venue.name}
+                    </Text>
+                  </GlassView>
+                ) : (
+                  <View style={styles.venuePillAndroid}>
+                    <Ionicons name="location" size={12} color="#FFFFFF" />
+                    <Text style={styles.venuePillText} numberOfLines={1}>
+                      {post.venue.name}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Pagination dots */}
+            {hasMultipleImages && (
+              <View style={styles.pagination}>
+                {images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      index === activeImageIndex && styles.dotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Image counter */}
+            {hasMultipleImages && (
+              <GlassView style={styles.imageCounter} fallbackColor="rgba(0, 0, 0, 0.55)">
+                <Text style={styles.imageCounterText}>
+                  {activeImageIndex + 1}/{images.length}
+                </Text>
+              </GlassView>
+            )}
+          </View>
+        </View>
       )}
 
-      {/* Caption */}
-      {post.caption ? (
-        <View style={styles.captionRow}>
+      {/* Compact Action Bar + Likes */}
+      <View style={styles.bottomSection}>
+        <View style={styles.actions}>
+          <View style={styles.actionsLeft}>
+            {/* Animated Like Button */}
+            <AnimatedPressable
+              onPress={handleLike}
+              style={[styles.actionButton, likeAnimStyle]}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={post.is_liked ? 'heart' : 'heart-outline'}
+                size={24}
+                color={post.is_liked ? Colors.primary : colors.text}
+              />
+            </AnimatedPressable>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => onComment?.(post.id)}
+              activeOpacity={0.5}
+              hitSlop={8}
+            >
+              <Ionicons name="chatbubble-outline" size={22} color={colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleShare}
+              activeOpacity={0.5}
+              hitSlop={8}
+            >
+              <Ionicons name="share-outline" size={22} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Animated Bookmark */}
+          <AnimatedPressable
+            onPress={handleBookmark}
+            style={[styles.actionButton, bookmarkAnimStyle]}
+            hitSlop={8}
+          >
+            <Ionicons name="bookmark-outline" size={22} color={colors.text} />
+          </AnimatedPressable>
+        </View>
+
+        {/* Likes Count */}
+        {(post.likes_count ?? 0) > 0 && (
+          <Text style={[styles.likesCount, { color: colors.text }]}>
+            {post.likes_count} begeni
+          </Text>
+        )}
+
+        {/* Caption */}
+        {post.caption ? (
           <Text style={[styles.caption, { color: colors.text }]} numberOfLines={3}>
             <Text style={styles.captionUsername}>
               {post.user?.username ?? 'Kullanici'}
             </Text>
             {'  '}{post.caption}
           </Text>
-        </View>
-      ) : null}
+        ) : null}
 
-      {/* Comments Count */}
-      {(post.comments_count ?? 0) > 0 && (
-        <TouchableOpacity
-          onPress={() => onComment?.(post.id)}
-          activeOpacity={0.6}
-          style={styles.commentsRow}
-        >
-          <Text style={[styles.commentsLink, { color: colors.textSecondary }]}>
-            Tum yorumlari gor ({post.comments_count})
-          </Text>
-        </TouchableOpacity>
-      )}
+        {/* Comments */}
+        {(post.comments_count ?? 0) > 0 && (
+          <TouchableOpacity
+            onPress={() => onComment?.(post.id)}
+            activeOpacity={0.6}
+          >
+            <Text style={[styles.commentsLink, { color: colors.textTertiary }]}>
+              Tum yorumlari gor ({post.comments_count})
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -228,56 +314,85 @@ function getRelativeTime(dateString: string): string {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    marginBottom: Spacing.sm,
+    paddingBottom: Spacing.xs,
   },
 
   // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: CARD_MARGIN,
     paddingVertical: Spacing.md,
     gap: Spacing.md,
   },
   headerText: {
     flex: 1,
-  },
-  headerNameRow: {
-    gap: 2,
+    gap: 1,
   },
   username: {
     fontSize: 14,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
     letterSpacing: -0.1,
-  },
-  venueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  venueLink: {
-    fontSize: FontSize.xs,
-    color: Colors.primary,
-    fontWeight: '600',
   },
   time: {
     fontSize: FontSize.xs,
-    color: Colors.textTertiary,
-    fontWeight: '400',
+    fontFamily: FontFamily.body,
+  },
+  moreButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  // Image Carousel
+  // Image — rounded corners, not edge-to-edge
+  imageWrapper: {
+    paddingHorizontal: CARD_MARGIN,
+  },
   imageSection: {
     position: 'relative',
-    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   postImage: {
-    width: SCREEN_WIDTH,
+    width: IMAGE_WIDTH,
     height: IMAGE_HEIGHT,
   },
+
+  // Venue glass pill overlay
+  venuePillWrapper: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    left: Spacing.md,
+    maxWidth: IMAGE_WIDTH * 0.6,
+  },
+  venuePillGlass: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 1,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+  },
+  venuePillAndroid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 1,
+    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  venuePillText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    color: '#FFFFFF',
+  },
+
+  // Pagination
   pagination: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,7 +431,14 @@ const styles = StyleSheet.create({
   imageCounterText: {
     color: Colors.textOnDark,
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.bodySemiBold,
+  },
+
+  // Bottom section
+  bottomSection: {
+    paddingHorizontal: CARD_MARGIN,
+    paddingTop: Spacing.md,
+    gap: Spacing.xs + 2,
   },
 
   // Actions
@@ -324,9 +446,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
   },
   actionsLeft: {
     flexDirection: 'row',
@@ -341,20 +460,13 @@ const styles = StyleSheet.create({
   likesCount: {
     fontSize: 14,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.xs,
     letterSpacing: -0.1,
   },
 
   // Caption
-  captionRow: {
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.xs,
-  },
   caption: {
     fontSize: 14,
-    color: Colors.text,
+    fontFamily: FontFamily.body,
     lineHeight: 20,
   },
   captionUsername: {
@@ -363,14 +475,9 @@ const styles = StyleSheet.create({
   },
 
   // Comments
-  commentsRow: {
-    paddingHorizontal: Spacing.lg,
-    marginTop: Spacing.xs,
-    paddingBottom: Spacing.lg,
-  },
   commentsLink: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: '400',
+    fontFamily: FontFamily.body,
+    paddingBottom: Spacing.xs,
   },
 });

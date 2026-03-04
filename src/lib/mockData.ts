@@ -16,6 +16,7 @@ import type {
   SocialVideo,
   Event,
   EventAttendee,
+  EventMessage,
   RecommendationAnswer,
 } from '../types';
 
@@ -1601,6 +1602,56 @@ export const MOCK_EVENT_ATTENDEES: EventAttendee[] = [
   { event_id: 'e-002', user_id: 'u-003', status: 'confirmed', joined_at: '2026-03-04T10:00:00Z' },
   { event_id: 'e-003', user_id: 'u-006', status: 'confirmed', joined_at: '2026-03-04T08:00:00Z' },
   { event_id: 'e-003', user_id: 'u-001', status: 'confirmed', joined_at: '2026-03-04T09:30:00Z' },
+];
+
+// ==========================================
+// MOCK EVENT MESSAGES
+// ==========================================
+export const MOCK_EVENT_MESSAGES: EventMessage[] = [
+  // e-001: Kadikoy Kebap Bulusmasi
+  {
+    id: 'em-001',
+    event_id: 'e-001',
+    user_id: 'u-001',
+    message: 'Merhaba! Cuma aksam saat 7de bulusuyoruz, herkes hazir mi?',
+    created_at: '2026-03-04T10:00:00Z',
+  },
+  {
+    id: 'em-002',
+    event_id: 'e-001',
+    user_id: 'u-002',
+    message: 'Ben hazirim! Kadikoy vapurunu yakalarsam tam zamaninda orda olurum',
+    created_at: '2026-03-04T10:15:00Z',
+  },
+  {
+    id: 'em-003',
+    event_id: 'e-001',
+    user_id: 'u-005',
+    message: 'Bende gelicem, adana kebap siparisi veriyorum simdilik 😄',
+    created_at: '2026-03-04T11:30:00Z',
+  },
+  {
+    id: 'em-004',
+    event_id: 'e-001',
+    user_id: 'u-001',
+    message: 'Super! Masayi 6 kisilik ayirtiyorum, baska gelmek isteyen varsa yazsin',
+    created_at: '2026-03-04T12:00:00Z',
+  },
+  // e-002: Ramen Deneme Gecesi
+  {
+    id: 'em-005',
+    event_id: 'e-002',
+    user_id: 'u-004',
+    message: 'Ramen mekani saat 8de aciliyor, tam zamaninda gidelim!',
+    created_at: '2026-03-04T14:00:00Z',
+  },
+  {
+    id: 'em-006',
+    event_id: 'e-002',
+    user_id: 'u-003',
+    message: 'Vejetaryen ramen secenegi var mi acaba?',
+    created_at: '2026-03-04T14:30:00Z',
+  },
 ];
 
 // ==========================================

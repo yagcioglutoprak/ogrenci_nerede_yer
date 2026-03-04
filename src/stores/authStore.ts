@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { User } from '../types';
+import { MOCK_USERS } from '../lib/mockData';
+
+// Dev mode: auto-login with mock user when no Supabase session
+const DEV_AUTO_LOGIN = __DEV__;
 
 interface AuthState {
   user: User | null;
@@ -35,6 +39,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
 
         set({ session, user: profile, initialized: true, error: null });
+      } else if (DEV_AUTO_LOGIN) {
+        // Dev: auto-login with first mock user
+        set({ session: { user: { id: MOCK_USERS[0].id } }, user: MOCK_USERS[0], initialized: true, error: null });
       } else {
         set({ session: null, user: null, initialized: true, error: null });
       }
@@ -48,15 +55,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             .eq('id', session.user.id)
             .single();
           set({ session, user: profile });
-        } else {
+        } else if (!DEV_AUTO_LOGIN) {
+          // Don't reset mock user in dev mode
           set({ session: null, user: null });
         }
       });
     } catch (err: any) {
-      set({
-        initialized: true,
-        error: err?.message || 'Oturum baslatilirken hata olustu',
-      });
+      if (DEV_AUTO_LOGIN) {
+        set({ session: { user: { id: MOCK_USERS[0].id } }, user: MOCK_USERS[0], initialized: true, error: null });
+      } else {
+        set({
+          initialized: true,
+          error: err?.message || 'Oturum baslatilirken hata olustu',
+        });
+      }
     }
   },
 

@@ -13,6 +13,7 @@ import {
   Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,6 +87,13 @@ export default function PostDetailScreen() {
     await addComment(post.id, user.id, commentText.trim());
     setCommentText('');
     setSubmitting(false);
+  };
+
+  const handleShare = async () => {
+    if (!post) return;
+    const venueName = post.venue?.name ? ` @ ${post.venue.name}` : '';
+    const message = `${post.caption || ''}${venueName}\n\nOgrenci Nerede Yer? uygulamasinda kesfet!`;
+    try { await Share.share({ message: message.trim() }); } catch {}
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -173,6 +181,9 @@ export default function PostDetailScreen() {
             activeOpacity={0.5}
           >
             <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleShare} activeOpacity={0.5}>
+            <Ionicons name="share-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.actionButton} activeOpacity={0.5}>

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -79,6 +80,14 @@ export default function VenueDetailScreen() {
     if (!venue) return;
     setIsFavorited((prev) => !prev);
     await toggleFavorite(venue.id, user.id);
+  };
+
+  const handleShareVenue = async () => {
+    if (!venue) return;
+    const message = `${venue.name}\n⭐ ${venue.overall_rating.toFixed(1)} · ${venue.address}\n\nOgrenci Nerede Yer? uygulamasinda kesfet!`;
+    try {
+      await Share.share({ message });
+    } catch {}
   };
 
   const handleToggleRatingForm = () => {
@@ -252,7 +261,7 @@ export default function VenueDetailScreen() {
             style={styles.heroGradient}
           />
 
-          {/* Top bar: Back + Favorite */}
+          {/* Top bar: Back + Share + Favorite */}
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
             <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
               <TouchableOpacity
@@ -263,19 +272,30 @@ export default function VenueDetailScreen() {
                 <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
               </TouchableOpacity>
             </GlassView>
-            <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
-              <TouchableOpacity
-                style={styles.heroCircleButtonInner}
-                onPress={handleFavorite}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isFavorited ? 'heart' : 'heart-outline'}
-                  size={22}
-                  color={isFavorited ? Colors.primary : '#FFFFFF'}
-                />
-              </TouchableOpacity>
-            </GlassView>
+            <View style={styles.heroTopBarRight}>
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+                <TouchableOpacity
+                  style={styles.heroCircleButtonInner}
+                  onPress={handleShareVenue}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+              </GlassView>
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+                <TouchableOpacity
+                  style={styles.heroCircleButtonInner}
+                  onPress={handleFavorite}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={isFavorited ? 'heart' : 'heart-outline'}
+                    size={22}
+                    color={isFavorited ? Colors.primary : '#FFFFFF'}
+                  />
+                </TouchableOpacity>
+              </GlassView>
+            </View>
           </SafeAreaView>
 
           {/* Hero bottom text */}
@@ -730,6 +750,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,
+  },
+  heroTopBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   heroCircleButton: {
     width: 40,

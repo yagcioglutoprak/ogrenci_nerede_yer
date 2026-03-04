@@ -220,6 +220,9 @@ export const FontSize = {
 export const FontFamily = {
   heading: 'Nunito_800ExtraBold',
   headingBold: 'Nunito_700Bold',
+  bodySemiBold: 'Nunito_600SemiBold',
+  bodyMedium: 'Nunito_500Medium',
+  body: 'Nunito_400Regular',
 } as const;
 
 // Supabase config
@@ -248,4 +251,31 @@ export const VENUE_TAGS = [
   { key: 'tatli', label: 'Tatlı', icon: 'ice-cream' },
   { key: 'kofte', label: 'Köfte', icon: 'restaurant' },
   { key: 'pide', label: 'Pide/Lahmacun', icon: 'pizza' },
+] as const;
+
+// ==========================================
+// Social Feature Tokens
+// Post types, feed categories, and districts
+// ==========================================
+
+export const POST_TYPES = {
+  discovery: { label: 'Kesif', icon: 'camera-outline', color: '#E23744' },
+  meetup: { label: 'Bulusma', icon: 'people-outline', color: '#06B6D4' },
+  question: { label: 'Soru', icon: 'help-circle-outline', color: '#8B5CF6' },
+  moment: { label: 'Anlik', icon: 'flash-outline', color: '#F97316' },
+} as const;
+
+export const FEED_CATEGORIES = [
+  { key: 'all', label: 'Tumu', icon: 'apps-outline' },
+  { key: 'meetups', label: 'Bulusmalar', icon: 'people-outline' },
+  { key: 'moments', label: 'Anlik', icon: 'flash-outline' },
+  { key: 'questions', label: 'Oneriler', icon: 'help-circle-outline' },
+  { key: 'top', label: 'Populer', icon: 'trending-up-outline' },
+  { key: 'new', label: 'Yeni', icon: 'time-outline' },
+] as const;
+
+export const ISTANBUL_SEMTLER = [
+  'Kadikoy', 'Besiktas', 'Taksim', 'Sisli', 'Uskudar',
+  'Bakirkoy', 'Fatih', 'Beyoglu', 'Maltepe', 'Atasehir',
+  'Sariyer', 'Kartal', 'Pendik', 'Umraniye', 'Beylikduzu',
 ] as const;
