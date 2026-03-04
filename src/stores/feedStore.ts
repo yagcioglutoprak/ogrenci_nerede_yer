@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { uploadImages } from '../lib/imageUpload';
 import type { Post, Comment, FeedCategory } from '../types';
-import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS } from '../lib/mockData';
+import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES } from '../lib/mockData';
 
 const PAGE_SIZE = 20;
 
@@ -20,7 +21,7 @@ interface FeedState {
   fetchMorePosts: () => Promise<void>;
   fetchPostById: (id: string) => Promise<void>;
   fetchComments: (postId: string) => Promise<void>;
-  createPost: (post: { user_id: string; venue_id?: string; caption: string; image_urls: string[] }) => Promise<{ error: string | null }>;
+  createPost: (post: { user_id: string; venue_id?: string; caption: string; image_urls: string[]; post_type?: string; expires_at?: string }) => Promise<{ error: string | null }>;
   toggleLike: (postId: string, userId: string) => Promise<void>;
   addComment: (postId: string, userId: string, text: string) => Promise<{ error: string | null }>;
   refreshFeed: () => Promise<void>;
@@ -40,6 +41,27 @@ function buildMockPostsWithJoins(): Post[] {
     const mockLikes = Math.floor(Math.random() * 20);
     const mockComments = MOCK_COMMENTS.filter((c) => c.post_id === post.id).length;
 
+    // Join event data for meetup posts
+    let event = undefined;
+    if (post.post_type === 'meetup') {
+      const mockEvent = MOCK_EVENTS.find((e) => e.post_id === post.id);
+      if (mockEvent) {
+        const attendees = MOCK_EVENT_ATTENDEES
+          .filter((a) => a.event_id === mockEvent.id)
+          .map((a) => ({
+            ...a,
+            user: MOCK_USERS.find((u) => u.id === a.user_id),
+          }));
+        event = {
+          ...mockEvent,
+          creator: MOCK_USERS.find((u) => u.id === mockEvent.creator_id),
+          venue: mockEvent.venue_id ? MOCK_VENUES.find((v) => v.id === mockEvent.venue_id) : undefined,
+          attendees,
+          attendee_count: attendees.filter((a) => a.status === 'confirmed').length,
+        };
+      }
+    }
+
     return {
       ...post,
       user: MOCK_USERS.find((u) => u.id === post.user_id),
@@ -47,6 +69,7 @@ function buildMockPostsWithJoins(): Post[] {
       images: MOCK_POST_IMAGES.filter((img) => img.post_id === post.id).sort((a, b) => a.order - b.order),
       likes_count: mockLikes,
       comments_count: mockComments,
+      event,
     };
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
@@ -55,21 +78,41 @@ function buildMockPostsWithJoins(): Post[] {
  * Apply category sorting/filtering to mock posts client-side.
  */
 function applyCategoryToMockPosts(posts: Post[], category: FeedCategory): Post[] {
-  const sorted = [...posts];
+  let filtered = [...posts];
+  const now = new Date().getTime();
+
   switch (category) {
+    case 'meetups':
+      filtered = filtered.filter((p) => p.post_type === 'meetup');
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      break;
+    case 'questions':
+      filtered = filtered.filter((p) => p.post_type === 'question');
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      break;
+    case 'moments':
+      filtered = filtered.filter((p) => p.post_type === 'moment' && (!p.expires_at || new Date(p.expires_at).getTime() > now));
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      break;
     case 'top':
-      sorted.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
+      filtered.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
       break;
     case 'new':
-      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
-    case 'nearby':
     case 'all':
     default:
-      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Exclude expired moments from "all" feed
+      filtered = filtered.filter((p) => {
+        if (p.post_type === 'moment' && p.expires_at) {
+          return new Date(p.expires_at).getTime() > now;
+        }
+        return true;
+      });
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
   }
-  return sorted;
+  return filtered;
 }
 
 /**
@@ -98,17 +141,28 @@ function buildCategoryQuery(category: FeedCategory) {
       images:post_images(*)
     `);
 
+  const now = new Date().toISOString();
+
   switch (category) {
+    case 'meetups':
+      query = query.eq('post_type', 'meetup').order('created_at', { ascending: false });
+      break;
+    case 'questions':
+      query = query.eq('post_type', 'question').order('created_at', { ascending: false });
+      break;
+    case 'moments':
+      query = query.eq('post_type', 'moment').gt('expires_at', now).order('created_at', { ascending: false });
+      break;
     case 'top':
       query = query.order('likes_count', { ascending: false });
       break;
     case 'new':
       query = query.order('created_at', { ascending: false });
       break;
-    case 'nearby':
     case 'all':
     default:
-      query = query.order('created_at', { ascending: false });
+      // Exclude expired moments
+      query = query.or(`expires_at.is.null,expires_at.gt.${now}`).order('created_at', { ascending: false });
       break;
   }
 
@@ -238,18 +292,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
   },
 
-  createPost: async ({ user_id, venue_id, caption, image_urls }) => {
+  createPost: async ({ user_id, venue_id, caption, image_urls, post_type, expires_at }) => {
+    // Upload images to Supabase Storage
+    const uploadedUrls = await uploadImages(image_urls, 'posts');
+
     const { data: post, error } = await supabase
       .from('posts')
-      .insert({ user_id, venue_id: venue_id || null, caption })
+      .insert({
+        user_id,
+        venue_id: venue_id || null,
+        caption,
+        post_type: post_type || 'discovery',
+        expires_at: expires_at || null,
+      })
       .select()
       .single();
 
     if (error) return { error: error.message };
 
     // Fotograflari ekle
-    if (post && image_urls.length > 0) {
-      const images = image_urls.map((url, index) => ({
+    if (post && uploadedUrls.length > 0) {
+      const images = uploadedUrls.map((url, index) => ({
         post_id: post.id,
         image_url: url,
         order: index,
