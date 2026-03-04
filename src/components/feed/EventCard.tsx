@@ -16,7 +16,7 @@ interface EventCardProps {
   event: Event;
   currentUserId?: string;
   onJoin: (eventId: string) => void;
-  onLeave: (eventId: string) => void;
+  onLeave?: (eventId: string) => void;
   onUserPress: (userId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onPress?: () => void;
@@ -80,7 +80,7 @@ export default function EventCard({
 
   const handleJoinPress = useCallback(() => {
     if (hasJoined) {
-      onLeave(event.id);
+      onLeave?.(event.id);
     } else {
       onJoin(event.id);
     }
