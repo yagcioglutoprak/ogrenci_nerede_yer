@@ -15,10 +15,20 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import VenueForm from '../../components/forms/VenueForm';
 import PostForm from '../../components/forms/PostForm';
-import GlassView from '../../components/ui/GlassView';
+import EventForm from '../../components/forms/EventForm';
+import QuestionForm from '../../components/forms/QuestionForm';
+import MomentCapture from '../../components/forms/MomentCapture';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
-type TabMode = 'venue' | 'post';
+type TabMode = 'venue' | 'post' | 'meetup' | 'question' | 'moment';
+
+const TAB_OPTIONS = [
+  { key: 'venue' as TabMode, label: 'Mekan', icon: 'restaurant' as const },
+  { key: 'post' as TabMode, label: 'Kesif', icon: 'camera' as const },
+  { key: 'meetup' as TabMode, label: 'Bulusma', icon: 'people' as const },
+  { key: 'question' as TabMode, label: 'Soru', icon: 'help-circle' as const },
+  { key: 'moment' as TabMode, label: 'Anlik', icon: 'flash' as const },
+];
 
 export default function AddScreen() {
   const router = useRouter();
@@ -62,38 +72,31 @@ export default function AddScreen() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Yeni Ekle</Text>
         </View>
 
-        {/* Segment Control */}
+        {/* Segment Control — horizontal scrollable chips */}
         <View style={[styles.segmentWrapper, { backgroundColor: colors.backgroundSecondary }]}>
-          <GlassView style={styles.segmentContainer} fallbackColor={colors.background}>
-            <TouchableOpacity
-              style={[styles.segmentButton, activeTab === 'venue' && styles.segmentButtonActive]}
-              onPress={() => setActiveTab('venue')}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="restaurant"
-                size={16}
-                color={activeTab === 'venue' ? '#FFFFFF' : Colors.textSecondary}
-              />
-              <Text style={[styles.segmentText, activeTab === 'venue' && styles.segmentTextActive, activeTab !== 'venue' && { color: colors.textSecondary }]}>
-                Mekan Ekle
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.segmentButton, activeTab === 'post' && styles.segmentButtonActive]}
-              onPress={() => setActiveTab('post')}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="camera"
-                size={16}
-                color={activeTab === 'post' ? '#FFFFFF' : Colors.textSecondary}
-              />
-              <Text style={[styles.segmentText, activeTab === 'post' && styles.segmentTextActive, activeTab !== 'post' && { color: colors.textSecondary }]}>
-                Gonderi Paylas
-              </Text>
-            </TouchableOpacity>
-          </GlassView>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.segmentScroll}
+          >
+            {TAB_OPTIONS.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.segmentChip, activeTab === tab.key && styles.segmentChipActive]}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={tab.icon}
+                  size={16}
+                  color={activeTab === tab.key ? '#FFFFFF' : colors.textSecondary}
+                />
+                <Text style={[styles.segmentChipText, activeTab === tab.key && styles.segmentChipTextActive, activeTab !== tab.key && { color: colors.textSecondary }]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         <ScrollView
@@ -104,6 +107,12 @@ export default function AddScreen() {
         >
           {activeTab === 'venue' ? (
             <VenueForm user={user} />
+          ) : activeTab === 'meetup' ? (
+            <EventForm user={user} />
+          ) : activeTab === 'question' ? (
+            <QuestionForm user={user} />
+          ) : activeTab === 'moment' ? (
+            <MomentCapture user={user} />
           ) : (
             <PostForm user={user} />
           )}
@@ -135,46 +144,33 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   segmentWrapper: {
-    paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
     backgroundColor: Colors.backgroundSecondary,
   },
-  segmentContainer: {
-    flexDirection: 'row',
-    borderRadius: BorderRadius.full,
-    padding: 3,
-    ...(Platform.OS === 'ios'
-      ? {}
-      : {
-          backgroundColor: Colors.background,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }),
+  segmentScroll: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
   },
-  segmentButton: {
-    flex: 1,
+  segmentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacing.xs + 2,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
-    gap: Spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  segmentButtonActive: {
+  segmentChipActive: {
     backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: Colors.primary,
   },
-  segmentText: {
+  segmentChipText: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-    color: Colors.textSecondary,
   },
-  segmentTextActive: {
+  segmentChipTextActive: {
     color: '#FFFFFF',
   },
   scrollContent: {
