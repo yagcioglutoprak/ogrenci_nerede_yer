@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Event, EventAttendee, EventMessage } from '../types';
 import { MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_USERS, MOCK_VENUES } from '../lib/mockData';
 
@@ -229,6 +230,11 @@ export const useEventStore = create<EventState>((set, get) => ({
 
       // Listeyi yenile
       await get().fetchUpcomingEvents();
+
+      // Badge check and XP (fire-and-forget)
+      checkAndAwardBadges(data.creator_id);
+      addXP(data.creator_id, 30);
+
       set({ loading: false });
       return { error: null, eventId: event.id };
     } catch (err: any) {
@@ -306,6 +312,10 @@ export const useEventStore = create<EventState>((set, get) => ({
       if (selectedEvent && selectedEvent.id === eventId) {
         await get().fetchEventByPostId(selectedEvent.post_id);
       }
+
+      // Badge check and XP (fire-and-forget)
+      checkAndAwardBadges(userId);
+      addXP(userId, 25);
 
       return { error: null };
     } catch (err: any) {

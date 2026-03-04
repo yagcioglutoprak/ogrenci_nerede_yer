@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { uploadImages } from '../lib/imageUpload';
+import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Post, Comment, FeedCategory } from '../types';
 import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES } from '../lib/mockData';
 
@@ -321,6 +322,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
 
     await get().fetchPosts();
+
+    // Badge check and XP (fire-and-forget)
+    checkAndAwardBadges(user_id);
+    addXP(user_id, 10);
+
     return { error: null };
   },
 

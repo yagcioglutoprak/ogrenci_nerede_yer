@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { uploadImage } from '../lib/imageUpload';
+import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Venue, Review, VenueFilters } from '../types';
 import { MOCK_VENUES, MOCK_REVIEWS, MOCK_USERS } from '../lib/mockData';
 
@@ -246,10 +248,18 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   },
 
   addVenue: async (venue) => {
+    // Upload cover image if it's a local URI
+    let coverUrl = venue.cover_image_url;
+    if (coverUrl && (coverUrl.startsWith('file://') || coverUrl.startsWith('ph://'))) {
+      const { url } = await uploadImage(coverUrl, 'venues');
+      coverUrl = url || coverUrl; // Fallback to local URI if upload fails
+    }
+
     const { data, error } = await supabase
       .from('venues')
       .insert({
         ...venue,
+        cover_image_url: coverUrl,
         avg_taste_rating: 0,
         avg_value_rating: 0,
         avg_friendliness_rating: 0,
@@ -263,6 +273,9 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     if (!error && data) {
       const venues = get().venues;
       set({ venues: [data as Venue, ...venues] });
+      // Badge check and XP (fire-and-forget)
+      checkAndAwardBadges(venue.created_by);
+      addXP(venue.created_by, 15);
       return { data: data as Venue, error: null };
     }
 
@@ -302,6 +315,10 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       }
 
       await get().fetchReviews(review.venue_id);
+
+      // Badge check and XP (fire-and-forget)
+      checkAndAwardBadges(review.user_id);
+      addXP(review.user_id, 10);
     }
 
     return { error: error?.message || null };
