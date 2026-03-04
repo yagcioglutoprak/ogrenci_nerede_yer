@@ -127,7 +127,7 @@ export interface Badge {
   name: string;
   description: string;
   icon_name: string;
-  condition_type: 'venues_added' | 'reviews_written' | 'posts_created' | 'likes_received' | 'streak_days' | 'meetups_attended' | 'meetups_organized' | 'moments_shared' | 'upvotes_received';
+  condition_type: 'venues_added' | 'reviews_written' | 'posts_created' | 'likes_received' | 'streak_days' | 'meetups_attended' | 'meetups_organized' | 'moments_shared' | 'upvotes_received' | 'buddy_matches_completed' | 'lists_created';
   condition_value: number;
   color: string;
 }

@@ -13,6 +13,8 @@ import {
   Linking,
   Platform,
   Share,
+  Modal,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -605,7 +607,7 @@ export default function VenueDetailScreen() {
         )}
 
         {/* ============================
-            PUAN VER SECTION
+            PUAN VER BUTTON
         ============================ */}
         <View style={styles.rateSection}>
           <TouchableOpacity
@@ -613,116 +615,109 @@ export default function VenueDetailScreen() {
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={showRatingForm ? [colors.backgroundSecondary, colors.backgroundSecondary] : [Colors.primary, Colors.accent]}
+              colors={[Colors.primary, Colors.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.rateToggleButton}
             >
-              <Ionicons
-                name={showRatingForm ? 'chevron-up' : 'star-outline'}
-                size={20}
-                color={showRatingForm ? Colors.primary : '#FFFFFF'}
-              />
-              <Text style={[styles.rateToggleText, { color: showRatingForm ? Colors.primary : '#FFFFFF' }]}>
-                {showRatingForm ? 'Kapat' : 'Puan Ver'}
-              </Text>
+              <Ionicons name="star-outline" size={20} color="#FFFFFF" />
+              <Text style={[styles.rateToggleText, { color: '#FFFFFF' }]}>Puan Ver</Text>
             </LinearGradient>
           </TouchableOpacity>
-
-          {/* Expandable rating form */}
-          {showRatingForm && (
-            <View style={[styles.rateFormContainer, { backgroundColor: colors.backgroundSecondary }]}>
-              {/* Taste */}
-              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.rateFormLabel}>
-                  <Ionicons
-                    name="restaurant"
-                    size={18}
-                    color={Colors.primary}
-                  />
-                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
-                </View>
-                <StarRating
-                  rating={ratingTaste}
-                  interactive
-                  onRatingChange={setRatingTaste}
-                  size={28}
-                />
-              </View>
-
-              {/* Value */}
-              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.rateFormLabel}>
-                  <Ionicons
-                    name="pricetag"
-                    size={18}
-                    color={Colors.accent}
-                  />
-                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>
-                    Fiyat/Performans
-                  </Text>
-                </View>
-                <StarRating
-                  rating={ratingValue}
-                  interactive
-                  onRatingChange={setRatingValue}
-                  size={28}
-                />
-              </View>
-
-              {/* Friendliness */}
-              <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
-                <View style={styles.rateFormLabel}>
-                  <Ionicons
-                    name="people"
-                    size={18}
-                    color={Colors.verified}
-                  />
-                  <Text style={[styles.rateFormLabelText, { color: colors.text }]}>
-                    Öğrenci Dostu
-                  </Text>
-                </View>
-                <StarRating
-                  rating={ratingFriendliness}
-                  interactive
-                  onRatingChange={setRatingFriendliness}
-                  size={28}
-                />
-              </View>
-
-              {/* Comment input */}
-              <TextInput
-                style={[styles.rateCommentInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
-                placeholder="Deneyimini paylaş..."
-                placeholderTextColor={colors.textTertiary}
-                multiline
-                value={ratingComment}
-                onChangeText={setRatingComment}
-                textAlignVertical="top"
-              />
-
-              {/* Submit button */}
-              <TouchableOpacity
-                style={[
-                  styles.rateSubmitButton,
-                  submittingReview && styles.rateSubmitDisabled,
-                ]}
-                onPress={handleSubmitReview}
-                disabled={submittingReview}
-                activeOpacity={0.8}
-              >
-                {submittingReview ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons name="send" size={16} color="#FFFFFF" />
-                    <Text style={styles.rateSubmitText}>Gönder</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
+
+        {/* ============================
+            RATING MODAL
+        ============================ */}
+        <Modal
+          visible={showRatingForm}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowRatingForm(false)}
+        >
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+              {/* Modal Header */}
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <TouchableOpacity onPress={() => setShowRatingForm(false)} style={styles.modalCloseBtn}>
+                  <Ionicons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Puan Ver</Text>
+                <View style={{ width: 40 }} />
+              </View>
+
+              {/* Venue info at top */}
+              {venue && (
+                <View style={[styles.modalVenueInfo, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.modalVenueName, { color: colors.text }]}>{venue.name}</Text>
+                  <Text style={[styles.modalVenueAddress, { color: colors.textSecondary }]}>{venue.address}</Text>
+                </View>
+              )}
+
+              <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalFormContent}>
+                {/* Taste */}
+                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                  <View style={styles.rateFormLabel}>
+                    <Ionicons name="restaurant" size={20} color={Colors.primary} />
+                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
+                  </View>
+                  <StarRating rating={ratingTaste} interactive onRatingChange={setRatingTaste} size={32} />
+                </View>
+
+                {/* Value */}
+                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                  <View style={styles.rateFormLabel}>
+                    <Ionicons name="pricetag" size={20} color={Colors.accent} />
+                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Fiyat/Performans</Text>
+                  </View>
+                  <StarRating rating={ratingValue} interactive onRatingChange={setRatingValue} size={32} />
+                </View>
+
+                {/* Friendliness */}
+                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                  <View style={styles.rateFormLabel}>
+                    <Ionicons name="people" size={20} color={Colors.verified} />
+                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Öğrenci Dostu</Text>
+                  </View>
+                  <StarRating rating={ratingFriendliness} interactive onRatingChange={setRatingFriendliness} size={32} />
+                </View>
+
+                {/* Comment */}
+                <TextInput
+                  style={[styles.rateCommentInput, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border, color: colors.text }]}
+                  placeholder="Deneyimini paylaş..."
+                  placeholderTextColor={colors.textTertiary}
+                  multiline
+                  value={ratingComment}
+                  onChangeText={setRatingComment}
+                  textAlignVertical="top"
+                />
+              </ScrollView>
+
+              {/* Submit button fixed at bottom */}
+              <View style={[styles.modalFooter, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                  style={[styles.rateSubmitButton, submittingReview && styles.rateSubmitDisabled]}
+                  onPress={handleSubmitReview}
+                  disabled={submittingReview}
+                  activeOpacity={0.8}
+                >
+                  {submittingReview ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="send" size={16} color="#FFFFFF" />
+                      <Text style={styles.rateSubmitText}>Gönder</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </SafeAreaView>
+          </KeyboardAvoidingView>
+        </Modal>
 
         {/* ============================
             REVIEWS LIST
@@ -1266,6 +1261,52 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
+  },
+
+  // ---- RATING MODAL ----
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  modalCloseBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: FontSize.xl,
+    fontFamily: FontFamily.headingBold,
+  },
+  modalVenueInfo: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+  },
+  modalVenueName: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
+  },
+  modalVenueAddress: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    marginTop: 2,
+  },
+  modalFormContent: {
+    padding: Spacing.xl,
+    gap: Spacing.md,
+  },
+  modalFooter: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    borderTopWidth: 1,
   },
 
   // ---- REVIEWS ----

@@ -91,3 +91,18 @@ CREATE INDEX idx_buddy_messages_match ON buddy_messages(match_id, created_at);
 INSERT INTO badges (name, description, icon_name, condition_type, condition_value, color)
 VALUES ('Sosyal Kelebek', '5 farkli kisiyle yemek ye', 'people', 'buddy_matches_completed', 5, '#06B6D4')
 ON CONFLICT DO NOTHING;
+
+-- Unique constraint to prevent duplicate match requests
+CREATE UNIQUE INDEX IF NOT EXISTS idx_buddy_matches_unique_pair
+  ON buddy_matches(requester_buddy_id, target_buddy_id)
+  WHERE status IN ('pending', 'accepted');
+
+-- Allow requester to withdraw/expire their own match requests
+CREATE POLICY "Requester can update own matches" ON buddy_matches
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM meal_buddies
+      WHERE meal_buddies.id = buddy_matches.requester_buddy_id
+      AND meal_buddies.user_id = auth.uid()
+    )
+  );

@@ -44,9 +44,14 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
     ]);
 
     const upvotesReceived = (answersData || []).reduce((sum: number, a: any) => sum + (a.upvotes || 0), 0);
-    const streakDays = userData?.last_active_date
-      ? Math.max(0, Math.floor((Date.now() - new Date(userData.last_active_date).getTime()) / (1000 * 60 * 60 * 24)))
-      : 0;
+    const streakDays = (() => {
+      if (!userData?.last_active_date) return 0;
+      const daysSinceActive = Math.floor((Date.now() - new Date(userData.last_active_date).getTime()) / (1000 * 60 * 60 * 24));
+      // If active today or yesterday, count as maintaining streak
+      // Without a dedicated counter, we can't know the real streak length,
+      // so we use 1 as minimum when recently active
+      return daysSinceActive <= 1 ? 1 : 0;
+    })();
 
     const statsMap: Record<string, number> = {
       venues_added: venueCount || 0,
