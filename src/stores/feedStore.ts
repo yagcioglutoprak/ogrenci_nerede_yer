@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { uploadImages } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
-import type { Post, Comment, FeedCategory } from '../types';
-import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES } from '../lib/mockData';
+import type { Post, Comment, FeedCategory, RecommendationAnswer } from '../types';
+import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_RECOMMENDATION_ANSWERS } from '../lib/mockData';
 
 const PAGE_SIZE = 20;
 
@@ -25,6 +25,9 @@ interface FeedState {
   createPost: (post: { user_id: string; venue_id?: string; caption: string; image_urls: string[]; post_type?: string; expires_at?: string }) => Promise<{ error: string | null }>;
   toggleLike: (postId: string, userId: string) => Promise<void>;
   addComment: (postId: string, userId: string, text: string) => Promise<{ error: string | null }>;
+  fetchAnswers: (postId: string) => Promise<RecommendationAnswer[]>;
+  submitAnswer: (postId: string, userId: string, text: string, venueId?: string) => Promise<RecommendationAnswer | null>;
+  upvoteAnswer: (answerId: string, userId: string) => Promise<boolean | null>;
   refreshFeed: () => Promise<void>;
   setCategory: (category: FeedCategory) => void;
   clearError: () => void;
@@ -397,6 +400,83 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set({ posts });
 
     return { error: error?.message || null };
+  },
+
+  fetchAnswers: async (postId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('recommendation_answers')
+        .select('*, user:users(*), venue:venues(id, name, cover_image_url)')
+        .eq('post_id', postId)
+        .order('upvotes', { ascending: false });
+
+      if (error || !data?.length) {
+        const mockAnswers = MOCK_RECOMMENDATION_ANSWERS
+          .filter((a: any) => a.post_id === postId)
+          .map((a: any) => ({
+            ...a,
+            user: MOCK_USERS.find((u: any) => u.id === a.user_id),
+            venue: a.venue_id ? MOCK_VENUES.find((v: any) => v.id === a.venue_id) : undefined,
+          }))
+          .sort((a: any, b: any) => (b.upvotes ?? 0) - (a.upvotes ?? 0));
+        return mockAnswers;
+      }
+      return data;
+    } catch {
+      return [];
+    }
+  },
+
+  submitAnswer: async (postId: string, userId: string, text: string, venueId?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('recommendation_answers')
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          text,
+          venue_id: venueId || null,
+          upvotes: 0,
+        })
+        .select('*, user:users(*), venue:venues(id, name, cover_image_url)')
+        .single();
+
+      if (error) throw error;
+      addXP(userId, 10).catch(() => {});
+      checkAndAwardBadges(userId).catch(() => {});
+      return data;
+    } catch {
+      return null;
+    }
+  },
+
+  upvoteAnswer: async (answerId: string, userId: string) => {
+    try {
+      const { data: existing } = await supabase
+        .from('answer_upvotes')
+        .select('*')
+        .eq('answer_id', answerId)
+        .eq('user_id', userId)
+        .single();
+
+      if (existing) {
+        await supabase.from('answer_upvotes').delete().eq('answer_id', answerId).eq('user_id', userId);
+        const { data: answer } = await supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single();
+        if (answer) {
+          await supabase.from('recommendation_answers').update({ upvotes: Math.max(0, (answer.upvotes || 0) - 1) }).eq('id', answerId);
+        }
+        return false;
+      } else {
+        await supabase.from('answer_upvotes').insert({ answer_id: answerId, user_id: userId });
+        const { data: answer } = await supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single();
+        if (answer) {
+          await supabase.from('recommendation_answers').update({ upvotes: (answer.upvotes || 0) + 1 }).eq('id', answerId);
+        }
+        return true;
+      }
+    } catch {
+      return null;
+    }
   },
 
   refreshFeed: async () => {

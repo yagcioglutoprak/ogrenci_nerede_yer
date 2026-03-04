@@ -24,15 +24,24 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       { count: meetupsAttended },
       { count: meetupsOrganized },
       { count: momentsCount },
+      { data: answersData },
+      { data: userData },
     ] = await Promise.all([
       supabase.from('venues').select('*', { count: 'exact', head: true }).eq('created_by', userId),
       supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', userId), // Note: this counts likes ON user's posts
+      supabase.from('likes').select('post_id, post:posts!inner(user_id)', { count: 'exact', head: true }).eq('posts.user_id', userId),
       supabase.from('event_attendees').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'confirmed'),
       supabase.from('events').select('*', { count: 'exact', head: true }).eq('creator_id', userId),
       supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('post_type', 'moment'),
+      supabase.from('recommendation_answers').select('upvotes').eq('user_id', userId),
+      supabase.from('users').select('last_active_date').eq('id', userId).single(),
     ]);
+
+    const upvotesReceived = (answersData || []).reduce((sum: number, a: any) => sum + (a.upvotes || 0), 0);
+    const streakDays = userData?.last_active_date
+      ? Math.max(0, Math.floor((Date.now() - new Date(userData.last_active_date).getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
 
     const statsMap: Record<string, number> = {
       venues_added: venueCount || 0,
@@ -42,6 +51,8 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       meetups_attended: meetupsAttended || 0,
       meetups_organized: meetupsOrganized || 0,
       moments_shared: momentsCount || 0,
+      upvotes_received: upvotesReceived,
+      streak_days: streakDays,
     };
 
     // Award any newly-earned badges
@@ -70,9 +81,13 @@ export async function addXP(userId: string, points: number): Promise<void> {
       .single();
 
     if (user) {
+      const currentXP = user.xp_points || 0;
       await supabase
         .from('users')
-        .update({ xp_points: (user.xp_points || 0) + points })
+        .update({
+          xp_points: currentXP + points,
+          last_active_date: new Date().toISOString().split('T')[0],
+        })
         .eq('id', userId);
     }
   } catch {

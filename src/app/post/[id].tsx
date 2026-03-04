@@ -24,7 +24,6 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/c
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Comment, PostImage, RecommendationAnswer } from '../../types';
-import { MOCK_RECOMMENDATION_ANSWERS, MOCK_USERS, MOCK_VENUES } from '../../lib/mockData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const QUESTION_COLOR = '#8B5CF6';
@@ -62,6 +61,8 @@ export default function PostDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const commentInputRef = useRef<TextInput>(null);
+  const [answers, setAnswers] = useState<RecommendationAnswer[]>([]);
+  const [upvotedAnswers, setUpvotedAnswers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (id) {
@@ -69,6 +70,12 @@ export default function PostDetailScreen() {
       fetchComments(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (post?.post_type === 'question') {
+      useFeedStore.getState().fetchAnswers(post.id).then(setAnswers);
+    }
+  }, [post]);
 
   const handleLike = () => {
     if (!user) {
@@ -84,9 +91,17 @@ export default function PostDetailScreen() {
       return;
     }
     if (!commentText.trim() || !post) return;
-
     setSubmitting(true);
-    await addComment(post.id, user.id, commentText.trim());
+
+    if (post.post_type === 'question') {
+      const newAnswer = await useFeedStore.getState().submitAnswer(post.id, user.id, commentText.trim());
+      if (newAnswer) {
+        setAnswers((prev) => [newAnswer, ...prev]);
+      }
+    } else {
+      await addComment(post.id, user.id, commentText.trim());
+    }
+
     setCommentText('');
     setSubmitting(false);
   };
@@ -114,15 +129,6 @@ export default function PostDetailScreen() {
 
   // ── Question-type post: dedicated answer layout ──
   if (post.post_type === 'question') {
-    const answers: RecommendationAnswer[] = MOCK_RECOMMENDATION_ANSWERS
-      .filter((a) => a.post_id === post.id)
-      .map((a) => ({
-        ...a,
-        user: MOCK_USERS.find((u) => u.id === a.user_id),
-        venue: a.venue_id ? MOCK_VENUES.find((v) => v.id === a.venue_id) : undefined,
-      }))
-      .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0));
-
     const renderAnswer = ({ item }: { item: RecommendationAnswer }) => (
       <View style={[qStyles.answerItem, { borderBottomColor: colors.borderLight }]}>
         <View style={qStyles.answerLeft}>
@@ -162,8 +168,32 @@ export default function PostDetailScreen() {
           </Text>
         </View>
         <View style={qStyles.upvoteBox}>
-          <TouchableOpacity activeOpacity={0.6}>
-            <Ionicons name="arrow-up-circle" size={28} color={QUESTION_COLOR} />
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={async () => {
+              if (!user) { router.push('/auth/login'); return; }
+              const result = await useFeedStore.getState().upvoteAnswer(item.id, user.id);
+              if (result !== null) {
+                setAnswers((prev) =>
+                  prev.map((a) =>
+                    a.id === item.id
+                      ? { ...a, upvotes: (a.upvotes || 0) + (result ? 1 : -1) }
+                      : a
+                  ),
+                );
+                setUpvotedAnswers((prev) => {
+                  const next = new Set(prev);
+                  result ? next.add(item.id) : next.delete(item.id);
+                  return next;
+                });
+              }
+            }}
+          >
+            <Ionicons
+              name={upvotedAnswers.has(item.id) ? 'arrow-up-circle' : 'arrow-up-circle-outline'}
+              size={28}
+              color={upvotedAnswers.has(item.id) ? '#E23744' : '#8B5CF6'}
+            />
           </TouchableOpacity>
           <Text style={[qStyles.upvoteCount, { color: QUESTION_COLOR }]}>{item.upvotes ?? 0}</Text>
         </View>
