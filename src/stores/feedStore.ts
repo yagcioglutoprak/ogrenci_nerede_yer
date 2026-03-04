@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { uploadImages } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
+import { sendPushNotification } from '../lib/notifications';
 import type { Post, Comment, FeedCategory, RecommendationAnswer } from '../types';
 import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_RECOMMENDATION_ANSWERS } from '../lib/mockData';
 
@@ -350,6 +351,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', userId);
       } else {
         await supabase.from('likes').insert({ post_id: postId, user_id: userId });
+
+        // Send push notification to post owner on new like
+        const likedPost = get().posts.find(p => p.id === postId);
+        if (likedPost && likedPost.user_id && likedPost.user_id !== userId) {
+          sendPushNotification(
+            likedPost.user_id,
+            'Yeni Begeni',
+            'Gonderin begenildi!',
+            { route: `/post/${postId}` }
+          ).catch(() => {});
+        }
       }
     }
     // If Supabase fails entirely, we still update local state below
@@ -378,6 +390,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     if (!error) {
       await get().fetchComments(postId);
+
+      // Send push notification to post owner on new comment
+      const commentedPost = get().posts.find(p => p.id === postId);
+      if (commentedPost && commentedPost.user_id && commentedPost.user_id !== userId) {
+        sendPushNotification(
+          commentedPost.user_id,
+          'Yeni Yorum',
+          'Gonderine yorum yapildi!',
+          { route: `/post/${postId}` }
+        ).catch(() => {});
+      }
     } else {
       // Fallback: add comment to local state for mock data
       const newComment: Comment = {

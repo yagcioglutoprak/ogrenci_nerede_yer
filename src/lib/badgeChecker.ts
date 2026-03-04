@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { sendPushNotification } from './notifications';
 
 /**
  * Check user stats against all badge conditions and award any newly-earned badges.
@@ -61,6 +62,14 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       const stat = statsMap[badge.condition_type];
       if (stat !== undefined && stat >= badge.condition_value) {
         await supabase.from('user_badges').insert({ user_id: userId, badge_id: badge.id });
+
+        // Send push notification for newly earned badge
+        sendPushNotification(
+          userId,
+          'Yeni Rozet!',
+          `"${badge.name}" rozetini kazandin!`,
+          { route: '/profile' }
+        ).catch(() => {});
       }
     }
   } catch {

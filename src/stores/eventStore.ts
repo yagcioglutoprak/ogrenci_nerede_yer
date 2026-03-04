@@ -77,6 +77,8 @@ interface EventState {
   fetchAttendees: (eventId: string) => Promise<void>;
   fetchMessages: (eventId: string) => Promise<void>;
   sendMessage: (eventId: string, userId: string, text: string) => Promise<void>;
+  subscribeToMessages: (eventId: string) => any;
+  unsubscribeFromMessages: (channel: any) => void;
   clearError: () => void;
 }
 
@@ -451,6 +453,43 @@ export const useEventStore = create<EventState>((set, get) => ({
       };
       const currentMessages = get().messages;
       set({ messages: [...currentMessages, newMessage] });
+    }
+  },
+
+  subscribeToMessages: (eventId: string) => {
+    const channel = supabase
+      .channel(`event-messages-${eventId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'event_messages',
+        filter: `event_id=eq.${eventId}`,
+      }, async (payload) => {
+        const newMsg = payload.new as any;
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', newMsg.user_id)
+          .single();
+
+        const message = {
+          ...newMsg,
+          user: userData || undefined,
+        };
+
+        const { messages } = get();
+        if (!messages.find((m: any) => m.id === message.id)) {
+          set({ messages: [...messages, message] });
+        }
+      })
+      .subscribe();
+
+    return channel;
+  },
+
+  unsubscribeFromMessages: (channel: any) => {
+    if (channel) {
+      supabase.removeChannel(channel);
     }
   },
 

@@ -7,6 +7,7 @@ import { useFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nuni
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
+import { useNotifications } from '../hooks/useNotifications';
 import { Colors } from '../lib/constants';
 
 SplashScreen.preventAutoHideAsync();
@@ -17,6 +18,8 @@ export default function RootLayout() {
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const [ready, setReady] = useState(false);
+
+  useNotifications();
 
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,

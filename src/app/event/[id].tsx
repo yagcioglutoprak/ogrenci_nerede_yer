@@ -60,6 +60,7 @@ export default function EventRoomScreen() {
   // Load event data by searching through events
   useEffect(() => {
     if (!id) return;
+    let channel: any = null;
 
     // Try to find the event — we need to fetch by looking through events
     // The store has fetchEventByPostId but we have the event ID, not post ID.
@@ -83,10 +84,28 @@ export default function EventRoomScreen() {
         fetchAttendees(id),
         fetchMessages(id),
       ]);
+
+      // Subscribe to new messages via Supabase Realtime
+      channel = useEventStore.getState().subscribeToMessages(id as string);
     };
 
     loadData();
+
+    return () => {
+      if (channel) {
+        useEventStore.getState().unsubscribeFromMessages(channel);
+      }
+    };
   }, [id]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
 
   const isAttendee = attendees.some(
     (a) => a.user_id === user?.id && a.status === 'confirmed'
