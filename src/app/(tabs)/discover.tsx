@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
+import { useListStore } from '../../stores/listStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue, Post } from '../../types';
@@ -244,11 +245,13 @@ export default function DiscoverScreen() {
   const fetchVenues = useVenueStore((s) => s.fetchVenues);
   const posts = useFeedStore((s) => s.posts);
   const fetchPosts = useFeedStore((s) => s.fetchPosts);
+  const { lists: popularLists, fetchPopularLists } = useListStore();
 
   // Fetch data on mount if empty
   useEffect(() => {
     if (venues.length === 0) fetchVenues();
     if (posts.length === 0) fetchPosts();
+    fetchPopularLists();
   }, []);
 
   // Trending venues: top 8 by rating
@@ -379,6 +382,49 @@ export default function DiscoverScreen() {
             <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
               Henuz soru sorulmamis
             </Text>
+          </View>
+        )}
+
+        {/* Popular Lists Section */}
+        {popularLists.length > 0 && (
+          <View style={{ marginTop: Spacing.xl }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.xl, marginBottom: Spacing.md, gap: Spacing.sm }}>
+              <Ionicons name="list" size={20} color="#F97316" />
+              <Text style={{ fontSize: FontSize.lg, fontFamily: FontFamily.heading, color: colors.text }}>Populer Listeler</Text>
+            </View>
+            <FlatList
+              horizontal
+              data={popularLists}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{
+                    width: 160, borderRadius: BorderRadius.md, overflow: 'hidden',
+                    backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.border,
+                  }}
+                  onPress={() => router.push(`/list/${item.id}`)}
+                  activeOpacity={0.8}
+                >
+                  {item.cover_image_url ? (
+                    <Image source={{ uri: item.cover_image_url }} style={{ width: 160, height: 90 }} />
+                  ) : (
+                    <View style={{ width: 160, height: 90, backgroundColor: Colors.primarySoft, justifyContent: 'center', alignItems: 'center' }}>
+                      <Ionicons name="list" size={28} color={Colors.primary} />
+                    </View>
+                  )}
+                  <View style={{ padding: Spacing.sm }}>
+                    <Text style={{ fontSize: FontSize.sm, fontFamily: FontFamily.bodySemiBold, color: colors.text }} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={{ fontSize: FontSize.xs, fontFamily: FontFamily.body, color: colors.textSecondary }}>
+                      {item.user?.full_name || 'Anonim'} · {item.likes_count} begeni
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
           </View>
         )}
 

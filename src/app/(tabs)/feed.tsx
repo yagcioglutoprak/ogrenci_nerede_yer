@@ -72,6 +72,7 @@ export default function FeedScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showBuddyBanner, setShowBuddyBanner] = useState(true);
 
   // Animated chip indicator
   const chipLayouts = useRef<Record<string, { x: number; width: number }>>({});
@@ -414,6 +415,34 @@ export default function FeedScreen() {
             )}
           </View>
         </Animated.View>
+      )}
+
+      {/* Buddy Banner */}
+      {showBuddyBanner && (
+        <TouchableOpacity
+          style={{ marginHorizontal: Spacing.lg, marginBottom: Spacing.md, borderRadius: BorderRadius.md, overflow: 'hidden' }}
+          onPress={() => router.push('/buddy')}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#06B6D4', '#0891B2']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, gap: Spacing.md }}
+          >
+            <Ionicons name="people" size={24} color="#FFF" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: FontSize.md, fontFamily: FontFamily.headingBold, color: '#FFF' }}>
+                Yalniz yemek yeme!
+              </Text>
+              <Text style={{ fontSize: FontSize.xs, fontFamily: FontFamily.body, color: 'rgba(255,255,255,0.8)' }}>
+                Yakininda yemek arkadasi bul
+              </Text>
+            </View>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); setShowBuddyBanner(false); }}>
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
+            </TouchableOpacity>
+          </LinearGradient>
+        </TouchableOpacity>
       )}
 
       {/* Feed */}

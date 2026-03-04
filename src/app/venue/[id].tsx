@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useListStore } from '../../stores/listStore';
 import { MOCK_SOCIAL_VIDEOS } from '../../lib/mockData';
 import {
   Colors,
@@ -56,9 +57,11 @@ export default function VenueDetailScreen() {
     addReview,
     toggleFavorite,
   } = useVenueStore();
+  const { userLists, fetchUserLists, addVenueToList } = useListStore();
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
+  const [showListPicker, setShowListPicker] = useState(false);
   const [ratingTaste, setRatingTaste] = useState(0);
   const [ratingValue, setRatingValue] = useState(0);
   const [ratingFriendliness, setRatingFriendliness] = useState(0);
@@ -71,6 +74,10 @@ export default function VenueDetailScreen() {
       fetchReviews(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (user) fetchUserLists(user.id);
+  }, [user]);
 
   const handleFavorite = async () => {
     if (!user) {
@@ -276,6 +283,18 @@ export default function VenueDetailScreen() {
               <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
                 <TouchableOpacity
                   style={styles.heroCircleButtonInner}
+                  onPress={() => {
+                    if (!user) { router.push('/auth/login'); return; }
+                    setShowListPicker(!showListPicker);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="list-outline" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+              </GlassView>
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+                <TouchableOpacity
+                  style={styles.heroCircleButtonInner}
                   onPress={handleShareVenue}
                   activeOpacity={0.7}
                 >
@@ -327,6 +346,40 @@ export default function VenueDetailScreen() {
             )}
           </View>
         </View>
+
+        {/* List Picker Dropdown */}
+        {showListPicker && (
+          <View style={{
+            backgroundColor: colors.backgroundSecondary, borderRadius: BorderRadius.md,
+            borderWidth: 1, borderColor: colors.border, marginHorizontal: Spacing.xl,
+            marginBottom: Spacing.md, overflow: 'hidden',
+          }}>
+            {userLists.length === 0 ? (
+              <TouchableOpacity
+                style={{ padding: Spacing.lg, alignItems: 'center' }}
+                onPress={() => { setShowListPicker(false); router.push('/list/create'); }}
+              >
+                <Text style={{ color: Colors.primary, fontFamily: FontFamily.bodySemiBold }}>Yeni Liste Olustur</Text>
+              </TouchableOpacity>
+            ) : (
+              userLists.map((list) => (
+                <TouchableOpacity
+                  key={list.id}
+                  style={{ flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm }}
+                  onPress={async () => {
+                    await addVenueToList(list.id, venue.id);
+                    setShowListPicker(false);
+                    Alert.alert('Eklendi', `"${list.title}" listesine eklendi`);
+                  }}
+                >
+                  <Ionicons name="list" size={18} color={Colors.primary} />
+                  <Text style={{ flex: 1, color: colors.text, fontFamily: FontFamily.body }}>{list.title}</Text>
+                  <Ionicons name="add" size={18} color={Colors.primary} />
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
 
         {/* ============================
             RATING OVERVIEW CARD

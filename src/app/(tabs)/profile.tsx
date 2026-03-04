@@ -25,6 +25,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { useAuthStore } from '../../stores/authStore';
+import { useListStore } from '../../stores/listStore';
 import {
   Colors,
   Spacing,
@@ -45,7 +46,7 @@ import { MOCK_BADGES, MOCK_VENUES, MOCK_POSTS, MOCK_POST_IMAGES } from '../../li
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 160;
 
-type ProfileTab = 'favorites' | 'posts';
+type ProfileTab = 'favorites' | 'posts' | 'lists';
 
 // Animated stat counter that springs to value
 function AnimatedStat({ value, label, icon, color, delay }: {
@@ -125,6 +126,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
   const colors = useThemeColors();
+  const { userLists, fetchUserLists } = useListStore();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('favorites');
   const [favorites, setFavorites] = useState<Venue[]>([]);
@@ -141,7 +143,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     tabIndicatorX.value = withSpring(
-      activeTab === 'favorites' ? 0 : (SCREEN_WIDTH - Spacing.lg * 2) / 2,
+      activeTab === 'favorites' ? 0 : activeTab === 'posts' ? (SCREEN_WIDTH - Spacing.lg * 2) / 3 : ((SCREEN_WIDTH - Spacing.lg * 2) / 3) * 2,
       { damping: 18, stiffness: 200 },
     );
   }, [activeTab]);
@@ -149,6 +151,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (user) {
       loadProfile();
+      fetchUserLists(user.id);
     }
   }, [user]);
 
@@ -334,7 +337,7 @@ export default function ProfileScreen() {
   // LOGGED IN
   // =============================================
   const GRID_ITEM_WIDTH = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.md) / 2;
-  const TAB_HALF = (SCREEN_WIDTH - Spacing.lg * 2) / 2;
+  const TAB_THIRD = (SCREEN_WIDTH - Spacing.lg * 2) / 3;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -441,7 +444,7 @@ export default function ProfileScreen() {
                     styles.tabIndicator,
                     { backgroundColor: Colors.primary },
                     tabIndicatorStyle,
-                    { width: TAB_HALF },
+                    { width: TAB_THIRD },
                   ]}
                 />
                 <TouchableOpacity
@@ -480,6 +483,25 @@ export default function ProfileScreen() {
                     ]}
                   >
                     Gonderilerim
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.tabButton}
+                  onPress={() => setActiveTab('lists')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={activeTab === 'lists' ? 'list' : 'list-outline'}
+                    size={16}
+                    color={activeTab === 'lists' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.tabText,
+                      activeTab === 'lists' ? styles.tabTextActive : { color: colors.textSecondary },
+                    ]}
+                  >
+                    Listelerim
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -562,57 +584,103 @@ export default function ProfileScreen() {
                   ))}
                 </View>
               )
-            ) : userPosts.length === 0 ? (
-              <EmptyState
-                variant="posts"
-                title="Henuz gonderin yok"
-                subtitle="Deneyimlerini paylasmaya basla!"
-              />
-            ) : (
-              <View style={styles.gridContainer}>
-                {userPosts.map((post, index) => {
-                  const firstImage = post.images?.[0]?.image_url;
-                  return (
-                    <Animated.View
-                      key={post.id}
-                      entering={FadeInDown.delay(Math.min(index * 60, 300)).springify()}
-                    >
-                      <TouchableOpacity
-                        style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
-                        onPress={() => router.push(`/post/${post.id}`)}
-                        activeOpacity={0.85}
+            ) : activeTab === 'posts' ? (
+              userPosts.length === 0 ? (
+                <EmptyState
+                  variant="posts"
+                  title="Henuz gonderin yok"
+                  subtitle="Deneyimlerini paylasmaya basla!"
+                />
+              ) : (
+                <View style={styles.gridContainer}>
+                  {userPosts.map((post, index) => {
+                    const firstImage = post.images?.[0]?.image_url;
+                    return (
+                      <Animated.View
+                        key={post.id}
+                        entering={FadeInDown.delay(Math.min(index * 60, 300)).springify()}
                       >
-                        <View style={styles.gridImageWrapper}>
-                          {firstImage ? (
-                            <Image
-                              source={{ uri: firstImage }}
-                              style={styles.gridImage}
-                            />
-                          ) : (
-                            <View style={[styles.gridImage, styles.gridImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-                              <Ionicons
-                                name="document-text-outline"
-                                size={28}
-                                color={colors.textTertiary}
+                        <TouchableOpacity
+                          style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
+                          onPress={() => router.push(`/post/${post.id}`)}
+                          activeOpacity={0.85}
+                        >
+                          <View style={styles.gridImageWrapper}>
+                            {firstImage ? (
+                              <Image
+                                source={{ uri: firstImage }}
+                                style={styles.gridImage}
                               />
-                            </View>
-                          )}
-                          {post.images && post.images.length > 1 && (
-                            <View style={styles.multiImageBadge}>
-                              <Ionicons name="copy-outline" size={12} color="#FFFFFF" />
-                              <Text style={styles.multiImageCount}>{post.images.length}</Text>
-                            </View>
-                          )}
-                        </View>
-                        <View style={styles.gridItemInfo}>
-                          <Text style={[styles.gridItemCaption, { color: colors.text }]} numberOfLines={2}>
-                            {post.caption || 'Gonderi'}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  );
-                })}
+                            ) : (
+                              <View style={[styles.gridImage, styles.gridImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
+                                <Ionicons
+                                  name="document-text-outline"
+                                  size={28}
+                                  color={colors.textTertiary}
+                                />
+                              </View>
+                            )}
+                            {post.images && post.images.length > 1 && (
+                              <View style={styles.multiImageBadge}>
+                                <Ionicons name="copy-outline" size={12} color="#FFFFFF" />
+                                <Text style={styles.multiImageCount}>{post.images.length}</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={styles.gridItemInfo}>
+                            <Text style={[styles.gridItemCaption, { color: colors.text }]} numberOfLines={2}>
+                              {post.caption || 'Gonderi'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    );
+                  })}
+                </View>
+              )
+            ) : (
+              <View style={{ paddingHorizontal: Spacing.lg, gap: Spacing.md }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                    padding: Spacing.md, borderRadius: BorderRadius.md,
+                    borderWidth: 1, borderStyle: 'dashed', borderColor: Colors.primary,
+                    gap: Spacing.sm,
+                  }}
+                  onPress={() => router.push('/list/create')}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
+                  <Text style={{ color: Colors.primary, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.md }}>
+                    Yeni Liste Olustur
+                  </Text>
+                </TouchableOpacity>
+                {userLists.map((list) => (
+                  <TouchableOpacity
+                    key={list.id}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      padding: Spacing.md, borderRadius: BorderRadius.md,
+                      backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.border,
+                      gap: Spacing.md,
+                    }}
+                    onPress={() => router.push(`/list/${list.id}`)}
+                  >
+                    {list.cover_image_url ? (
+                      <Image source={{ uri: list.cover_image_url }} style={{ width: 50, height: 50, borderRadius: BorderRadius.sm }} />
+                    ) : (
+                      <View style={{ width: 50, height: 50, borderRadius: BorderRadius.sm, backgroundColor: Colors.primarySoft, justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="list" size={20} color={Colors.primary} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.text, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.md }}>{list.title}</Text>
+                      <Text style={{ color: colors.textSecondary, fontFamily: FontFamily.body, fontSize: FontSize.xs }}>
+                        {list.venues?.length || 0} mekan
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
           </>

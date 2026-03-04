@@ -258,3 +258,36 @@ export interface ListVenue {
   added_at: string;
   venue?: Venue;
 }
+
+export interface MealBuddy {
+  id: string;
+  user_id: string;
+  status: 'available' | 'matched' | 'expired';
+  latitude: number;
+  longitude: number;
+  radius_km: number;
+  available_from: string;
+  available_until: string;
+  note: string | null;
+  created_at: string;
+  user?: User;
+}
+
+export interface BuddyMatch {
+  id: string;
+  requester_buddy_id: string;
+  target_buddy_id: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  created_at: string;
+  requester?: MealBuddy;
+  target?: MealBuddy;
+}
+
+export interface BuddyMessage {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  user?: User;
+}

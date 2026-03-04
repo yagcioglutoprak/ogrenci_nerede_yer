@@ -12,6 +12,7 @@ import {
   FlatList,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import GlassView from '../../components/ui/GlassView';
 import RatingBar from '../../components/ui/RatingBar';
 import CircleRating from '../../components/ui/CircleRating';
@@ -589,6 +590,17 @@ export default function MapScreen() {
         </GlassView>
       )}
 
+      {/* Buddy FAB */}
+      <TouchableOpacity
+        style={styles.buddyFab}
+        onPress={() => router.push('/buddy')}
+        activeOpacity={0.8}
+      >
+        <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.buddyFabGradient}>
+          <Ionicons name="people" size={20} color="#FFF" />
+        </LinearGradient>
+      </TouchableOpacity>
+
       {/* My Location — Liquid Glass */}
       {userLocation && (
         <GlassView style={[styles.myLocationBlur, { borderColor: colors.glass.border }]}>
@@ -1138,6 +1150,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
+  },
+
+  // Buddy FAB
+  buddyFab: {
+    position: 'absolute',
+    bottom: 190,
+    right: 16,
+    borderRadius: 22,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  buddyFabGradient: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // My Location — Liquid Glass
