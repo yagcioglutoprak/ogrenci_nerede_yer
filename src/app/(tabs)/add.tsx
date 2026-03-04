@@ -18,6 +18,7 @@ import PostForm from '../../components/forms/PostForm';
 import EventForm from '../../components/forms/EventForm';
 import QuestionForm from '../../components/forms/QuestionForm';
 import MomentCapture from '../../components/forms/MomentCapture';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 type TabMode = 'venue' | 'post' | 'meetup' | 'question' | 'moment';
@@ -67,10 +68,7 @@ export default function AddScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Yeni Ekle</Text>
-        </View>
+        <ScreenHeader title="Yeni Ekle" />
 
         {/* Segment Control — horizontal scrollable chips */}
         <View style={[styles.segmentWrapper, { backgroundColor: colors.backgroundSecondary }]}>
@@ -129,19 +127,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  headerTitle: {
-    fontSize: FontSize.xxl,
-    fontFamily: FontFamily.heading,
-    color: Colors.text,
-    letterSpacing: -0.5,
   },
   segmentWrapper: {
     paddingTop: Spacing.lg,

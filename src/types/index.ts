@@ -291,3 +291,40 @@ export interface BuddyMessage {
   created_at: string;
   user?: User;
 }
+
+export interface Conversation {
+  id: string;
+  participant_1: string;
+  participant_2: string;
+  last_message_text: string | null;
+  last_message_at: string;
+  last_message_sender_id: string | null;
+  created_at: string;
+  // Joined
+  other_user?: User;
+  unread_count?: number;
+}
+
+export interface DirectMessageMetadata {
+  image_url?: string;
+  venue_id?: string;
+  venue_name?: string;
+  venue_cover_url?: string;
+  venue_rating?: number;
+  venue_price_range?: number;
+}
+
+export type DirectMessageType = 'text' | 'image' | 'venue';
+
+export interface DirectMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type?: DirectMessageType;
+  metadata?: DirectMessageMetadata;
+  is_read: boolean;
+  created_at: string;
+  // Joined
+  user?: User;
+}

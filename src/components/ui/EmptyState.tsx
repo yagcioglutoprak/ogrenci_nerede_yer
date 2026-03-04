@@ -23,9 +23,9 @@ function FeedIllustration() {
   return (
     <View style={illustrationStyles.container}>
       {/* Stacked cards effect */}
-      <Animated.View entering={FadeInDown.delay(100).springify()} style={[illustrationStyles.backCard, { backgroundColor: colors.accentSoft }]} />
-      <Animated.View entering={FadeInDown.delay(200).springify()} style={[illustrationStyles.midCard, { backgroundColor: colors.primarySoft }]} />
-      <Animated.View entering={FadeInDown.delay(300).springify()} style={[illustrationStyles.frontCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)} style={[illustrationStyles.backCard, { backgroundColor: colors.accentSoft }]} />
+      <Animated.View entering={FadeInDown.delay(100).springify().damping(16)} style={[illustrationStyles.midCard, { backgroundColor: colors.primarySoft }]} />
+      <Animated.View entering={FadeInDown.delay(100).springify().damping(16).damping(16)} style={[illustrationStyles.frontCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
         {/* Mini food plate icon cluster */}
         <View style={illustrationStyles.iconRow}>
           <View style={[illustrationStyles.miniIcon, { backgroundColor: Colors.primarySoft }]}>
@@ -50,7 +50,7 @@ function FavoritesIllustration() {
   const colors = useThemeColors();
   return (
     <View style={illustrationStyles.container}>
-      <Animated.View entering={FadeInUp.delay(100).springify()}>
+      <Animated.View entering={FadeInUp.delay(50).springify().damping(16)}>
         <View style={[illustrationStyles.heartContainer, { backgroundColor: colors.primarySoft }]}>
           <Ionicons name="heart" size={40} color={Colors.primary} style={{ opacity: 0.3 }} />
           <View style={illustrationStyles.heartOverlay}>
@@ -73,7 +73,7 @@ function PostsIllustration() {
   const colors = useThemeColors();
   return (
     <View style={illustrationStyles.container}>
-      <Animated.View entering={FadeInDown.delay(150).springify()}>
+      <Animated.View entering={FadeInDown.delay(100).springify().damping(16)}>
         <View style={[illustrationStyles.cameraFrame, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
           <View style={[illustrationStyles.cameraLens, { borderColor: Colors.primary }]}>
             <Ionicons name="aperture" size={28} color={Colors.primary} />
@@ -93,7 +93,7 @@ function ReviewsIllustration() {
   const colors = useThemeColors();
   return (
     <View style={illustrationStyles.container}>
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)}>
         <View style={[illustrationStyles.speechBubble, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
           <View style={illustrationStyles.starsRow}>
             {[1, 2, 3, 4, 5].map((i) => (
@@ -125,19 +125,19 @@ export default function EmptyState({ variant = 'generic', title, subtitle, actio
     <View style={styles.container}>
       <Illustration />
       <Animated.Text
-        entering={FadeInDown.delay(400).springify()}
+        entering={FadeInDown.delay(200).springify().damping(16)}
         style={[styles.title, { color: colors.text }]}
       >
         {title}
       </Animated.Text>
       <Animated.Text
-        entering={FadeInDown.delay(500).springify()}
+        entering={FadeInDown.delay(280).springify().damping(16)}
         style={[styles.subtitle, { color: colors.textSecondary }]}
       >
         {subtitle}
       </Animated.Text>
       {actionLabel && onAction && (
-        <Animated.View entering={FadeInUp.delay(600).springify()}>
+        <Animated.View entering={FadeInUp.delay(360).springify().damping(16)}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={onAction}

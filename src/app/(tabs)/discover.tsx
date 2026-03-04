@@ -63,7 +63,7 @@ function TrendingVenueCard({
   const priceLabel = Array(venue.price_range).fill('\u20BA').join('');
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 200)).springify().damping(16).stiffness(120)}>
       <TouchableOpacity
         style={[trendingStyles.card, { backgroundColor: colors.card }]}
         onPress={onPress}
@@ -143,7 +143,7 @@ function MeetupCard({
   const venueName = post.event?.venue?.name ?? post.venue?.name ?? '';
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 200)).springify().damping(16).stiffness(120)}>
       <TouchableOpacity
         style={[meetupStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={onPress}
@@ -198,7 +198,7 @@ function QuestionItem({
   onPress: () => void;
 }) {
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 200)).springify().damping(16).stiffness(120)}>
       <TouchableOpacity
         style={[questionStyles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={onPress}
@@ -280,7 +280,7 @@ export default function DiscoverScreen() {
       />
 
       {/* Header */}
-      <Animated.View entering={FadeInDown.delay(0).duration(500)} style={styles.header}>
+      <Animated.View entering={FadeInDown.duration(350).springify().damping(16)} style={styles.header}>
         <View style={styles.headerBrand}>
           <Image
             source={require('../../../assets/logo.png')}

@@ -37,6 +37,7 @@ import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
 import EmptyState from '../../components/ui/EmptyState';
 import BadgeCard from '../../components/ui/BadgeCard';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { ProfileSkeleton } from '../../components/ui/Skeleton';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue, Post, Badge } from '../../types';
@@ -346,17 +347,13 @@ export default function ProfileScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header bar */}
-      <View style={styles.headerBar}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
-        <TouchableOpacity
-          style={[styles.settingsBtn, { backgroundColor: colors.backgroundSecondary }]}
-          onPress={() => router.push('/settings')}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="settings-outline" size={22} color={colors.textTertiary} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Profil"
+        rightAction={{
+          icon: 'settings-outline',
+          onPress: () => router.push('/settings'),
+        }}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -698,19 +695,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header Bar
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-  },
-  headerTitle: {
-    fontSize: FontSize.xxl,
-    fontFamily: FontFamily.heading,
-    letterSpacing: -0.5,
-  },
   settingsBtn: {
     width: 36,
     height: 36,

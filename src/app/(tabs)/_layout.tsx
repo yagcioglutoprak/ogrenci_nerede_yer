@@ -7,6 +7,8 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import GlassView from '../../components/ui/GlassView';
+import { useMessageStore } from '../../stores/messageStore';
+import { useAuthStore } from '../../stores/authStore';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -37,7 +39,7 @@ const TABS: TabDef[] = [
   { name: 'map', title: 'Harita', iconFocused: 'map', iconOutline: 'map-outline' as IoniconsName },
   { name: 'feed', title: 'Akis', iconFocused: 'chatbubbles', iconOutline: 'chatbubbles-outline' as IoniconsName },
   { name: 'add', title: '', iconFocused: 'add', iconOutline: 'add', isAdd: true },
-  { name: 'discover', title: 'Kesfet', iconFocused: 'compass', iconOutline: 'compass-outline' as IoniconsName },
+  { name: 'messages', title: 'Mesajlar', iconFocused: 'mail', iconOutline: 'mail-outline' as IoniconsName },
   { name: 'profile', title: 'Profil', iconFocused: 'person', iconOutline: 'person-outline' as IoniconsName },
 ];
 
@@ -91,9 +93,10 @@ interface GlassTabItemProps {
   onLongPress: () => void;
   color: string;
   isDark: boolean;
+  badge?: number;
 }
 
-function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark }: GlassTabItemProps) {
+function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, badge }: GlassTabItemProps) {
   const scale = useSharedValue(isFocused ? 1 : 0);
   const iconY = useSharedValue(isFocused ? -2 : 0);
 
@@ -124,11 +127,18 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark }: G
     >
       <View style={iosStyles.tabItemInner}>
         <Animated.View style={iconAnimStyle}>
-          <Ionicons
-            name={isFocused ? tab.iconFocused : tab.iconOutline}
-            size={23}
-            color={color}
-          />
+          <View>
+            <Ionicons
+              name={isFocused ? tab.iconFocused : tab.iconOutline}
+              size={23}
+              color={color}
+            />
+            {badge != null && badge > 0 && (
+              <View style={iosStyles.badge}>
+                <Text style={iosStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+              </View>
+            )}
+          </View>
         </Animated.View>
         {tab.title ? (
           <Text
@@ -162,6 +172,13 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
+  const totalUnreadCount = useMessageStore((s) => s.totalUnreadCount);
+  const fetchUnreadCount = useMessageStore((s) => s.fetchUnreadCount);
+  const authUser = useAuthStore((s) => s.user);
+
+  React.useEffect(() => {
+    if (authUser) fetchUnreadCount(authUser.id);
+  }, [authUser?.id]);
 
   // Split tabs: left side, center (add), right side
   const leftTabs = TABS.filter((t) => !t.isAdd).slice(0, 2);
@@ -196,6 +213,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     const idx = findRouteIndex(tab.name);
     const isFocused = state.index === idx;
     const color = isFocused ? colors.primary : colors.textTertiary;
+    const badge = tab.name === 'messages' ? totalUnreadCount : undefined;
     return (
       <GlassTabItem
         key={tab.name}
@@ -205,6 +223,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
         onLongPress={() => handleLongPress(tab.name)}
         color={color}
         isDark={isDark}
+        badge={badge}
       />
     );
   };
@@ -245,6 +264,23 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
 // ---------------------------------------------------------------------------
 // Main layout
 // ---------------------------------------------------------------------------
+
+function AndroidUnreadBadge() {
+  const count = useMessageStore((s) => s.totalUnreadCount);
+  const authUser = useAuthStore((s) => s.user);
+  const fetchUnreadCount = useMessageStore((s) => s.fetchUnreadCount);
+
+  React.useEffect(() => {
+    if (authUser) fetchUnreadCount(authUser.id);
+  }, [authUser?.id]);
+
+  if (!count || count <= 0) return null;
+  return (
+    <View style={iosStyles.badge}>
+      <Text style={iosStyles.badgeText}>{count > 9 ? '9+' : count}</Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -338,23 +374,34 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ---- Discover ---- */}
+      {/* ---- Messages ---- */}
       <Tabs.Screen
-        name="discover"
+        name="messages"
         options={{
-          title: 'Kesfet',
+          title: 'Mesajlar',
           tabBarIcon: ({ color, focused }) => (
             <View style={androidStyles.tabIconWrap}>
-              <Ionicons
-                name={focused ? 'compass' : ('compass-outline' as IoniconsName)}
-                size={22}
-                color={color}
-              />
+              <View>
+                <Ionicons
+                  name={focused ? 'mail' : ('mail-outline' as IoniconsName)}
+                  size={22}
+                  color={color}
+                />
+                <AndroidUnreadBadge />
+              </View>
               {focused && (
                 <View style={[androidStyles.activeIndicator, { backgroundColor: color }]} />
               )}
             </View>
           ),
+        }}
+      />
+
+      {/* ---- Discover (hidden) ---- */}
+      <Tabs.Screen
+        name="discover"
+        options={{
+          href: null,
         }}
       />
 
@@ -467,6 +514,26 @@ const iosStyles = StyleSheet.create({
     fontSize: FontSize.xs,
     letterSpacing: 0.3,
     marginTop: 1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
   },
 });
 

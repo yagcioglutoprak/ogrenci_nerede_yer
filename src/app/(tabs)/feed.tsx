@@ -2,7 +2,6 @@ import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -26,6 +25,7 @@ import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useEventStore } from '../../stores/eventStore';
+import { useMessageStore } from '../../stores/messageStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import PostCard from '../../components/feed/PostCard';
@@ -36,6 +36,7 @@ import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import { PostCardSkeleton } from '../../components/ui/Skeleton';
 import GlassView from '../../components/ui/GlassView';
+import ScreenHeader from '../../components/ui/ScreenHeader';
 import { MOCK_RECOMMENDATION_ANSWERS } from '../../lib/mockData';
 import type { Post, FeedCategory } from '../../types';
 
@@ -188,6 +189,17 @@ export default function FeedScreen() {
     router.push(`/post/${postId}`);
   }, []);
 
+  const handleMessage = useCallback(async (userId: string) => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    const convId = await useMessageStore.getState().fetchOrCreateConversation(user.id, userId);
+    if (convId) {
+      router.push(`/chat/${convId}`);
+    }
+  }, [user]);
+
   const handleCategoryChange = useCallback((cat: FeedCategory) => {
     setCategory(cat);
   }, []);
@@ -237,6 +249,8 @@ export default function FeedScreen() {
                 onBookmark={handleBookmark}
                 onVenuePress={handleVenuePress}
                 onUserPress={handleUserPress}
+                onMessage={handleMessage}
+                currentUserId={user?.id}
               />
             );
           }
@@ -285,7 +299,7 @@ export default function FeedScreen() {
         </Animated.View>
       );
     },
-    [handleLike, handleComment, handleBookmark, handleVenuePress, handleUserPress, handleJoinEvent, handleAnswer, handleJoinMoment],
+    [handleLike, handleComment, handleBookmark, handleVenuePress, handleUserPress, handleJoinEvent, handleAnswer, handleJoinMoment, handleMessage, user?.id],
   );
 
   const renderFooter = () => {
@@ -376,23 +390,14 @@ export default function FeedScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
-      <Animated.View
-        entering={FadeInDown.delay(0).duration(500)}
-        style={styles.header}
-      >
-        <View style={styles.headerBrand}>
-          <Image source={require('../../../assets/logo.png')} style={styles.headerLogo} resizeMode="contain" />
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Akis</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.headerIconButton, { backgroundColor: colors.backgroundSecondary }]}
-          onPress={() => setShowSearch(!showSearch)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name={showSearch ? "close" : "search"} size={22} color={showSearch ? Colors.primary : colors.textTertiary} />
-        </TouchableOpacity>
-      </Animated.View>
+      <ScreenHeader
+        title="Akis"
+        rightAction={{
+          icon: showSearch ? 'close' : 'search',
+          onPress: () => setShowSearch(!showSearch),
+          color: showSearch ? Colors.primary : undefined,
+        }}
+      />
 
       {/* Search Bar */}
       {showSearch && (
@@ -508,35 +513,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-  },
-  headerTitle: {
-    fontSize: FontSize.xxl,
-    fontFamily: FontFamily.heading,
-    letterSpacing: -0.5,
-  },
-  headerBrand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  headerLogo: {
-    width: 32,
-    height: 32,
-  },
-  headerIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   // Search Bar
   searchBarContainer: {

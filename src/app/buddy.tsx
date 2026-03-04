@@ -266,8 +266,13 @@ export default function BuddyScreen() {
   const handleSendMatch = async (buddy: MealBuddy) => {
     const match = await sendMatchRequest(buddy.id);
     if (match) {
-      Alert.alert('Istek Gonderildi', `${buddy.user?.full_name || 'Kullanici'}'a bulusma istegi gonderildi!`);
+      Alert.alert(
+        'Istek Gonderildi',
+        `${buddy.user?.full_name || 'Kullanici'}'a bulusma istegi gonderildi! Cevap bekleniyor...`,
+      );
       setSelectedBuddy(null);
+    } else {
+      Alert.alert('Hata', 'Istek gonderilemedi, tekrar deneyin.');
     }
   };
 
@@ -298,7 +303,11 @@ export default function BuddyScreen() {
 
   const handleRate = async (thumbsUp: boolean) => {
     if (!activeMatch || !user) return;
-    await rateBuddy(activeMatch.id, user.id, thumbsUp);
+    try {
+      await rateBuddy(activeMatch.id, user.id, thumbsUp);
+    } catch {
+      // Rating save failed, continue with cleanup anyway
+    }
     setShowRating(false);
     setRatingDone(true);
 

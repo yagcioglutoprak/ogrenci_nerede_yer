@@ -43,6 +43,8 @@ interface PostCardProps {
   onBookmark?: (postId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onUserPress?: (userId: string) => void;
+  onMessage?: (userId: string) => void;
+  currentUserId?: string;
 }
 
 export default function PostCard({
@@ -53,6 +55,8 @@ export default function PostCard({
   onBookmark,
   onVenuePress,
   onUserPress,
+  onMessage,
+  currentUserId,
 }: PostCardProps) {
   const colors = useThemeColors();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -250,6 +254,17 @@ export default function PostCard({
             >
               <Ionicons name="share-outline" size={22} color={colors.text} />
             </TouchableOpacity>
+
+            {onMessage && post.user_id !== currentUserId && (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => onMessage(post.user_id)}
+                activeOpacity={0.5}
+                hitSlop={8}
+              >
+                <Ionicons name="paper-plane-outline" size={21} color={colors.text} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Animated Bookmark */}

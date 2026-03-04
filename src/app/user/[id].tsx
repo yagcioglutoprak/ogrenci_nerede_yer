@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
+import { useMessageStore } from '../../stores/messageStore';
 import { supabase } from '../../lib/supabase';
 import { MOCK_USERS, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -142,6 +143,17 @@ export default function UserProfileScreen() {
     }
   };
 
+  const handleMessage = async () => {
+    if (!currentUser || !id) {
+      router.push('/auth/login');
+      return;
+    }
+    const convId = await useMessageStore.getState().fetchOrCreateConversation(currentUser.id, id);
+    if (convId) {
+      router.push(`/chat/${convId}`);
+    }
+  };
+
   if (loading || !profileUser) {
     return (
       <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
@@ -188,22 +200,32 @@ export default function UserProfileScreen() {
             <Text style={[styles.bioText, { color: colors.text }]}>{profileUser.bio}</Text>
           )}
 
-          {/* Follow button */}
+          {/* Action buttons */}
           {!isOwnProfile && (
-            <TouchableOpacity
-              style={[styles.followButton, isFollowing && styles.followButtonActive, isFollowing && { backgroundColor: colors.backgroundSecondary }]}
-              onPress={handleFollowToggle}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name={isFollowing ? 'checkmark' : 'person-add-outline'}
-                size={16}
-                color={isFollowing ? Colors.primary : '#FFFFFF'}
-              />
-              <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
-                {isFollowing ? 'Takip Ediliyor' : 'Takip Et'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[styles.followButton, isFollowing && styles.followButtonActive, isFollowing && { backgroundColor: colors.backgroundSecondary }]}
+                onPress={handleFollowToggle}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={isFollowing ? 'checkmark' : 'person-add-outline'}
+                  size={16}
+                  color={isFollowing ? Colors.primary : '#FFFFFF'}
+                />
+                <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+                  {isFollowing ? 'Takip Ediliyor' : 'Takip Et'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.messageButton}
+                onPress={handleMessage}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="chatbubble-outline" size={16} color={Colors.primary} />
+                <Text style={styles.messageButtonText}>Mesaj At</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
@@ -363,20 +385,40 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
   },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
   followButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
+  },
+  messageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  messageButtonText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: Colors.primary,
   },
   followButtonActive: {
     backgroundColor: Colors.backgroundSecondary,

@@ -109,6 +109,7 @@ const getMarkerTier = (venue: Venue): MarkerTier => {
 };
 
 const getPriceSymbol = (priceRange: number) => '₺'.repeat(priceRange);
+const isEfsane = (venue: Venue) => venue.level >= 4;
 
 export default function MapScreen() {
   const router = useRouter();
@@ -347,7 +348,7 @@ export default function MapScreen() {
             );
           }
 
-          // ── Tier 2: Unreviewed ONY venue — muted pill ──
+          // ── Tier 2: Unreviewed ONY venue — grey tag ──
           if (tier === 'unreviewed') {
             return (
               <Marker
@@ -356,14 +357,13 @@ export default function MapScreen() {
                 onPress={() => handleMarkerPress(venue)}
                 tracksViewChanges={false}
               >
-                <View style={styles.markerWrapper}>
-                  <View style={[styles.mutedPill, { backgroundColor: isDark ? 'rgba(40,40,40,0.75)' : 'rgba(245,245,245,0.85)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                    <Text style={[styles.mutedPillText, { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1}>
+                <View style={styles.tagWrapper}>
+                  <View style={[styles.tagUnreviewed, { backgroundColor: isDark ? 'rgba(60,60,60,0.9)' : '#ECECF0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
+                    <Text style={[styles.tagUnreviewedText, { color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                   </View>
-                  <View style={[styles.mutedStem, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
-                  <View style={[styles.mutedAnchor, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)', borderColor: isDark ? 'rgba(60,60,60,0.9)' : 'rgba(255,255,255,0.9)' }]} />
+                  <View style={[styles.tagPointer, { borderTopColor: isDark ? 'rgba(60,60,60,0.9)' : '#ECECF0' }]} />
                 </View>
 
                 <Callout tooltip onPress={() => handleCalloutPress(venue)}>
@@ -388,8 +388,20 @@ export default function MapScreen() {
             );
           }
 
-          // ── Tier 3: Reviewed ONY venue — full liquid glass card ──
-          const hasEditorial = venue.editorial_rating != null;
+          // ── Tier 3: Reviewed ONY venue — colored tag ──
+          const venueIsEfsane = isEfsane(venue);
+          const tagContent = (
+            <>
+              <Text style={styles.tagReviewedText} numberOfLines={1}>
+                {venue.name}
+              </Text>
+              <Ionicons name="star" size={10} color="rgba(255,255,255,0.85)" style={{ marginLeft: 6 }} />
+              <Text style={styles.tagReviewedRating}>
+                {venue.overall_rating.toFixed(1)}
+              </Text>
+            </>
+          );
+
           return (
           <Marker
             key={venue.id}
@@ -400,43 +412,22 @@ export default function MapScreen() {
             onPress={() => handleMarkerPress(venue)}
             tracksViewChanges={false}
           >
-            <View style={styles.markerWrapper}>
-              {/* Liquid Glass card */}
-              <View style={[styles.markerGlass, { backgroundColor: isDark ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.82)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
-                <View style={styles.markerGlassInner}>
-                  {/* Top row: dot + name */}
-                  <View style={styles.markerHeader}>
-                    {hasEditorial ? (
-                      <Image source={require('../../../assets/logo.png')} style={styles.markerLogo} resizeMode="contain" />
-                    ) : (
-                      <View style={[styles.markerDot, { backgroundColor: Colors.primary }]} />
-                    )}
-                    <Text style={[styles.markerName, { color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)' }]} numberOfLines={1}>
-                      {venue.name}
-                    </Text>
-                  </View>
-                  {/* Bottom row: rating + price + editorial */}
-                  <View style={styles.markerMeta}>
-                    <Text style={[styles.markerScore, { color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }]}>
-                      {venue.overall_rating.toFixed(1)}
-                    </Text>
-                    <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-                    <Text style={[styles.markerPrice, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }]}>
-                      {getPriceSymbol(venue.price_range)}
-                    </Text>
-                    {hasEditorial && (
-                      <>
-                        <View style={[styles.markerMetaDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-                        <Image source={require('../../../assets/logo.png')} style={styles.markerMetaLogo} resizeMode="contain" />
-                        <Text style={styles.markerOnyScore}>{venue.editorial_rating}</Text>
-                      </>
-                    )}
-                  </View>
+            <View style={styles.tagWrapper}>
+              {venueIsEfsane ? (
+                <LinearGradient
+                  colors={[Colors.gradientStart, Colors.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.tagReviewed}
+                >
+                  {tagContent}
+                </LinearGradient>
+              ) : (
+                <View style={styles.tagReviewed}>
+                  {tagContent}
                 </View>
-              </View>
-              {/* Stem */}
-              <View style={[styles.markerStem, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
-              <View style={[styles.markerAnchor, { backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)', borderColor: isDark ? 'rgba(60,60,60,0.9)' : 'rgba(255,255,255,0.9)' }]} />
+              )}
+              <View style={[styles.tagPointer, { borderTopColor: venueIsEfsane ? Colors.gradientEnd : Colors.primary }]} />
             </View>
 
             <Callout tooltip onPress={() => handleCalloutPress(venue)}>
@@ -859,81 +850,70 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
 
-  // Markers — Liquid Glass inspired
-  markerWrapper: {
+  // ── Tag markers ──
+  tagWrapper: {
     alignItems: 'center',
   },
-  markerGlass: {
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.7)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    maxWidth: 150,
-  },
-  markerGlassInner: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  markerHeader: {
+  // Reviewed ONY — solid red tag
+  tagReviewed: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    maxWidth: 170,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  markerDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  markerName: {
+  tagReviewedText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(0,0,0,0.85)',
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
     letterSpacing: -0.3,
     flexShrink: 1,
   },
-  markerMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 3,
-    paddingLeft: 12,
-  },
-  markerScore: {
+  tagReviewedRating: {
     fontSize: 11,
     fontFamily: FontFamily.headingBold,
-    color: 'rgba(0,0,0,0.6)',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: -0.2,
+    marginLeft: 2,
+  },
+  // Unreviewed ONY — light grey tag
+  tagUnreviewed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    maxWidth: 140,
+    borderWidth: 0.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tagUnreviewedText: {
+    fontSize: 11,
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
-  markerMetaDivider: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  markerPrice: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(0,0,0,0.45)',
-  },
-  markerLogo: {
-    width: 14,
-    height: 14,
-  },
-  markerMetaLogo: {
-    width: 11,
-    height: 11,
-  },
-  markerOnyScore: {
-    fontSize: 10,
-    fontFamily: FontFamily.heading,
-    color: Colors.accent,
-    letterSpacing: -0.2,
-    marginLeft: 1,
+  // Shared pointer triangle
+  tagPointer: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.primary,
+    marginTop: -1,
   },
   // Tier 1: Grey dot (Google Places)
   greyDot: {
@@ -979,46 +959,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // Tier 2: Muted pill (unreviewed ONY venue)
-  mutedPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    maxWidth: 120,
-  },
-  mutedPillText: {
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: -0.2,
-  },
-  mutedStem: {
-    width: 1,
-    height: 4,
-  },
-  mutedAnchor: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    borderWidth: 1,
-  },
   mutedCalloutAddr: {
     fontSize: FontSize.xs,
     marginTop: 2,
-  },
-
-  markerStem: {
-    width: 1.5,
-    height: 6,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-  },
-  markerAnchor: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
   },
 
   // Callout — Liquid Glass

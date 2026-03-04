@@ -21,6 +21,8 @@ import type {
   MealBuddy,
   BuddyMatch,
   BuddyMessage,
+  Conversation,
+  DirectMessage,
 } from '../types';
 
 // ==========================================
@@ -2115,5 +2117,189 @@ export const MOCK_BUDDY_MESSAGES: BuddyMessage[] = [
     sender_id: 'u-001',
     content: 'Olur! 15 dakikaya orada olurum',
     created_at: new Date(Date.now() - 15 * 60000).toISOString(),
+  },
+];
+
+// ==========================================
+// MOCK CONVERSATIONS (4 for u-001)
+// ==========================================
+export const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv-001',
+    participant_1: 'u-001',
+    participant_2: 'u-002',
+    last_message_text: 'Kadikoy\'deki o yeni yere gittim, cok iyiydi!',
+    last_message_at: new Date(Date.now() - 5 * 60000).toISOString(),
+    last_message_sender_id: 'u-002',
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    other_user: {
+      id: 'u-002',
+      email: 'can.demir@boun.edu.tr',
+      username: 'can_demir',
+      full_name: 'Can Demir',
+      avatar_url: 'https://i.pravatar.cc/150?u=can',
+      university: 'Bogazici Universitesi',
+      bio: 'Kahve bagimlisi, her yeni kafeyi denerim',
+      xp_points: 870,
+      created_at: '2025-09-15T08:30:00Z',
+    },
+    unread_count: 2,
+  },
+  {
+    id: 'conv-002',
+    participant_1: 'u-001',
+    participant_2: 'u-003',
+    last_message_text: 'O vejetaryen mekani deneyecegim, tesekkurler!',
+    last_message_at: new Date(Date.now() - 3 * 3600000).toISOString(),
+    last_message_sender_id: 'u-001',
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    other_user: {
+      id: 'u-003',
+      email: 'zeynep.kaya@itu.edu.tr',
+      username: 'zeynep_kaya',
+      full_name: 'Zeynep Kaya',
+      avatar_url: 'https://i.pravatar.cc/150?u=zeynep',
+      university: 'Istanbul Teknik Universitesi',
+      bio: 'Vejetaryen dostum, en iyi salatalari bulurum!',
+      xp_points: 2100,
+      created_at: '2025-08-20T14:00:00Z',
+    },
+    unread_count: 0,
+  },
+  {
+    id: 'conv-003',
+    participant_1: 'u-001',
+    participant_2: 'u-005',
+    last_message_text: 'Pazar kahvaltisi icin saati ayarlayalim mi?',
+    last_message_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    last_message_sender_id: 'u-005',
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+    other_user: {
+      id: 'u-005',
+      email: 'selin.arslan@yildiz.edu.tr',
+      username: 'selin_arslan',
+      full_name: 'Selin Arslan',
+      avatar_url: 'https://i.pravatar.cc/150?u=selin',
+      university: 'Yildiz Teknik Universitesi',
+      bio: 'Kahvalti kralicesi. Pazar kahvaltisi icin her yere giderim.',
+      xp_points: 1680,
+      created_at: '2025-09-10T09:00:00Z',
+    },
+    unread_count: 1,
+  },
+  {
+    id: 'conv-004',
+    participant_1: 'u-001',
+    participant_2: 'u-004',
+    last_message_text: 'Doner tavsiyesini begendim, sagol!',
+    last_message_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    last_message_sender_id: 'u-004',
+    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+    other_user: {
+      id: 'u-004',
+      email: 'ahmet.ozturk@marmara.edu.tr',
+      username: 'ahmet_ozturk',
+      full_name: 'Ahmet Ozturk',
+      avatar_url: 'https://i.pravatar.cc/150?u=ahmet',
+      university: 'Marmara Universitesi',
+      bio: 'Kadikoy sokaklarinin yemek gurusu. Doner konusunda uzman.',
+      xp_points: 560,
+      created_at: '2025-10-05T12:00:00Z',
+    },
+    unread_count: 0,
+  },
+];
+
+// ==========================================
+// MOCK DIRECT MESSAGES
+// ==========================================
+export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
+  // conv-001: u-001 <-> u-002
+  {
+    id: 'dm-001',
+    conversation_id: 'conv-001',
+    sender_id: 'u-001',
+    content: 'Selam Can! O kafeden bahsettiklerin nasil?',
+    is_read: true,
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+  },
+  {
+    id: 'dm-002',
+    conversation_id: 'conv-001',
+    sender_id: 'u-002',
+    content: 'Harika, filtre kahvesi mukemmeldi',
+    is_read: true,
+    created_at: new Date(Date.now() - 90 * 60000).toISOString(),
+  },
+  {
+    id: 'dm-003',
+    conversation_id: 'conv-001',
+    sender_id: 'u-002',
+    content: 'Kadikoy\'deki o yeni yere gittim, cok iyiydi!',
+    is_read: false,
+    created_at: new Date(Date.now() - 5 * 60000).toISOString(),
+  },
+  // conv-002: u-001 <-> u-003
+  {
+    id: 'dm-004',
+    conversation_id: 'conv-002',
+    sender_id: 'u-003',
+    content: 'Besiktas\'ta yeni vejetaryen mekani acildi, denedin mi?',
+    is_read: true,
+    created_at: new Date(Date.now() - 4 * 3600000).toISOString(),
+  },
+  {
+    id: 'dm-005',
+    conversation_id: 'conv-002',
+    sender_id: 'u-001',
+    content: 'O vejetaryen mekani deneyecegim, tesekkurler!',
+    is_read: true,
+    created_at: new Date(Date.now() - 3 * 3600000).toISOString(),
+  },
+  // conv-003: u-001 <-> u-005
+  {
+    id: 'dm-006',
+    conversation_id: 'conv-003',
+    sender_id: 'u-001',
+    content: 'Bu hafta sonu kahvalti yapacak misin?',
+    is_read: true,
+    created_at: new Date(Date.now() - 26 * 3600000).toISOString(),
+  },
+  {
+    id: 'dm-007',
+    conversation_id: 'conv-003',
+    sender_id: 'u-005',
+    content: 'Pazar kahvaltisi icin saati ayarlayalim mi?',
+    is_read: false,
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+  },
+  // Typed messages: image + venue
+  {
+    id: 'dm-008',
+    conversation_id: 'conv-001',
+    sender_id: 'u-002',
+    content: '\ud83d\udcf7 Fotograf',
+    message_type: 'image' as const,
+    metadata: {
+      image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
+    },
+    is_read: false,
+    created_at: new Date(Date.now() - 3 * 60000).toISOString(),
+  },
+  {
+    id: 'dm-009',
+    conversation_id: 'conv-002',
+    sender_id: 'u-003',
+    content: 'Yesil Bahce Cafe',
+    message_type: 'venue' as const,
+    metadata: {
+      venue_id: 'v-003',
+      venue_name: 'Yesil Bahce Cafe',
+      venue_cover_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop',
+      venue_rating: 4.3,
+      venue_price_range: 2,
+    },
+    is_read: true,
+    created_at: new Date(Date.now() - 2.5 * 3600000).toISOString(),
   },
 ];
