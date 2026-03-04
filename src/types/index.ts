@@ -232,3 +232,29 @@ export interface PaginationState {
   cursor: string | null;
   pageSize: number;
 }
+
+export interface List {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  is_public: boolean;
+  slug: string | null;
+  likes_count: number;
+  followers_count: number;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  venues?: ListVenue[];
+}
+
+export interface ListVenue {
+  id: string;
+  list_id: string;
+  venue_id: string;
+  position: number;
+  note: string | null;
+  added_at: string;
+  venue?: Venue;
+}

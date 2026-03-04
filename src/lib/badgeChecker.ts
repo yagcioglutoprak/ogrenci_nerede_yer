@@ -27,6 +27,7 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       { count: momentsCount },
       { data: answersData },
       { data: userData },
+      { count: listsCount },
     ] = await Promise.all([
       supabase.from('venues').select('*', { count: 'exact', head: true }).eq('created_by', userId),
       supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -37,6 +38,7 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('post_type', 'moment'),
       supabase.from('recommendation_answers').select('upvotes').eq('user_id', userId),
       supabase.from('users').select('last_active_date').eq('id', userId).single(),
+      supabase.from('lists').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     ]);
 
     const upvotesReceived = (answersData || []).reduce((sum: number, a: any) => sum + (a.upvotes || 0), 0);
@@ -54,6 +56,7 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       moments_shared: momentsCount || 0,
       upvotes_received: upvotesReceived,
       streak_days: streakDays,
+      lists_created: listsCount || 0,
     };
 
     // Award any newly-earned badges
