@@ -67,6 +67,8 @@ export interface Post {
   id: string;
   user_id: string;
   venue_id: string | null;
+  post_type: 'discovery' | 'meetup' | 'question' | 'moment';
+  expires_at: string | null;
   caption: string;
   created_at: string;
   // Joined
@@ -76,6 +78,7 @@ export interface Post {
   likes_count?: number;
   comments_count?: number;
   is_liked?: boolean;
+  event?: Event;
 }
 
 export interface PostImage {
@@ -120,7 +123,7 @@ export interface Badge {
   name: string;
   description: string;
   icon_name: string;
-  condition_type: 'venues_added' | 'reviews_written' | 'posts_created' | 'likes_received' | 'streak_days';
+  condition_type: 'venues_added' | 'reviews_written' | 'posts_created' | 'likes_received' | 'streak_days' | 'meetups_attended' | 'meetups_organized' | 'moments_shared' | 'upvotes_received';
   condition_value: number;
   color: string;
 }
@@ -131,6 +134,62 @@ export interface UserBadge {
   earned_at: string;
   badge?: Badge;
 }
+
+export interface Event {
+  id: string;
+  creator_id: string;
+  venue_id: string | null;
+  post_id: string;
+  title: string;
+  description: string | null;
+  location_name: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  event_date: string;
+  max_attendees: number;
+  is_public: boolean;
+  status: 'upcoming' | 'active' | 'completed' | 'cancelled';
+  created_at: string;
+  // Joined
+  creator?: User;
+  venue?: Venue;
+  attendees?: EventAttendee[];
+  attendee_count?: number;
+}
+
+export interface EventAttendee {
+  event_id: string;
+  user_id: string;
+  status: 'confirmed' | 'waitlisted' | 'cancelled';
+  joined_at: string;
+  // Joined
+  user?: User;
+}
+
+export interface EventMessage {
+  id: string;
+  event_id: string;
+  user_id: string;
+  message: string;
+  created_at: string;
+  // Joined
+  user?: User;
+}
+
+export interface RecommendationAnswer {
+  id: string;
+  post_id: string;
+  user_id: string;
+  venue_id: string | null;
+  text: string;
+  upvotes: number;
+  created_at: string;
+  // Joined
+  user?: User;
+  venue?: Venue;
+}
+
+export type PostType = 'discovery' | 'meetup' | 'question' | 'moment';
 
 // Navigation parametreleri
 export type RootStackParamList = {
@@ -161,7 +220,7 @@ export interface VenueFilters {
 }
 
 // Feed category tipi
-export type FeedCategory = 'all' | 'nearby' | 'top' | 'new';
+export type FeedCategory = 'all' | 'nearby' | 'top' | 'new' | 'meetups' | 'questions' | 'moments';
 
 // Pagination state tipi
 export interface PaginationState {
