@@ -172,7 +172,7 @@ export const PriceRanges = [
 export const RatingCategories = [
   { key: 'taste', label: 'Lezzet', icon: 'restaurant' },
   { key: 'value', label: 'Fiyat/Performans', icon: 'pricetag' },
-  { key: 'friendliness', label: 'Öğrenci Dostu', icon: 'people' },
+  { key: 'friendliness', label: 'Ortam', icon: 'cafe' },
 ] as const;
 
 // Mekan seviyeleri

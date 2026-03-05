@@ -191,20 +191,26 @@ export default function VenueDetailScreen() {
       3
     ).toFixed(1);
 
+    const ratingPills = [
+      { icon: 'restaurant' as keyof typeof Ionicons.glyphMap, value: item.taste_rating, color: Colors.primary },
+      { icon: 'pricetag' as keyof typeof Ionicons.glyphMap, value: item.value_rating, color: Colors.accent },
+      { icon: 'cafe' as keyof typeof Ionicons.glyphMap, value: item.friendliness_rating, color: Colors.verified },
+    ];
+
     return (
-      <GlassView key={item.id} style={[styles.reviewCard, Platform.OS === 'ios' && styles.reviewCardGlass, { backgroundColor: colors.card, borderColor: colors.border, borderLeftColor: Colors.primary, borderLeftWidth: 3 }]} fallbackColor={colors.card}>
-        {/* Header: avatar + name + date */}
+      <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* Header: avatar + name + date + score */}
         <View style={styles.reviewHeader}>
           <Avatar
             uri={item.user?.avatar_url}
             name={item.user?.full_name ?? item.user?.username ?? '?'}
-            size={38}
+            size={36}
           />
           <View style={styles.reviewHeaderText}>
             <Text style={[styles.reviewUsername, { color: colors.text }]}>
               {item.user?.username ?? 'Anonim'}
             </Text>
-            <Text style={styles.reviewDate}>
+            <Text style={[styles.reviewDate, { color: colors.textTertiary }]}>
               {new Date(item.created_at).toLocaleDateString('tr-TR', {
                 day: 'numeric',
                 month: 'long',
@@ -212,21 +218,27 @@ export default function VenueDetailScreen() {
               })}
             </Text>
           </View>
-          <CircleRating score={parseFloat(avg)} maxScore={5} size="sm" autoColor />
-        </View>
-
-        {/* Mini inline ratings */}
-        <View style={styles.reviewMiniRatings}>
-          <RatingBar rating={item.taste_rating} size="sm" icon="restaurant" color={Colors.primary} />
-          <RatingBar rating={item.value_rating} size="sm" icon="pricetag" color={Colors.accent} />
-          <RatingBar rating={item.friendliness_rating} size="sm" icon="people" color={Colors.verified} />
+          <View style={styles.reviewAvgBadge}>
+            <Ionicons name="star" size={12} color={Colors.accent} />
+            <Text style={styles.reviewAvgText}>{avg}</Text>
+          </View>
         </View>
 
         {/* Comment */}
         {item.comment ? (
           <Text style={[styles.reviewComment, { color: colors.text }]}>{item.comment}</Text>
         ) : null}
-      </GlassView>
+
+        {/* Compact rating pills */}
+        <View style={styles.reviewRatingPills}>
+          {ratingPills.map((pill) => (
+            <View key={pill.icon} style={[styles.reviewPill, { backgroundColor: colors.background }]}>
+              <Ionicons name={pill.icon} size={12} color={pill.color} />
+              <Text style={[styles.reviewPillText, { color: colors.textSecondary }]}>{pill.value.toFixed(1)}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
     );
   };
 
@@ -443,6 +455,23 @@ export default function VenueDetailScreen() {
               </Text>
             </View>
           ))}
+
+          {/* Puan Ver button */}
+          <TouchableOpacity
+            onPress={handleToggleRatingForm}
+            activeOpacity={0.8}
+            style={{ marginTop: Spacing.md }}
+          >
+            <LinearGradient
+              colors={[Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.rateToggleButton}
+            >
+              <Ionicons name="star-outline" size={20} color="#FFFFFF" />
+              <Text style={[styles.rateToggleText, { color: '#FFFFFF' }]}>Puan Ver</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </GlassView>
 
         {/* ============================
@@ -607,26 +636,6 @@ export default function VenueDetailScreen() {
         )}
 
         {/* ============================
-            PUAN VER BUTTON
-        ============================ */}
-        <View style={styles.rateSection}>
-          <TouchableOpacity
-            onPress={handleToggleRatingForm}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.rateToggleButton}
-            >
-              <Ionicons name="star-outline" size={20} color="#FFFFFF" />
-              <Text style={[styles.rateToggleText, { color: '#FFFFFF' }]}>Puan Ver</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* ============================
             RATING MODAL
         ============================ */}
         <Modal
@@ -676,11 +685,11 @@ export default function VenueDetailScreen() {
                   <StarRating rating={ratingValue} interactive onRatingChange={setRatingValue} size={32} />
                 </View>
 
-                {/* Friendliness */}
+                {/* Ortam */}
                 <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
                   <View style={styles.rateFormLabel}>
-                    <Ionicons name="people" size={20} color={Colors.verified} />
-                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Öğrenci Dostu</Text>
+                    <Ionicons name="cafe" size={20} color={Colors.verified} />
+                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Ortam</Text>
                   </View>
                   <StarRating rating={ratingFriendliness} interactive onRatingChange={setRatingFriendliness} size={32} />
                 </View>
@@ -723,9 +732,14 @@ export default function VenueDetailScreen() {
             REVIEWS LIST
         ============================ */}
         <View style={styles.reviewsSection}>
-          <Text style={[styles.reviewsSectionTitle, { color: colors.text }]}>
-            Değerlendirmeler ({reviews.length})
-          </Text>
+          <View style={styles.reviewsSectionHeader}>
+            <Text style={[styles.reviewsSectionTitle, { color: colors.text }]}>
+              Değerlendirmeler
+            </Text>
+            <View style={styles.reviewsCountBadge}>
+              <Text style={styles.reviewsCountText}>{reviews.length}</Text>
+            </View>
+          </View>
 
           {reviews.length === 0 ? (
             <View style={styles.noReviews}>
@@ -1186,11 +1200,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ---- PUAN VER SECTION ----
-  rateSection: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.xxl,
-  },
+  // ---- PUAN VER BUTTON ----
   rateToggleButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1314,11 +1324,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xxl,
   },
+  reviewsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   reviewsSectionTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
     color: Colors.text,
-    marginBottom: Spacing.lg,
+  },
+  reviewsCountBadge: {
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.full,
+    minWidth: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  reviewsCountText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.headingBold,
+    color: Colors.primary,
   },
   noReviews: {
     alignItems: 'center',
@@ -1336,65 +1365,67 @@ const styles = StyleSheet.create({
   },
   reviewCard: {
     backgroundColor: Colors.card,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
   },
   reviewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.md,
+    gap: Spacing.sm,
   },
   reviewHeaderText: {
     flex: 1,
   },
   reviewUsername: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   reviewDate: {
     fontSize: FontSize.xs,
     color: Colors.textTertiary,
-    marginTop: 2,
+    marginTop: 1,
   },
-  reviewScoreBadge: {
+  reviewAvgBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: Colors.primarySoft,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: '#FFF8E1',
+    borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 4,
   },
-  reviewScoreText: {
+  reviewAvgText: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
-  reviewMiniRatings: {
+  reviewComment: {
+    fontSize: FontSize.sm,
+    color: Colors.text,
+    lineHeight: 20,
+    marginTop: Spacing.sm,
+  },
+  reviewRatingPills: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.lg,
-    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
   },
-  reviewMiniItem: {
+  reviewPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
   },
-  reviewComment: {
-    fontSize: FontSize.md,
-    color: Colors.text,
-    lineHeight: 22,
+  reviewPillText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.headingBold,
   },
   heroCircleButtonGlass: {
     width: 40,
@@ -1411,9 +1442,6 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   editorialCardGlass: {
-    borderWidth: 0,
-  },
-  reviewCardGlass: {
     borderWidth: 0,
   },
 });
