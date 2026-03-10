@@ -133,6 +133,7 @@ export default function MapScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
 
   // Filter state
   const [filterPrice, setFilterPrice] = useState<number[]>([]);
@@ -317,7 +318,7 @@ export default function MapScreen() {
                   coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
                   tracksViewChanges={false}
                   anchor={{ x: 0.5, y: 0.5 }}
-                  centerOffset={{ x: 0, y: 28 }}
+                  centerOffset={{ x: 0, y: 37 }}
                   tappable={false}
                 >
                   <View style={styles.clusterCountBadge}>
@@ -367,8 +368,6 @@ export default function MapScreen() {
           }
 
           // ── Tier 3: Reviewed ONY venue — native logo marker ──
-          // `image` prop renders natively, bypassing Fabric AIRMapMarker crash.
-          // Tap → zoom to venue + open bottom sheet.
           return (
           <Marker
             key={venue.id}
@@ -384,8 +383,8 @@ export default function MapScreen() {
         })}
       </MapView>
 
-      {/* Liquid Glass Search Bar */}
-      <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
+      {/* Liquid Glass Search Bar — hidden when sheet is expanded */}
+      {!sheetExpanded && <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
         <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]} effect="regular" interactive>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.searchIcon} />
@@ -475,7 +474,7 @@ export default function MapScreen() {
             )}
           </GlassView>
         )}
-      </SafeAreaView>
+      </SafeAreaView>}
 
       {/* Error banner — Liquid Glass on iOS */}
       {error && (
@@ -633,6 +632,7 @@ export default function MapScreen() {
       <VenueBottomSheet
         venue={selectedVenue}
         onDismiss={() => setSelectedVenue(null)}
+        onExpandChange={setSheetExpanded}
       />
     </View>
   );
