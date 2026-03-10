@@ -23,7 +23,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useListStore } from '../../stores/listStore';
-import { MOCK_SOCIAL_VIDEOS } from '../../lib/mockData';
+import { MOCK_SOCIAL_VIDEOS, MOCK_POSTS, MOCK_USERS, MOCK_POST_IMAGES } from '../../lib/mockData';
+import { supabase } from '../../lib/supabase';
 import {
   Colors,
   PriceRanges,
@@ -38,7 +39,7 @@ import RatingBar from '../../components/ui/RatingBar';
 import CircleRating from '../../components/ui/CircleRating';
 import CirclePicker from '../../components/ui/CirclePicker';
 import Avatar from '../../components/ui/Avatar';
-import type { Review, SocialVideo } from '../../types';
+import type { Review, SocialVideo, Post } from '../../types';
 import GlassView from '../../components/ui/GlassView';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
@@ -69,11 +70,13 @@ export default function VenueDetailScreen() {
   const [ratingFriendliness, setRatingFriendliness] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [venuePosts, setVenuePosts] = useState<Post[]>([]);
 
   useEffect(() => {
     if (id) {
       fetchVenueById(id);
       fetchReviews(id);
+      fetchVenuePosts(id);
     }
   }, [id]);
 
@@ -151,6 +154,51 @@ export default function VenueDetailScreen() {
 
   const openVideo = (url: string) => {
     Linking.openURL(url);
+  };
+
+  const fetchVenuePosts = async (venueId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('posts_with_counts')
+        .select(`
+          *,
+          user:users(*),
+          images:post_images(*)
+        `)
+        .eq('venue_id', venueId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (!error && data && data.length > 0) {
+        setVenuePosts(data as Post[]);
+        return;
+      }
+    } catch {}
+
+    // Fallback: mock data
+    const mockPosts = MOCK_POSTS
+      .filter((p) => p.venue_id === venueId)
+      .map((p) => ({
+        ...p,
+        user: MOCK_USERS.find((u) => u.id === p.user_id),
+        images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id).sort((a, b) => a.order - b.order),
+      }))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as Post[];
+    setVenuePosts(mockPosts);
+  };
+
+  const getPostRelativeTime = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMinutes < 1) return 'şimdi';
+    if (diffMinutes < 60) return `${diffMinutes}dk`;
+    if (diffHours < 24) return `${diffHours}sa`;
+    if (diffDays < 7) return `${diffDays}g`;
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
   };
 
   const getPlatformInfo = (platform: SocialVideo['platform']) => {
@@ -641,6 +689,99 @@ export default function VenueDetailScreen() {
                           @{video.author}
                         </Text>
                       )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ============================
+            COMMUNITY POSTS SECTION
+        ============================ */}
+        {venuePosts.length > 0 && (
+          <View style={styles.communitySection}>
+            <View style={styles.communitySectionHeader}>
+              <View style={styles.communitySectionTitleRow}>
+                <Ionicons name="people" size={20} color={Colors.primary} />
+                <Text style={[styles.communitySectionTitle, { color: colors.text }]}>Topluluk</Text>
+              </View>
+              <Text style={styles.communitySectionCount}>{venuePosts.length} paylaşım</Text>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.communityScroll}
+            >
+              {venuePosts.map((post) => {
+                const firstImage = post.images?.[0]?.image_url;
+                return (
+                  <TouchableOpacity
+                    key={post.id}
+                    style={[styles.communityCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      // Navigate to feed or post detail
+                    }}
+                  >
+                    {/* Post image */}
+                    {firstImage ? (
+                      <View style={styles.communityImageContainer}>
+                        <Image source={{ uri: firstImage }} style={styles.communityImage} />
+                        {(post.images?.length ?? 0) > 1 && (
+                          <View style={styles.communityImageCount}>
+                            <Ionicons name="images" size={10} color="#FFFFFF" />
+                            <Text style={styles.communityImageCountText}>{post.images?.length}</Text>
+                          </View>
+                        )}
+                      </View>
+                    ) : (
+                      <View style={[styles.communityImageContainer, styles.communityImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.textTertiary} />
+                      </View>
+                    )}
+
+                    {/* Post info */}
+                    <View style={styles.communityCardBody}>
+                      {/* User row */}
+                      <View style={styles.communityUserRow}>
+                        <Avatar
+                          uri={post.user?.avatar_url}
+                          name={post.user?.full_name ?? post.user?.username ?? '?'}
+                          size={20}
+                        />
+                        <Text style={[styles.communityUsername, { color: colors.text }]} numberOfLines={1}>
+                          {post.user?.username ?? 'Kullanıcı'}
+                        </Text>
+                        <Text style={[styles.communityTime, { color: colors.textTertiary }]}>
+                          {getPostRelativeTime(post.created_at)}
+                        </Text>
+                      </View>
+
+                      {/* Caption */}
+                      {post.caption ? (
+                        <Text style={[styles.communityCaption, { color: colors.textSecondary }]} numberOfLines={2}>
+                          {post.caption}
+                        </Text>
+                      ) : null}
+
+                      {/* Engagement */}
+                      <View style={styles.communityEngagement}>
+                        <View style={styles.communityEngagementItem}>
+                          <Ionicons name="heart" size={12} color={Colors.primary} />
+                          <Text style={[styles.communityEngagementText, { color: colors.textTertiary }]}>
+                            {post.likes_count ?? 0}
+                          </Text>
+                        </View>
+                        <View style={styles.communityEngagementItem}>
+                          <Ionicons name="chatbubble" size={11} color={colors.textTertiary} />
+                          <Text style={[styles.communityEngagementText, { color: colors.textTertiary }]}>
+                            {post.comments_count ?? 0}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 );
@@ -1241,6 +1382,119 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs - 1,
     color: Colors.textTertiary,
     fontWeight: '500',
+  },
+
+  // ---- COMMUNITY POSTS SECTION ----
+  communitySection: {
+    paddingTop: Spacing.xxl,
+  },
+  communitySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  communitySectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  communitySectionTitle: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
+    color: Colors.text,
+  },
+  communitySectionCount: {
+    fontSize: FontSize.sm,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+  communityScroll: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  communityCard: {
+    width: 200,
+    backgroundColor: Colors.card,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  communityImageContainer: {
+    width: '100%',
+    height: 130,
+    position: 'relative',
+  },
+  communityImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  communityImagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityImageCount: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  communityImageCountText: {
+    fontSize: FontSize.xs - 1,
+    fontFamily: FontFamily.bodySemiBold,
+    color: '#FFFFFF',
+  },
+  communityCardBody: {
+    padding: Spacing.sm + 2,
+    gap: Spacing.xs + 1,
+  },
+  communityUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  communityUsername: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.headingBold,
+    flex: 1,
+  },
+  communityTime: {
+    fontSize: FontSize.xs - 1,
+    fontFamily: FontFamily.body,
+  },
+  communityCaption: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+    lineHeight: 16,
+  },
+  communityEngagement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: 2,
+  },
+  communityEngagementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  communityEngagementText: {
+    fontSize: FontSize.xs - 1,
+    fontFamily: FontFamily.bodySemiBold,
   },
 
   // ---- PUAN VER BUTTON ----
