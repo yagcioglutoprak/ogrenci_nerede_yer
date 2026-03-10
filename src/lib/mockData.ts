@@ -14,6 +14,7 @@ import type {
   Badge,
   UserBadge,
   SocialVideo,
+  Story,
   Event,
   EventAttendee,
   EventMessage,
@@ -2653,6 +2654,59 @@ export const MOCK_SOCIAL_VIDEOS: SocialVideo[] = [
     thumbnail_url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=200&h=360',
     title: 'Istanbul\'un ikonik sokak lezzeti',
     author: 'sokak_yemekleri',
+  },
+];
+
+// ==========================================
+// MOCK STORIES (ONY Reels)
+// ==========================================
+export const MOCK_STORIES: Story[] = [
+  {
+    id: 'story-001',
+    title: 'Cigkofte Turu',
+    thumbnail_url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    external_url: 'https://youtube.com/shorts/example1',
+    venue_id: 'v-004',
+  },
+  {
+    id: 'story-002',
+    title: 'Ucuz Kahvalti',
+    thumbnail_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    external_url: 'https://youtube.com/shorts/example2',
+    venue_id: 'v-003',
+  },
+  {
+    id: 'story-003',
+    title: 'Doner Kapismasi',
+    thumbnail_url: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    external_url: 'https://tiktok.com/@ony/video/example3',
+    venue_id: 'v-004',
+  },
+  {
+    id: 'story-004',
+    title: 'Balik Ekmek',
+    thumbnail_url: 'https://images.unsplash.com/photo-1534604973900-c43ab4c2e0ab?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    external_url: 'https://youtube.com/shorts/example4',
+    venue_id: 'v-006',
+  },
+  {
+    id: 'story-005',
+    title: 'Tost Rehberi',
+    thumbnail_url: 'https://images.unsplash.com/photo-1553909489-cd47e0907980?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    external_url: 'https://instagram.com/reel/example5',
+    venue_id: 'v-002',
+  },
+  {
+    id: 'story-006',
+    title: 'Kofte Dunyasi',
+    thumbnail_url: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=400&h=400&fit=crop',
+    video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    external_url: 'https://youtube.com/shorts/example6',
   },
 ];
 

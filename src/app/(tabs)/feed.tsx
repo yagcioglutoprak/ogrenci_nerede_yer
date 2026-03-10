@@ -37,6 +37,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import { PostCardSkeleton } from '../../components/ui/Skeleton';
 import GlassView from '../../components/ui/GlassView';
 import ScreenHeader from '../../components/ui/ScreenHeader';
+import StoriesBar from '../../components/feed/StoriesBar';
 import { MOCK_RECOMMENDATION_ANSWERS } from '../../lib/mockData';
 import type { Post, FeedCategory } from '../../types';
 
@@ -336,53 +337,55 @@ export default function FeedScreen() {
   };
 
   const renderHeader = () => (
-    <View style={styles.categoryRow}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        <View style={styles.chipContainer}>
-          {/* Animated sliding indicator */}
-          <Animated.View
-            style={[
-              styles.chipIndicator,
-              { backgroundColor: Colors.primary },
-              indicatorStyle,
-            ]}
-          />
-          {CATEGORIES.map((cat) => {
-            const isActive = category === cat.key;
-            return (
-              <TouchableOpacity
-                key={cat.key}
-                onLayout={(e) => handleChipLayout(cat.key, e)}
-                style={styles.categoryChip}
-                onPress={() => handleCategoryChange(cat.key)}
-                activeOpacity={0.7}
-                accessibilityRole="tab"
-                accessibilityLabel={cat.label + ' kategorisi'}
-                accessibilityState={{ selected: isActive }}
-              >
-                <Ionicons
-                  name={cat.icon}
-                  size={14}
-                  color={isActive ? '#FFFFFF' : colors.textTertiary}
-                />
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
-                  ]}
+    <>
+      <StoriesBar />
+      <View style={styles.categoryRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          <View style={styles.chipContainer}>
+            <Animated.View
+              style={[
+                styles.chipIndicator,
+                { backgroundColor: Colors.primary },
+                indicatorStyle,
+              ]}
+            />
+            {CATEGORIES.map((cat) => {
+              const isActive = category === cat.key;
+              return (
+                <TouchableOpacity
+                  key={cat.key}
+                  onLayout={(e) => handleChipLayout(cat.key, e)}
+                  style={styles.categoryChip}
+                  onPress={() => handleCategoryChange(cat.key)}
+                  activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityLabel={cat.label + ' kategorisi'}
+                  accessibilityState={{ selected: isActive }}
                 >
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+                  <Ionicons
+                    name={cat.icon}
+                    size={14}
+                    color={isActive ? '#FFFFFF' : colors.textTertiary}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+    </>
   );
 
   return (

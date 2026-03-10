@@ -54,6 +54,15 @@ export interface SocialVideo {
   author?: string;
 }
 
+export interface Story {
+  id: string;
+  title: string;
+  thumbnail_url: string;
+  video_url: string;
+  external_url: string;
+  venue_id?: string;
+}
+
 export interface Review {
   id: string;
   venue_id: string;
