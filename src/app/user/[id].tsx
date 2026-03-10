@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
@@ -21,14 +21,14 @@ import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { User, Post } from '../../types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const GRID_ITEM_WIDTH = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.md) / 2;
-
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const currentUser = useAuthStore((s) => s.user);
+  const GRID_ITEM_WIDTH = (screenWidth - Spacing.lg * 2 - Spacing.md) / 2;
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -178,7 +178,7 @@ export default function UserProfileScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: Spacing.xxl + insets.bottom }]}>
         {/* Profile card */}
         <View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Avatar

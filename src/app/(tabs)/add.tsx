@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
@@ -36,6 +36,7 @@ export default function AddScreen() {
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<TabMode>('venue');
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   // Auth Guard
   if (!user) {
@@ -99,7 +100,7 @@ export default function AddScreen() {
 
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

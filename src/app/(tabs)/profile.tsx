@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Dimensions,
+  useWindowDimensions,
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -45,7 +45,6 @@ import type { Venue, Post, Badge } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { MOCK_BADGES, MOCK_VENUES, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 160;
 
 type ProfileTab = 'favorites' | 'posts' | 'lists';
@@ -137,6 +136,11 @@ export default function ProfileScreen() {
   const [badges, setBadges] = useState<{badge: Badge; earned: boolean; earned_at?: string}[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const TAB_THIRD = (screenWidth - Spacing.lg * 2) / 3;
+  const GRID_ITEM_WIDTH = (screenWidth - Spacing.lg * 2 - Spacing.md) / 2;
+
   // Tab indicator animation
   const tabIndicatorX = useSharedValue(0);
   const tabIndicatorStyle = useAnimatedStyle(() => ({
@@ -145,10 +149,10 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     tabIndicatorX.value = withSpring(
-      activeTab === 'favorites' ? 0 : activeTab === 'posts' ? (SCREEN_WIDTH - Spacing.lg * 2) / 3 : ((SCREEN_WIDTH - Spacing.lg * 2) / 3) * 2,
+      activeTab === 'favorites' ? 0 : activeTab === 'posts' ? TAB_THIRD : TAB_THIRD * 2,
       { damping: 18, stiffness: 200 },
     );
-  }, [activeTab]);
+  }, [activeTab, TAB_THIRD]);
 
   useEffect(() => {
     if (user) {
@@ -338,9 +342,6 @@ export default function ProfileScreen() {
   // =============================================
   // LOGGED IN
   // =============================================
-  const GRID_ITEM_WIDTH = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.md) / 2;
-  const TAB_THIRD = (SCREEN_WIDTH - Spacing.lg * 2) / 3;
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <LinearGradient
@@ -358,7 +359,7 @@ export default function ProfileScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}
       >
         {loading ? (
           <ProfileSkeleton />
@@ -711,9 +712,7 @@ const styles = StyleSheet.create({
   },
 
   // Scroll
-  scrollContent: {
-    paddingBottom: 100,
-  },
+  scrollContent: {},
 
   // =========================================
   // LOGIN PROMPT (not logged in)

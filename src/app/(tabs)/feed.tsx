@@ -11,7 +11,7 @@ import {
   LayoutChangeEvent,
   TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -52,6 +52,7 @@ const CATEGORIES: { key: FeedCategory; label: string; icon: keyof typeof Ionicon
 
 export default function FeedScreen() {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const {
     posts,
@@ -472,7 +473,7 @@ export default function FeedScreen() {
           ListEmptyComponent={renderEmpty}
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={filteredPosts.length === 0 ? styles.emptyList : { paddingBottom: 100 }}
+          contentContainerStyle={filteredPosts.length === 0 ? styles.emptyList : { paddingBottom: 80 + insets.bottom }}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
           refreshControl={
