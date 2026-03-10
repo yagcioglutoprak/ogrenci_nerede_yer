@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface ActionButton {
@@ -13,61 +13,81 @@ interface ActionButton {
 
 interface ScreenHeaderProps {
   title: string;
+  subtitle?: string;
   leftAction?: ActionButton;
   rightAction?: ActionButton;
+  /** Compact mode for sub-screens (centered title, smaller font) */
+  compact?: boolean;
 }
 
-export default function ScreenHeader({ title, leftAction, rightAction }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, subtitle, leftAction, rightAction, compact = false }: ScreenHeaderProps) {
   const colors = useThemeColors();
 
+  if (compact) {
+    return (
+      <View style={styles.compactContainer}>
+        <View style={styles.compactSide}>
+          {leftAction && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={leftAction.onPress}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name={leftAction.icon} size={20} color={leftAction.color ?? colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <Text style={[styles.compactTitle, { color: colors.text }]} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={styles.compactSide}>
+          {rightAction && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={rightAction.onPress}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name={rightAction.icon} size={20} color={rightAction.color ?? colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <Animated.View entering={FadeInDown.duration(400).springify().damping(18)} style={styles.container}>
-      {/* Left action — positioned absolutely so it doesn't shift the center */}
-      <View style={styles.sideSlot}>
-        {leftAction && (
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={leftAction.onPress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={leftAction.icon}
-              size={20}
-              color={leftAction.color ?? colors.textTertiary}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Center — logo + title stacked */}
-      <View style={styles.center}>
-        <Animated.View entering={FadeIn.delay(120).duration(500)}>
-          <Image
-            source={require('../../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </Animated.View>
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      </View>
-
-      {/* Right action */}
-      <View style={styles.sideSlot}>
-        {rightAction && (
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={rightAction.onPress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={rightAction.icon}
-              size={20}
-              color={rightAction.color ?? colors.textTertiary}
-            />
-          </TouchableOpacity>
-        )}
+    <Animated.View entering={FadeIn.duration(300)} style={styles.container}>
+      <View style={styles.titleRow}>
+        <View style={styles.titleBlock}>
+          <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>
+          {subtitle && (
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+          )}
+        </View>
+        <View style={styles.actions}>
+          {leftAction && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={leftAction.onPress}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name={leftAction.icon} size={20} color={leftAction.color ?? colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+          {rightAction && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={rightAction.onPress}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name={rightAction.icon} size={20} color={rightAction.color ?? colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </Animated.View>
   );
@@ -75,38 +95,60 @@ export default function ScreenHeader({ title, leftAction, rightAction }: ScreenH
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  titleBlock: {
+    flex: 1,
+  },
+  largeTitle: {
+    fontSize: 34,
+    fontFamily: FontFamily.headingBold,
+    letterSpacing: 0.37,
+    lineHeight: 41,
+  },
+  subtitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.body,
+    marginTop: 2,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingTop: 6,
+  },
+  // Compact mode (sub-screens)
+  compactContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.xs,
+    minHeight: 44,
   },
-  sideSlot: {
+  compactSide: {
     width: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  center: {
+  compactTitle: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    marginBottom: 2,
-  },
-  title: {
+    textAlign: 'center',
     fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
     letterSpacing: 0.3,
-    textTransform: 'uppercase',
   },
   actionButton: {
     width: 38,
     height: 38,
-    borderRadius: BorderRadius.full,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },

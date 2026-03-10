@@ -56,7 +56,7 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
 
         {/* Price tag - top-left red pill */}
         {Platform.OS === 'ios' ? (
-          <GlassView style={styles.priceTagGlass} fallbackColor="rgba(226, 55, 68, 0.85)" tintColor={Colors.primary}>
+          <GlassView style={styles.priceTagGlass} fallbackColor="rgba(226, 55, 68, 0.85)">
             <Text style={styles.priceText}>{priceLabel}</Text>
           </GlassView>
         ) : (

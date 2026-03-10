@@ -490,7 +490,6 @@ export default function FeedScreen() {
       {Platform.OS === 'ios' ? (
         <GlassView
           style={styles.floatingCreateButtonGlass}
-          tintColor={Colors.primary}
           fallbackColor="rgba(226, 55, 68, 0.85)"
         >
           <TouchableOpacity

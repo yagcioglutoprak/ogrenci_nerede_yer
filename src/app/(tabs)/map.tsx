@@ -385,7 +385,7 @@ export default function MapScreen() {
 
       {/* Liquid Glass Search Bar — hidden when sheet is expanded */}
       {!sheetExpanded && <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
-        <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]} effect="regular" interactive>
+        <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.searchIcon} />
             <TextInput
@@ -433,7 +433,6 @@ export default function MapScreen() {
         {showSearchResults && debouncedSearch.trim().length > 0 && (
           <GlassView
             style={[styles.searchDropdown, { borderColor: colors.glass.border }]}
-            effect="clear"
             fallbackColor={isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.92)'}
           >
             {venues.length === 0 ? (
@@ -540,7 +539,7 @@ export default function MapScreen() {
           activeOpacity={1}
           onPress={() => setShowFilters(false)}
         >
-          <TouchableOpacity activeOpacity={1} style={[styles.filterSheet, { backgroundColor: colors.background }]}>
+          <TouchableOpacity activeOpacity={1} style={[styles.filterSheet, { backgroundColor: Platform.OS === 'ios' ? (isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.88)') : colors.background }]}>
             <GlassView style={styles.filterHandleArea} fallbackColor="transparent">
               <View style={[styles.filterHandle, { backgroundColor: colors.border }]} />
             </GlassView>
@@ -897,24 +896,27 @@ const styles = StyleSheet.create({
   // Filter Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   filterSheet: {
     backgroundColor: Colors.background,
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xxl,
     paddingTop: Spacing.md,
     maxHeight: '70%',
+    borderWidth: Platform.OS === 'ios' ? StyleSheet.hairlineWidth : 0,
+    borderColor: Colors.glass.border,
+    borderBottomWidth: 0,
   },
   filterHandleArea: {
     alignItems: 'center',
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
   filterHandle: {
     width: 40,

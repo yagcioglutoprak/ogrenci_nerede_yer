@@ -8,6 +8,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { BorderRadius, Spacing } from '../../lib/constants';
 
@@ -20,33 +21,53 @@ interface SkeletonProps {
 
 export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
   const colors = useThemeColors();
-  const shimmer = useSharedValue(0);
+  const translateX = useSharedValue(-1);
 
   useEffect(() => {
-    shimmer.value = withRepeat(
-      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+    translateX.value = withRepeat(
+      withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true,
+      false,
     );
   }, []);
 
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(shimmer.value, [0, 1], [0.35, 0.7]),
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(translateX.value, [-1, 1], [-200, 200]) }],
   }));
 
   return (
-    <Animated.View
+    <View
       style={[
         {
           width: width as any,
           height,
           borderRadius,
           backgroundColor: colors.shimmer,
+          overflow: 'hidden',
         },
-        animStyle,
         style,
       ]}
-    />
+    >
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            width: 200,
+            left: '50%',
+          },
+          shimmerStyle,
+        ]}
+      >
+        <LinearGradient
+          colors={['transparent', colors.shimmerHighlight ?? 'rgba(255,255,255,0.3)', 'transparent']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
+    </View>
   );
 }
 

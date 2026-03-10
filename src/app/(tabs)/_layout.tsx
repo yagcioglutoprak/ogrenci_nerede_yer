@@ -3,7 +3,7 @@ import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize, SpringConfig } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,6 +58,16 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
   onLongPress: () => void;
   isDark: boolean;
 }) {
+  const rotation = useSharedValue(0);
+
+  React.useEffect(() => {
+    rotation.value = withSpring(isFocused ? 45 : 0, { damping: 14, stiffness: 180 });
+  }, [isFocused]);
+
+  const rotateStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
     <View style={iosStyles.addButtonArea}>
       <Pressable
@@ -67,7 +77,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
         accessibilityLabel="Ekle"
         accessibilityState={isFocused ? { selected: true } : {}}
       >
-        <View style={isFocused ? { transform: [{ rotate: '45deg' }] } : {}}>
+        <Animated.View style={rotateStyle}>
           <LinearGradient
             colors={[Colors.gradientStart, Colors.gradientEnd]}
             start={{ x: 0, y: 0 }}
@@ -76,7 +86,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
           >
             <Ionicons name="add" size={30} color="#FFFFFF" />
           </LinearGradient>
-        </View>
+        </Animated.View>
       </Pressable>
     </View>
   );
@@ -144,7 +154,7 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, bad
           <Text
             style={[
               iosStyles.label,
-              { color, fontWeight: isFocused ? '700' : '500' },
+              { color, fontFamily: isFocused ? FontFamily.headingBold : FontFamily.bodyMedium },
             ]}
             numberOfLines={1}
           >
@@ -250,7 +260,6 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       {/* Glass bar */}
       <GlassView
         style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
-        effect="regular"
       >
         <View style={iosStyles.tabRow}>
           {leftTabs.map(renderTab)}

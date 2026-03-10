@@ -4,32 +4,21 @@ import { BlurView } from 'expo-blur';
 import { Colors, DarkColors } from '../../lib/constants';
 import { useIsDarkMode } from '../../hooks/useThemeColors';
 
-const isGlassAvailable = false;
-
-type GlassEffect = 'clear' | 'regular';
-
 interface GlassViewProps {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  effect?: GlassEffect;
-  interactive?: boolean;
-  tintColor?: string;
   fallbackColor?: string;
   blurIntensity?: number;
 }
 
 /**
  * Platform-aware glass wrapper:
- * - iOS 26+ with native Liquid Glass: renders expo-glass-effect GlassView
- * - Older iOS: renders BlurView from expo-blur
+ * - iOS: renders BlurView from expo-blur
  * - Android: renders a plain View with fallbackColor background
  */
 export default function GlassView({
   children,
   style,
-  effect = 'regular',
-  interactive = false,
-  tintColor,
   fallbackColor,
   blurIntensity = 80,
 }: GlassViewProps) {
@@ -45,7 +34,7 @@ export default function GlassView({
     );
   }
 
-  // Older iOS — BlurView fallback
+  // iOS — BlurView
   return (
     <BlurView
       intensity={blurIntensity}
@@ -56,5 +45,3 @@ export default function GlassView({
     </BlurView>
   );
 }
-
-export { isGlassAvailable };

@@ -60,7 +60,6 @@ export default function Badge({
         Platform.OS !== 'ios' && { backgroundColor: hexToRgba(color, 0.12) },
         style,
       ]}
-      tintColor={color}
       fallbackColor={hexToRgba(color, 0.12)}
     >
       {icon && (
