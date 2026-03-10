@@ -15,17 +15,22 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ogrencinerdeyer.app",
+      "buildNumber": "1",
       "config": {
-        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        "googleMapsApiKey": "MOCK_GOOGLE_MAPS_API_KEY"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Yakınındaki mekanları gösterebilmemiz için konum izni gerekli.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Yakınındaki mekanları sürekli gösterebilmemiz için konum izni gerekli.",
+        "NSLocationAlwaysUsageDescription": "Yakınındaki mekanları arka planda gösterebilmemiz için konum izni gerekli.",
         "NSCameraUsageDescription": "Mekan fotoğrafı çekebilmek için kamera izni gerekli.",
-        "NSPhotoLibraryUsageDescription": "Galerinizden fotoğraf seçebilmek için izin gerekli."
+        "NSPhotoLibraryUsageDescription": "Galerinizden fotoğraf seçebilmek için izin gerekli.",
+        "NSMicrophoneUsageDescription": "Sesli içerik kaydedebilmek için mikrofon izni gerekli."
       }
     },
     "android": {
       "package": "com.ogrencinerdeyer.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#F5A623",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -34,15 +39,16 @@
       },
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "apiKey": "MOCK_GOOGLE_MAPS_API_KEY"
         }
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
-        "READ_EXTERNAL_STORAGE"
-      ]
+        "READ_MEDIA_IMAGES"
+      ],
+      "softwareKeyboardLayoutMode": "adjustResize"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -56,11 +62,19 @@
       [
         "react-native-maps",
         {
-          "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "googleMapsApiKey": "MOCK_GOOGLE_MAPS_API_KEY"
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#E23744"
+        }
+      ],
+      "expo-video"
     ]
   }
 }
