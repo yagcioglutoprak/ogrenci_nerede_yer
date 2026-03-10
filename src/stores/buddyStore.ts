@@ -20,7 +20,7 @@ interface BuddyState {
   ratingDone: boolean;
 
   fetchMyBuddy: (userId: string) => Promise<void>;
-  goAvailable: (data: { user_id: string; latitude: number; longitude: number; available_from: string; available_until: string; note?: string }) => Promise<MealBuddy | null>;
+  goAvailable: (data: { user_id: string; latitude: number; longitude: number; available_from: string; available_until: string; note?: string; radius_km?: number }) => Promise<MealBuddy | null>;
   goUnavailable: () => Promise<void>;
   fetchNearbyBuddies: (lat: number, lng: number) => Promise<void>;
   sendMatchRequest: (targetBuddyId: string) => Promise<BuddyMatch | null>;
@@ -64,8 +64,9 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
     }
   },
 
-  goAvailable: async ({ user_id, latitude, longitude, available_from, available_until, note }) => {
+  goAvailable: async ({ user_id, latitude, longitude, available_from, available_until, note, radius_km }) => {
     set({ loading: true });
+    const radiusValue = radius_km ?? 3;
     try {
       if (isMockId(user_id)) throw new Error('mock-user');
 
@@ -73,7 +74,7 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
 
       const { data, error } = await supabase
         .from('meal_buddies')
-        .insert({ user_id, latitude, longitude, available_from, available_until, note, status: 'available' })
+        .insert({ user_id, latitude, longitude, available_from, available_until, note, radius_km: radiusValue, status: 'available' })
         .select('*')
         .single();
 
@@ -89,7 +90,7 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
         status: 'available',
         latitude,
         longitude,
-        radius_km: 2.0,
+        radius_km: radiusValue,
         available_from,
         available_until,
         note: note || null,

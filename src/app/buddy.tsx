@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image, Animated,
-  ScrollView,
+  ScrollView, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import MapView, { Marker } from 'react-native-maps';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../lib/constants';
-import { supabase } from '../lib/supabase';
 import { useBuddyStore } from '../stores/buddyStore';
 import { useAuthStore } from '../stores/authStore';
-import { useThemeColors } from '../hooks/useThemeColors';
+import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
+import { haptic } from '../lib/haptics';
+import SwipeDeck from '../components/buddy/SwipeDeck';
 import * as Location from 'expo-location';
 import type { MealBuddy, BuddyMatch } from '../types';
 
@@ -21,6 +21,7 @@ import type { MealBuddy, BuddyMatch } from '../types';
 const BUDDY_COLOR = '#06B6D4';
 const BUDDY_COLOR_DARK = '#0891B2';
 const AVAILABILITY_HOURS = 2;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // -- Mock Buddies for offline fallback --
 const MOCK_NEARBY_BUDDIES: MealBuddy[] = [
@@ -95,7 +96,7 @@ const MOCK_NEARBY_BUDDIES: MealBuddy[] = [
   },
 ];
 
-// -- Helper: format remaining time as mm:ss or hh:mm:ss --
+// -- Helper: format remaining time --
 function formatCountdown(ms: number): string {
   if (ms <= 0) return '00:00';
   const totalSeconds = Math.floor(ms / 1000);
@@ -108,11 +109,153 @@ function formatCountdown(ms: number): string {
 }
 
 // =============================================================
+// Proximity Slider Component
+// =============================================================
+function ProximitySlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const colors = useThemeColors();
+  const isDark = useIsDarkMode();
+  const trackWidth = useRef(0);
+
+  const min = 1;
+  const max = 10;
+  const progress = ((value - min) / (max - min)) * 100;
+
+  const handleTouch = (locationX: number) => {
+    if (trackWidth.current <= 0) return;
+    const ratio = Math.max(0, Math.min(1, locationX / trackWidth.current));
+    const raw = min + ratio * (max - min);
+    onChange(Math.max(min, Math.min(max, Math.round(raw))));
+    haptic?.light?.();
+  };
+
+  return (
+    <View style={sliderStyles.container}>
+      <View style={sliderStyles.labelRow}>
+        <View style={sliderStyles.labelLeft}>
+          <Ionicons name="navigate-outline" size={16} color={BUDDY_COLOR} />
+          <Text style={[sliderStyles.label, { color: colors.textSecondary }]}>Mesafe</Text>
+        </View>
+        <View style={[sliderStyles.valueBadge, {
+          backgroundColor: isDark ? 'rgba(6,182,212,0.15)' : 'rgba(6,182,212,0.1)',
+        }]}>
+          <Text style={sliderStyles.valueText}>{value} km</Text>
+        </View>
+      </View>
+
+      <View
+        onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
+        onTouchStart={(e) => handleTouch(e.nativeEvent.locationX)}
+        onTouchMove={(e) => handleTouch(e.nativeEvent.locationX)}
+        style={[sliderStyles.track, {
+          backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+        }]}
+      >
+        <LinearGradient
+          colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[sliderStyles.fill, { width: `${progress}%` }]}
+        />
+        <View style={[sliderStyles.thumb, { left: `${progress}%` }]}>
+          <View style={[sliderStyles.thumbOuter, {
+            borderColor: isDark ? colors.surface : '#FFF',
+          }]}>
+            <LinearGradient
+              colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+              style={sliderStyles.thumbGradient}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={sliderStyles.tickRow}>
+        <Text style={[sliderStyles.tick, { color: colors.textTertiary }]}>{min} km</Text>
+        <Text style={[sliderStyles.tick, { color: colors.textTertiary }]}>5 km</Text>
+        <Text style={[sliderStyles.tick, { color: colors.textTertiary }]}>{max} km</Text>
+      </View>
+    </View>
+  );
+}
+
+const sliderStyles = StyleSheet.create({
+  container: {
+    gap: Spacing.sm,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  labelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  label: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+  valueBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  valueText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: BUDDY_COLOR,
+  },
+  track: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'visible',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  fill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 4,
+  },
+  thumb: {
+    position: 'absolute',
+    top: -10,
+    marginLeft: -14,
+  },
+  thumbOuter: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+    overflow: 'hidden',
+    shadowColor: BUDDY_COLOR,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  thumbGradient: {
+    flex: 1,
+  },
+  tickRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tick: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+  },
+});
+
+// =============================================================
 // Main Screen Component
 // =============================================================
 export default function BuddyScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const isDark = useIsDarkMode();
   const { user } = useAuthStore();
   const {
     myBuddy, nearbyBuddies, activeMatch, messages, pendingMatches,
@@ -126,9 +269,9 @@ export default function BuddyScreen() {
 
   // -- Local state --
   const [note, setNote] = useState('');
+  const [radiusKm, setRadiusKm] = useState(3);
   const [messageText, setMessageText] = useState('');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [selectedBuddy, setSelectedBuddy] = useState<MealBuddy | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const [showRating, setShowRating] = useState(false);
   const [xpAnimVisible, setXpAnimVisible] = useState(false);
@@ -137,7 +280,7 @@ export default function BuddyScreen() {
   const xpOpacity = useRef(new Animated.Value(0)).current;
   const xpTranslateY = useRef(new Animated.Value(0)).current;
 
-  // -- Derived: effective nearby list (real or mock fallback) --
+  // -- Derived: effective nearby list --
   const effectiveNearbyBuddies = useMemo(() => {
     if (nearbyBuddies.length > 0) return nearbyBuddies;
     if (useMockBuddies) return MOCK_NEARBY_BUDDIES;
@@ -166,7 +309,6 @@ export default function BuddyScreen() {
 
     const doFetch = async () => {
       await fetchNearbyBuddies(userLocation.latitude, userLocation.longitude);
-      // If still empty after fetch, enable mock fallback
       const { nearbyBuddies: current } = useBuddyStore.getState();
       if (current.length === 0) {
         setUseMockBuddies(true);
@@ -180,23 +322,18 @@ export default function BuddyScreen() {
     return () => clearInterval(interval);
   }, [myBuddy, userLocation]);
 
-  // -- Real-time: subscribe to match updates --
+  // -- Real-time subscriptions --
   useEffect(() => {
     if (!user) return;
     const channel = subscribeToMatchUpdates(user.id);
-    return () => {
-      if (channel) unsubscribeChannel(channel);
-    };
+    return () => { if (channel) unsubscribeChannel(channel); };
   }, [user]);
 
-  // -- Real-time: subscribe to messages when matched --
   useEffect(() => {
     if (!activeMatch) return;
     fetchMessages(activeMatch.id);
     const channel = subscribeToMessages(activeMatch.id);
-    return () => {
-      if (channel) unsubscribeChannel(channel);
-    };
+    return () => { if (channel) unsubscribeChannel(channel); };
   }, [activeMatch]);
 
   // -- Auto-scroll messages --
@@ -206,42 +343,29 @@ export default function BuddyScreen() {
     }
   }, [messages.length]);
 
-  // -- Countdown timer for availability window --
+  // -- Countdown timer --
   useEffect(() => {
-    if (!myBuddy) {
-      setCountdown(0);
-      return;
-    }
+    if (!myBuddy) { setCountdown(0); return; }
     const updateCountdown = () => {
       const until = new Date(myBuddy.available_until).getTime();
       const remaining = until - Date.now();
       setCountdown(Math.max(0, remaining));
-
-      // Auto-expire: when time runs out, go unavailable
-      if (remaining <= 0) {
-        goUnavailable();
-      }
+      if (remaining <= 0) goUnavailable();
     };
-
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [myBuddy]);
 
-  // -- Check if match time expired (for showing rating) --
+  // -- Match expiry check --
   useEffect(() => {
     if (!activeMatch) return;
-    // Check expiry based on the requester's available_until (the match window)
     const matchBuddy = activeMatch.requester;
     if (!matchBuddy) return;
-
     const checkExpiry = () => {
       const until = new Date(matchBuddy.available_until).getTime();
-      if (Date.now() >= until && !showRating) {
-        setShowRating(true);
-      }
+      if (Date.now() >= until && !showRating) setShowRating(true);
     };
-
     checkExpiry();
     const interval = setInterval(checkExpiry, 5000);
     return () => clearInterval(interval);
@@ -250,6 +374,7 @@ export default function BuddyScreen() {
   // -- Handlers --
   const handleGoAvailable = async () => {
     if (!user || !userLocation) return;
+    haptic?.medium?.();
     const now = new Date();
     const until = new Date(now.getTime() + AVAILABILITY_HOURS * 60 * 60 * 1000);
     await goAvailable({
@@ -259,29 +384,29 @@ export default function BuddyScreen() {
       available_from: now.toISOString(),
       available_until: until.toISOString(),
       note: note.trim() || undefined,
+      radius_km: radiusKm,
     });
     setNote('');
   };
 
-  const handleSendMatch = async (buddy: MealBuddy) => {
+  const handleSwipeRight = useCallback(async (buddy: MealBuddy) => {
+    haptic?.medium?.();
     const match = await sendMatchRequest(buddy.id);
     if (match) {
       Alert.alert(
-        'Istek Gonderildi',
+        'Istek Gonderildi!',
         `${buddy.user?.full_name || 'Kullanici'}'a bulusma istegi gonderildi! Cevap bekleniyor...`,
       );
-      setSelectedBuddy(null);
-    } else {
-      Alert.alert('Hata', 'Istek gonderilemedi, tekrar deneyin.');
     }
-  };
+  }, []);
+
+  const handleSwipeLeft = useCallback((_buddy: MealBuddy) => {
+    haptic?.light?.();
+  }, []);
 
   const handleRespondToMatch = async (matchId: string, accept: boolean) => {
     await respondToMatch(matchId, accept);
-    if (accept && user) {
-      // Re-fetch active match to enter chat
-      await fetchActiveMatch(user.id);
-    }
+    if (accept && user) await fetchActiveMatch(user.id);
   };
 
   const handleSendMessage = async () => {
@@ -303,36 +428,20 @@ export default function BuddyScreen() {
 
   const handleRate = async (thumbsUp: boolean) => {
     if (!activeMatch || !user) return;
-    try {
-      await rateBuddy(activeMatch.id, user.id, thumbsUp);
-    } catch {
-      // Rating save failed, continue with cleanup anyway
-    }
+    try { await rateBuddy(activeMatch.id, user.id, thumbsUp); } catch {}
     setShowRating(false);
     setRatingDone(true);
 
-    // Play XP animation
     setXpAnimVisible(true);
     xpOpacity.setValue(1);
     xpTranslateY.setValue(0);
     Animated.parallel([
-      Animated.timing(xpOpacity, {
-        toValue: 0,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(xpTranslateY, {
-        toValue: -60,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
+      Animated.timing(xpOpacity, { toValue: 0, duration: 2000, useNativeDriver: true }),
+      Animated.timing(xpTranslateY, { toValue: -60, duration: 2000, useNativeDriver: true }),
     ]).start(() => {
       setXpAnimVisible(false);
-      // Clean up and go back to STATE A
       clearActiveSession();
-      if (user) {
-        goUnavailable();
-      }
+      if (user) goUnavailable();
     });
   };
 
@@ -359,33 +468,26 @@ export default function BuddyScreen() {
   }
 
   // ============================
-  // RENDER: STATE D -- Rating (shown as overlay when ratingDone with XP anim)
+  // RENDER: STATE D -- Rating
   // ============================
   if (showRating) {
     const otherBuddy = activeMatch?.requester?.user_id === user.id ? activeMatch?.target : activeMatch?.requester;
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.ratingContainer}>
-          <View style={styles.ratingIconWrapper}>
+          <View style={[styles.ratingIconWrapper, { backgroundColor: isDark ? colors.surface : '#E0F7FA' }]}>
             <Ionicons name="chatbubbles" size={56} color={BUDDY_COLOR} />
           </View>
           <Text style={[styles.ratingTitle, { color: colors.text }]}>Nasil Gecti?</Text>
           <Text style={[styles.ratingSubtitle, { color: colors.textSecondary }]}>
             {otherBuddy?.user?.full_name || 'Buddy'} ile bulusmanizi degerlendir
           </Text>
-
           <View style={styles.ratingButtons}>
-            <TouchableOpacity
-              style={[styles.ratingBtn, styles.ratingBtnUp]}
-              onPress={() => handleRate(true)}
-            >
+            <TouchableOpacity style={[styles.ratingBtn, styles.ratingBtnUp]} onPress={() => handleRate(true)}>
               <Ionicons name="thumbs-up" size={36} color="#FFF" />
               <Text style={styles.ratingBtnLabel}>Guzeldi</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.ratingBtn, styles.ratingBtnDown]}
-              onPress={() => handleRate(false)}
-            >
+            <TouchableOpacity style={[styles.ratingBtn, styles.ratingBtnDown]} onPress={() => handleRate(false)}>
               <Ionicons name="thumbs-down" size={36} color="#FFF" />
               <Text style={styles.ratingBtnLabel}>Pek degil</Text>
             </TouchableOpacity>
@@ -396,7 +498,7 @@ export default function BuddyScreen() {
   }
 
   // ============================
-  // RENDER: XP Animation overlay
+  // RENDER: XP Animation
   // ============================
   if (xpAnimVisible) {
     return (
@@ -416,8 +518,6 @@ export default function BuddyScreen() {
   // ============================
   if (activeMatch) {
     const otherBuddy = activeMatch.requester?.user_id === user.id ? activeMatch.target : activeMatch.requester;
-
-    // Calculate chat time remaining (based on the match window)
     const matchBuddy = activeMatch.requester;
     const chatTimeLeft = matchBuddy
       ? Math.max(0, new Date(matchBuddy.available_until).getTime() - Date.now())
@@ -427,7 +527,7 @@ export default function BuddyScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.chatHeader}>
+        <View style={[styles.chatHeader, { borderBottomColor: isDark ? colors.border : '#F0F0F3' }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -455,19 +555,14 @@ export default function BuddyScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Expired banner */}
         {chatExpired && (
-          <TouchableOpacity
-            style={styles.expiredBanner}
-            onPress={() => setShowRating(true)}
-          >
+          <TouchableOpacity style={styles.expiredBanner} onPress={() => setShowRating(true)}>
             <Ionicons name="time" size={18} color="#FFF" />
             <Text style={styles.expiredBannerText}>Sure doldu! Bulusmayi degerlendir</Text>
             <Ionicons name="chevron-forward" size={18} color="#FFF" />
           </TouchableOpacity>
         )}
 
-        {/* Messages */}
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <FlatList
             ref={flatListRef}
@@ -486,7 +581,7 @@ export default function BuddyScreen() {
               const isMe = item.sender_id === user.id;
               return (
                 <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.theirMessage,
-                  { backgroundColor: isMe ? BUDDY_COLOR : colors.backgroundSecondary }]}>
+                  { backgroundColor: isMe ? BUDDY_COLOR : isDark ? colors.surface : colors.backgroundSecondary }]}>
                   {!isMe && item.user?.full_name && (
                     <Text style={[styles.messageSender, { color: BUDDY_COLOR }]}>
                       {item.user.full_name}
@@ -504,7 +599,7 @@ export default function BuddyScreen() {
           />
           <View style={[styles.inputBar, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <TextInput
-              style={[styles.messageInput, { color: colors.text, backgroundColor: colors.backgroundSecondary }]}
+              style={[styles.messageInput, { color: colors.text, backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}
               value={messageText}
               onChangeText={setMessageText}
               placeholder="Mesaj yaz..."
@@ -521,10 +616,10 @@ export default function BuddyScreen() {
   }
 
   // ============================
-  // RENDER: STATE B -- Available (Map + Pending Requests)
+  // RENDER: STATE B -- Available (Swipe Cards)
   // ============================
   if (myBuddy) {
-    const isCountdownLow = countdown > 0 && countdown < 15 * 60 * 1000; // less than 15 min
+    const isCountdownLow = countdown > 0 && countdown < 15 * 60 * 1000;
 
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -534,7 +629,7 @@ export default function BuddyScreen() {
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerCenterColumn}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Yakinindaki Buddy'ler</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Buddy Bul</Text>
             {countdown > 0 && (
               <View style={[styles.countdownBadge, isCountdownLow && styles.countdownBadgeLow]}>
                 <Ionicons name="time-outline" size={12} color="#FFF" />
@@ -547,49 +642,44 @@ export default function BuddyScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Map */}
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: myBuddy.latitude,
-            longitude: myBuddy.longitude,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
-          }}
-        >
-          <Marker
-            coordinate={{ latitude: myBuddy.latitude, longitude: myBuddy.longitude }}
-            pinColor={Colors.primary}
-            title="Sen"
-          />
-          {effectiveNearbyBuddies.map((buddy) => (
-            <Marker
-              key={buddy.id}
-              coordinate={{ latitude: buddy.latitude, longitude: buddy.longitude }}
-              pinColor={BUDDY_COLOR}
-              title={buddy.user?.full_name || 'Buddy'}
-              description={buddy.note || undefined}
-              onPress={() => setSelectedBuddy(buddy)}
-            />
-          ))}
-        </MapView>
-
-        {/* Loading overlay */}
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color={BUDDY_COLOR} />
-            <Text style={{ color: colors.textSecondary, fontSize: FontSize.sm, fontFamily: FontFamily.body }}>
-              Buddy araniyor...
-            </Text>
-          </View>
+        {/* Pending incoming requests notification */}
+        {pendingMatches.length > 0 && (
+          <TouchableOpacity
+            style={styles.pendingNotif}
+            onPress={() => {
+              // Show first pending match
+              const match = pendingMatches[0];
+              Alert.alert(
+                'Bulusma Istegi',
+                `${match.requester?.user?.full_name || 'Birisi'} seninle yemek yemek istiyor!`,
+                [
+                  { text: 'Reddet', style: 'destructive', onPress: () => handleRespondToMatch(match.id, false) },
+                  { text: 'Kabul Et', onPress: () => handleRespondToMatch(match.id, true) },
+                ],
+              );
+            }}
+          >
+            <LinearGradient
+              colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.pendingNotifGradient}
+            >
+              <Ionicons name="notifications" size={16} color="#FFF" />
+              <Text style={styles.pendingNotifText}>
+                {pendingMatches.length} yeni bulusma istegi!
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color="#FFF" />
+            </LinearGradient>
+          </TouchableOpacity>
         )}
 
-        {/* No buddies found */}
-        {effectiveNearbyBuddies.length === 0 && !loading && (
-          <View style={[styles.noBuddyBanner, { backgroundColor: colors.background }]}>
-            <Ionicons name="search-outline" size={24} color={colors.textTertiary} />
-            <Text style={{ color: colors.textSecondary, fontFamily: FontFamily.body, textAlign: 'center' }}>
-              Henuz yakininda buddy yok. Biraz bekle!
+        {/* Loading */}
+        {loading && effectiveNearbyBuddies.length === 0 && (
+          <View style={styles.loadingCenter}>
+            <ActivityIndicator color={BUDDY_COLOR} size="large" />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              Yakinindaki buddy'ler araniyor...
             </Text>
           </View>
         )}
@@ -602,63 +692,28 @@ export default function BuddyScreen() {
           </View>
         )}
 
-        {/* Pending incoming match requests */}
-        {pendingMatches.length > 0 && (
-          <View style={[styles.pendingContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <Text style={[styles.pendingTitle, { color: colors.text }]}>
-              Gelen Istekler ({pendingMatches.length})
-            </Text>
-            <ScrollView horizontal={false} style={{ maxHeight: 200 }}>
-              {pendingMatches.map((match) => (
-                <PendingMatchCard
-                  key={match.id}
-                  match={match}
-                  userId={user.id}
-                  colors={colors}
-                  onAccept={() => handleRespondToMatch(match.id, true)}
-                  onDecline={() => handleRespondToMatch(match.id, false)}
-                />
-              ))}
-            </ScrollView>
-          </View>
+        {/* Swipe Deck */}
+        {effectiveNearbyBuddies.length > 0 && (
+          <SwipeDeck
+            buddies={effectiveNearbyBuddies}
+            onSwipeRight={handleSwipeRight}
+            onSwipeLeft={handleSwipeLeft}
+            userLocation={userLocation}
+          />
         )}
 
-        {/* Selected buddy bottom sheet */}
-        {selectedBuddy && (
-          <View style={[styles.buddySheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
-            <View style={styles.buddySheetRow}>
-              {selectedBuddy.user?.avatar_url ? (
-                <Image source={{ uri: selectedBuddy.user.avatar_url }} style={styles.buddyAvatar} />
-              ) : (
-                <View style={[styles.buddyAvatar, styles.buddyAvatarPlaceholder]}>
-                  <Ionicons name="person" size={20} color={BUDDY_COLOR} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.buddySheetName, { color: colors.text }]}>
-                  {selectedBuddy.user?.full_name || 'Anonim'}
-                </Text>
-                {selectedBuddy.user?.university && (
-                  <Text style={[styles.buddySheetUni, { color: colors.textTertiary }]}>
-                    {selectedBuddy.user.university}
-                  </Text>
-                )}
-                {selectedBuddy.note && (
-                  <Text style={[styles.buddySheetNote, { color: colors.textSecondary }]}>
-                    "{selectedBuddy.note}"
-                  </Text>
-                )}
-              </View>
-              <TouchableOpacity onPress={() => setSelectedBuddy(null)}>
-                <Ionicons name="close-circle" size={24} color={colors.textTertiary} />
-              </TouchableOpacity>
+        {/* No buddies */}
+        {effectiveNearbyBuddies.length === 0 && !loading && (
+          <View style={styles.noBuddyCenter}>
+            <View style={[styles.noBuddyIcon, { backgroundColor: isDark ? colors.surface : 'rgba(6,182,212,0.08)' }]}>
+              <Ionicons name="search-outline" size={40} color={BUDDY_COLOR} />
             </View>
-            <TouchableOpacity style={styles.matchRequestBtn} onPress={() => handleSendMatch(selectedBuddy)}>
-              <LinearGradient colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]} style={styles.matchRequestBtnGradient}>
-                <Ionicons name="hand-right" size={20} color="#FFF" />
-                <Text style={styles.matchRequestBtnText}>Bulusma Iste</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <Text style={[styles.noBuddyTitle, { color: colors.text }]}>
+              Henuz buddy yok
+            </Text>
+            <Text style={[styles.noBuddySubtext, { color: colors.textSecondary }]}>
+              Yakininda henuz arayan kimse yok. Biraz bekle!
+            </Text>
           </View>
         )}
       </SafeAreaView>
@@ -666,7 +721,7 @@ export default function BuddyScreen() {
   }
 
   // ============================
-  // RENDER: STATE A -- Not Available (Form + Incoming Requests)
+  // RENDER: STATE A -- Not Available (Form)
   // ============================
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -686,7 +741,7 @@ export default function BuddyScreen() {
           <Text style={styles.heroBannerSubtitle}>Yakininda yemek arkadasi bul</Text>
         </LinearGradient>
 
-        {/* Pending incoming match requests (visible in STATE A too) */}
+        {/* Pending incoming requests */}
         {pendingMatches.length > 0 && (
           <View style={[styles.pendingSection, { borderColor: colors.border }]}>
             <View style={styles.pendingSectionHeader}>
@@ -701,6 +756,7 @@ export default function BuddyScreen() {
                 match={match}
                 userId={user.id}
                 colors={colors}
+                isDark={isDark}
                 onAccept={() => handleRespondToMatch(match.id, true)}
                 onDecline={() => handleRespondToMatch(match.id, false)}
               />
@@ -712,7 +768,11 @@ export default function BuddyScreen() {
         <View style={styles.formField}>
           <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Not (istege bagli)</Text>
           <TextInput
-            style={[styles.formInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
+            style={[styles.formInput, {
+              color: colors.text,
+              borderColor: isDark ? colors.border : colors.backgroundSecondary,
+              backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+            }]}
             value={note}
             onChangeText={setNote}
             placeholder="ornek: Kadikoy'de tost yiyelim"
@@ -720,6 +780,9 @@ export default function BuddyScreen() {
             maxLength={120}
           />
         </View>
+
+        {/* Proximity slider */}
+        <ProximitySlider value={radiusKm} onChange={setRadiusKm} />
 
         {/* Duration info */}
         <View style={styles.durationRow}>
@@ -760,23 +823,26 @@ export default function BuddyScreen() {
 }
 
 // =============================================================
-// Pending Match Card Component
+// Pending Match Card
 // =============================================================
 interface PendingMatchCardProps {
   match: BuddyMatch;
   userId: string;
   colors: any;
+  isDark: boolean;
   onAccept: () => void;
   onDecline: () => void;
 }
 
-function PendingMatchCard({ match, userId, colors, onAccept, onDecline }: PendingMatchCardProps) {
-  // The requester is the person who sent the request (not the current user)
+function PendingMatchCard({ match, colors, isDark, onAccept, onDecline }: PendingMatchCardProps) {
   const requester = match.requester;
   const requesterUser = requester?.user;
 
   return (
-    <View style={[styles.pendingCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+    <View style={[styles.pendingCard, {
+      backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+      borderColor: colors.border,
+    }]}>
       <View style={styles.pendingCardRow}>
         {requesterUser?.avatar_url ? (
           <Image source={{ uri: requesterUser.avatar_url }} style={styles.pendingAvatar} />
@@ -819,7 +885,6 @@ function PendingMatchCard({ match, userId, colors, onAccept, onDecline }: Pendin
 // Styles
 // =============================================================
 const styles = StyleSheet.create({
-  // -- Layout --
   container: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -829,7 +894,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.heading },
 
-  // -- Countdown --
+  // Countdown
   countdownBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: BUDDY_COLOR, paddingHorizontal: Spacing.sm, paddingVertical: 2,
@@ -838,12 +903,12 @@ const styles = StyleSheet.create({
   countdownBadgeLow: { backgroundColor: Colors.error },
   countdownText: { color: '#FFF', fontSize: FontSize.xs, fontFamily: FontFamily.bodySemiBold },
 
-  // -- Cancel --
+  // Cancel
   cancelBtn: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs },
   cancelText: { color: Colors.primary, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
 
-  // -- Form (STATE A) --
-  formContent: { padding: Spacing.xl, gap: Spacing.xl, paddingBottom: Spacing.xxxl },
+  // Form (STATE A)
+  formContent: { padding: Spacing.xl, gap: Spacing.xl, paddingBottom: Spacing.xxxl * 2 },
   heroBanner: {
     borderRadius: BorderRadius.lg, padding: Spacing.xxl,
     alignItems: 'center', gap: Spacing.sm,
@@ -857,13 +922,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
   },
-  durationRow: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-  },
+  durationRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   durationText: { fontSize: FontSize.sm, fontFamily: FontFamily.bodySemiBold },
   locationWarning: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, justifyContent: 'center',
   },
   locationWarningText: { color: Colors.primary, fontFamily: FontFamily.body, fontSize: FontSize.sm },
   goAvailableBtn: { borderRadius: BorderRadius.md, overflow: 'hidden' },
@@ -873,60 +935,38 @@ const styles = StyleSheet.create({
   },
   goAvailableBtnText: { fontSize: FontSize.lg, fontFamily: FontFamily.headingBold, color: '#FFF' },
 
-  // -- Map (STATE B) --
-  map: { flex: 1 },
-  loadingOverlay: {
-    position: 'absolute', top: 100, alignSelf: 'center',
-    flexDirection: 'row', gap: Spacing.sm, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full, elevation: 4,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  // STATE B - Swipe
+  pendingNotif: { marginHorizontal: Spacing.lg, marginBottom: Spacing.sm, borderRadius: BorderRadius.md, overflow: 'hidden' },
+  pendingNotifGradient: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.sm, paddingVertical: Spacing.sm + 2,
   },
-  noBuddyBanner: {
-    position: 'absolute', bottom: 100, left: Spacing.xl, right: Spacing.xl,
-    padding: Spacing.lg, borderRadius: BorderRadius.md, alignItems: 'center', gap: Spacing.sm,
-    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  pendingNotifText: { color: '#FFF', fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
+  loadingCenter: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.lg,
   },
+  loadingText: { fontFamily: FontFamily.body, fontSize: FontSize.md },
   mockBadge: {
-    position: 'absolute', top: 8, alignSelf: 'center',
+    alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: Colors.accentSoft, paddingHorizontal: Spacing.md, paddingVertical: 4,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.full, marginBottom: Spacing.xs,
   },
   mockBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.body, color: Colors.accent },
+  noBuddyCenter: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md,
+    paddingHorizontal: Spacing.xxxl,
+  },
+  noBuddyIcon: {
+    width: 80, height: 80, borderRadius: 40,
+    alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm,
+  },
+  noBuddyTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.headingBold },
+  noBuddySubtext: {
+    fontSize: FontSize.sm, fontFamily: FontFamily.body, textAlign: 'center', lineHeight: 20,
+  },
 
-  // -- Buddy bottom sheet --
-  buddySheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: Spacing.xl, borderTopLeftRadius: BorderRadius.xl, borderTopRightRadius: BorderRadius.xl,
-    borderWidth: 1, gap: Spacing.lg,
-    elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 8,
-  },
-  buddySheetRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  buddyAvatar: { width: 48, height: 48, borderRadius: 24 },
-  buddyAvatarPlaceholder: {
-    backgroundColor: '#E0F7FA', justifyContent: 'center', alignItems: 'center',
-  },
-  buddySheetName: { fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.md },
-  buddySheetUni: { fontFamily: FontFamily.body, fontSize: FontSize.xs },
-  buddySheetNote: { fontFamily: FontFamily.body, fontSize: FontSize.sm, fontStyle: 'italic', marginTop: 2 },
-  matchRequestBtn: { borderRadius: BorderRadius.md, overflow: 'hidden' },
-  matchRequestBtnGradient: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: Spacing.sm, paddingVertical: Spacing.md,
-  },
-  matchRequestBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.headingBold, color: '#FFF' },
-
-  // -- Pending matches --
-  pendingContainer: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: Spacing.lg, borderTopLeftRadius: BorderRadius.xl, borderTopRightRadius: BorderRadius.xl,
-    borderWidth: 1,
-    elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 8,
-  },
-  pendingTitle: {
-    fontSize: FontSize.md, fontFamily: FontFamily.headingBold, marginBottom: Spacing.sm,
-  },
+  // Pending matches
   pendingSection: {
     borderWidth: 1, borderRadius: BorderRadius.md, padding: Spacing.lg, gap: Spacing.md,
   },
@@ -960,11 +1000,11 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: { color: '#FFF', fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
 
-  // -- Chat (STATE C) --
+  // Chat (STATE C)
   chatHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: '#F0F0F3',
+    borderBottomWidth: 1,
   },
   chatHeaderCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   chatAvatar: { width: 36, height: 36, borderRadius: 18 },
@@ -977,9 +1017,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
     backgroundColor: Colors.primarySoft, borderRadius: BorderRadius.sm,
   },
-  endMeetupText: {
-    color: Colors.primary, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm,
-  },
+  endMeetupText: { color: Colors.primary, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
   expiredBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.sm, backgroundColor: Colors.accent, paddingVertical: Spacing.sm,
@@ -987,8 +1025,7 @@ const styles = StyleSheet.create({
   expiredBannerText: { color: '#FFF', fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
   messageList: { padding: Spacing.lg, gap: Spacing.sm, flexGrow: 1 },
   emptyChat: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md,
-    paddingVertical: 80,
+    flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md, paddingVertical: 80,
   },
   emptyChatText: { fontFamily: FontFamily.body, fontSize: FontSize.md },
   messageBubble: {
@@ -1002,14 +1039,12 @@ const styles = StyleSheet.create({
   messageTime: { fontSize: FontSize.xs, fontFamily: FontFamily.body, marginTop: 2, alignSelf: 'flex-end' },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderTopWidth: 1,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderTopWidth: 1,
   },
   messageInput: {
     flex: 1, borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    fontSize: FontSize.md, fontFamily: FontFamily.body,
-    maxHeight: 100,
+    fontSize: FontSize.md, fontFamily: FontFamily.body, maxHeight: 100,
   },
   sendBtn: {
     width: 40, height: 40, borderRadius: 20,
@@ -1017,19 +1052,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 
-  // -- Rating (STATE D) --
+  // Rating (STATE D)
   ratingContainer: {
     flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xxxl, gap: Spacing.xl,
   },
   ratingIconWrapper: {
-    width: 100, height: 100, borderRadius: 50, backgroundColor: '#E0F7FA',
+    width: 100, height: 100, borderRadius: 50,
     justifyContent: 'center', alignItems: 'center',
   },
   ratingTitle: { fontSize: FontSize.xxl, fontFamily: FontFamily.heading },
   ratingSubtitle: { fontSize: FontSize.md, fontFamily: FontFamily.body, textAlign: 'center' },
-  ratingButtons: {
-    flexDirection: 'row', gap: Spacing.xl, marginTop: Spacing.lg,
-  },
+  ratingButtons: { flexDirection: 'row', gap: Spacing.xl, marginTop: Spacing.lg },
   ratingBtn: {
     width: 120, height: 120, borderRadius: 60,
     justifyContent: 'center', alignItems: 'center', gap: Spacing.xs,
@@ -1039,22 +1072,16 @@ const styles = StyleSheet.create({
   ratingBtnDown: { backgroundColor: Colors.error },
   ratingBtnLabel: { color: '#FFF', fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.sm },
 
-  // -- XP Animation --
-  xpContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md,
-  },
-  xpText: {
-    fontSize: 48, fontFamily: FontFamily.heading, color: Colors.accent,
-  },
+  // XP Animation
+  xpContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
+  xpText: { fontSize: 48, fontFamily: FontFamily.heading, color: Colors.accent },
   xpSubtext: { fontSize: FontSize.lg, fontFamily: FontFamily.body },
 
-  // -- Empty / Login --
+  // Empty / Login
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.lg, padding: Spacing.xxxl },
   emptyTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.heading },
   emptySubtitle: { fontSize: FontSize.md, fontFamily: FontFamily.body, textAlign: 'center' },
   loginBtn: { borderRadius: BorderRadius.md, overflow: 'hidden', width: '100%', maxWidth: 280 },
-  loginBtnGradient: {
-    alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.lg,
-  },
+  loginBtnGradient: { alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.lg },
   loginBtnText: { fontSize: FontSize.lg, fontFamily: FontFamily.headingBold, color: '#FFF' },
 });

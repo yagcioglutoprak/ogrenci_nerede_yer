@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useBuddyStore } from '../../stores/buddyStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, AnimationConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
@@ -28,6 +29,9 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { useIsDarkMode } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
 import type { Conversation } from '../../types';
+
+const BUDDY_COLOR = '#06B6D4';
+const BUDDY_COLOR_DARK = '#0891B2';
 
 
 export default function MessagesScreen() {
@@ -43,16 +47,24 @@ export default function MessagesScreen() {
   const subscribeToConversations = useMessageStore((s) => s.subscribeToConversations);
   const unsubscribeChannel = useMessageStore((s) => s.unsubscribeChannel);
 
+  // Buddy match state
+  const activeMatch = useBuddyStore((s) => s.activeMatch);
+  const fetchActiveMatch = useBuddyStore((s) => s.fetchActiveMatch);
+
   useEffect(() => {
     if (!user) return;
 
     fetchConversations(user.id);
+    fetchActiveMatch(user.id);
     const channel = subscribeToConversations(user.id);
     return () => { if (channel) unsubscribeChannel(channel); };
   }, [user?.id]);
 
   const handleRefresh = useCallback(() => {
-    if (user) fetchConversations(user.id);
+    if (user) {
+      fetchConversations(user.id);
+      fetchActiveMatch(user.id);
+    }
   }, [user?.id]);
 
   const filteredConversations = useMemo(() =>
@@ -118,6 +130,67 @@ export default function MessagesScreen() {
             </Animated.View>
           ))}
         </ScrollView>
+      </Animated.View>
+    );
+  };
+
+  const renderBuddyMatch = () => {
+    if (!activeMatch || !user) return null;
+    const otherBuddy = activeMatch.requester?.user_id === user.id ? activeMatch.target : activeMatch.requester;
+    const otherUser = otherBuddy?.user;
+
+    return (
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)}>
+        <Text style={[styles.sectionLabel, { color: BUDDY_COLOR }]}>Yemek Buddy</Text>
+        <TouchableOpacity
+          style={[styles.buddyMatchCard, {
+            backgroundColor: isDark ? 'rgba(6,182,212,0.08)' : 'rgba(6,182,212,0.05)',
+            borderColor: isDark ? 'rgba(6,182,212,0.2)' : 'rgba(6,182,212,0.15)',
+          }]}
+          onPress={() => { haptic.light(); router.push('/buddy'); }}
+          activeOpacity={0.65}
+        >
+          {/* Blue accent bar */}
+          <LinearGradient
+            colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.buddyAccentBar}
+          />
+
+          <View style={styles.buddyAvatarWrap}>
+            <LinearGradient
+              colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buddyAvatarRing}
+            />
+            <View style={[styles.buddyAvatarInner, { backgroundColor: isDark ? colors.surface : '#FAFEFF' }]}>
+              <Avatar
+                uri={otherUser?.avatar_url}
+                name={otherUser?.full_name || otherUser?.username || '?'}
+                size={44}
+              />
+            </View>
+          </View>
+
+          <View style={styles.buddyMatchBody}>
+            <View style={styles.buddyMatchTop}>
+              <Text style={[styles.buddyMatchName, { color: colors.text }]} numberOfLines={1}>
+                {otherUser?.full_name || otherUser?.username || 'Yemek Buddy'}
+              </Text>
+              <View style={styles.buddyLiveBadge}>
+                <View style={styles.buddyLiveDot} />
+                <Text style={styles.buddyLiveText}>Aktif</Text>
+              </View>
+            </View>
+            <Text style={[styles.buddyMatchPreview, { color: colors.textSecondary }]} numberOfLines={1}>
+              Yemek buddy eslesmesi - Mesaj gonder!
+            </Text>
+          </View>
+
+          <Ionicons name="chevron-forward" size={18} color={BUDDY_COLOR} />
+        </TouchableOpacity>
       </Animated.View>
     );
   };
@@ -321,7 +394,12 @@ export default function MessagesScreen() {
           data={filteredConversations}
           keyExtractor={(item) => item.id}
           renderItem={renderConversation}
-          ListHeaderComponent={!searchQuery ? renderActiveRow : null}
+          ListHeaderComponent={!searchQuery ? () => (
+            <>
+              {renderBuddyMatch()}
+              {renderActiveRow()}
+            </>
+          ) : null}
           contentContainerStyle={filteredConversations.length === 0 ? styles.emptyList : styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -505,7 +583,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.success,
     borderWidth: 2.5,
   },
   conversationBody: {
@@ -627,5 +705,84 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
+  },
+
+  // Buddy match card
+  buddyMatchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.xl,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md + 2,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    gap: Spacing.md,
+    overflow: 'hidden',
+  },
+  buddyAccentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
+  },
+  buddyAvatarWrap: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyAvatarRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 26,
+  },
+  buddyAvatarInner: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyMatchBody: {
+    flex: 1,
+    gap: 3,
+  },
+  buddyMatchTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  buddyMatchName: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  buddyLiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(6,182,212,0.12)',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  buddyLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: BUDDY_COLOR,
+  },
+  buddyLiveText: {
+    fontSize: 10,
+    fontFamily: FontFamily.bodySemiBold,
+    color: BUDDY_COLOR,
+  },
+  buddyMatchPreview: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    lineHeight: 18,
   },
 });

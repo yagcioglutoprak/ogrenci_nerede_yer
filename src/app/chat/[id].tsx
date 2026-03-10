@@ -217,7 +217,7 @@ export default function ChatScreen() {
         ]}>
           {isOwn ? (
             <LinearGradient
-              colors={[Colors.primary, Colors.primaryDark]}
+              colors={[Colors.primary, Colors.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[
@@ -414,7 +414,7 @@ export default function ChatScreen() {
             accessibilityRole="button"
           >
             <LinearGradient
-              colors={canSend ? [Colors.primary, Colors.primaryDark] : [colors.textTertiary, colors.textTertiary]}
+              colors={canSend ? [Colors.primary, Colors.accent] : [colors.textTertiary, colors.textTertiary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[styles.sendButton, !canSend && { opacity: 0.35 }]}
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.success,
     borderWidth: 2,
   },
   headerInfo: {
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   },
   ownBubble: {
     borderBottomRightRadius: 6,
-    shadowColor: Colors.primary,
+    shadowColor: Colors.accent,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,

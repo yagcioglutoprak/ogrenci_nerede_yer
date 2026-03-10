@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Avatar from '../ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -17,10 +18,15 @@ export default function MessageBubble({ message, isCurrentUser }: MessageBubbleP
   if (isCurrentUser) {
     return (
       <View style={styles.rowRight}>
-        <View style={[styles.bubbleRight, { backgroundColor: Colors.primary }]}>
+        <LinearGradient
+          colors={[Colors.primary, Colors.accent]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.bubbleRight}
+        >
           <Text style={styles.textRight}>{message.message}</Text>
           <Text style={styles.timeRight}>{getRelativeTime(message.created_at)}</Text>
-        </View>
+        </LinearGradient>
       </View>
     );
   }

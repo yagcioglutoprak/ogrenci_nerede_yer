@@ -81,7 +81,7 @@ export default function VenueBubble({
       >
         {isOwn ? (
           <LinearGradient
-            colors={[Colors.primary, Colors.primaryDark]}
+            colors={[Colors.primary, Colors.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.cardGradient}
