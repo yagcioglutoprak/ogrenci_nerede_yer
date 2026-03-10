@@ -59,6 +59,7 @@ interface EventState {
   error: string | null;
 
   fetchEventByPostId: (postId: string) => Promise<void>;
+  fetchEventById: (eventId: string) => Promise<void>;
   fetchUpcomingEvents: () => Promise<void>;
   createEvent: (data: {
     creator_id: string;
@@ -127,6 +128,44 @@ export const useEventStore = create<EventState>((set, get) => ({
           selectedEvent: null,
           error: err?.message || 'Etkinlik yuklenirken hata olustu',
         });
+      }
+    }
+
+    set({ loading: false });
+  },
+
+  fetchEventById: async (eventId) => {
+    set({ loading: true, error: null });
+
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          creator:users!creator_id(*),
+          venue:venues(*),
+          attendees:event_attendees(*, user:users(*))
+        `)
+        .eq('id', eventId)
+        .single();
+
+      if (!error && data) {
+        const event = {
+          ...data,
+          attendee_count: (data.attendees as EventAttendee[])
+            ?.filter((a) => a.status === 'confirmed').length ?? 0,
+        } as Event;
+        set({ selectedEvent: event });
+      } else {
+        set({ selectedEvent: null });
+      }
+    } catch (err: any) {
+      if (__DEV__) {
+        const allMock = buildMockEventsWithJoins();
+        const mockEvent = allMock.find((e) => e.id === eventId) || null;
+        set({ selectedEvent: mockEvent, error: err?.message });
+      } else {
+        set({ selectedEvent: null, error: err?.message || 'Etkinlik yuklenirken hata olustu' });
       }
     }
 

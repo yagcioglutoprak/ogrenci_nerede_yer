@@ -407,14 +407,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ---- Discover (hidden) ---- */}
-      <Tabs.Screen
-        name="discover"
-        options={{
-          href: null,
-        }}
-      />
-
       {/* ---- Profile ---- */}
       <Tabs.Screen
         name="profile"

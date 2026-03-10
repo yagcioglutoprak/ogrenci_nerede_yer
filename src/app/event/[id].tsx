@@ -57,36 +57,18 @@ export default function EventRoomScreen() {
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  // Load event data by searching through events
+  // Load event data directly by ID
   useEffect(() => {
     if (!id) return;
     let channel: any = null;
 
-    // Try to find the event — we need to fetch by looking through events
-    // The store has fetchEventByPostId but we have the event ID, not post ID.
-    // Let's fetch upcoming events and also fetch attendees + messages directly.
     const loadData = async () => {
-      // Fetch upcoming events to populate selectedEvent
-      const { events } = useEventStore.getState();
-      const found = events.find((e) => e.id === id);
-      if (found) {
-        useEventStore.setState({ selectedEvent: found });
-      } else {
-        // Fetch all events to find this one
-        await useEventStore.getState().fetchUpcomingEvents();
-        const refreshed = useEventStore.getState().events.find((e) => e.id === id);
-        if (refreshed) {
-          useEventStore.setState({ selectedEvent: refreshed });
-        }
-      }
-
+      await useEventStore.getState().fetchEventById(id);
       await Promise.all([
         fetchAttendees(id),
         fetchMessages(id),
       ]);
-
-      // Subscribe to new messages via Supabase Realtime
-      channel = useEventStore.getState().subscribeToMessages(id as string);
+      channel = useEventStore.getState().subscribeToMessages(id);
     };
 
     loadData();

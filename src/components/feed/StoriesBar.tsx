@@ -25,7 +25,9 @@ export default function StoriesBar() {
   const handleStoryPress = useCallback((index: number) => {
     const story = MOCK_STORIES[index];
     setWatchedIds((prev) => new Set(prev).add(story.id));
-    router.push({ pathname: '/reels', params: { startIndex: index.toString() } });
+    if (story.venue_id) {
+      router.push(`/venue/${story.venue_id}`);
+    }
   }, [router]);
 
   const renderStory = useCallback(
