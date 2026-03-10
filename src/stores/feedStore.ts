@@ -195,28 +195,40 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const { data, error } = await buildCategoryQuery(category)
         .range(0, PAGE_SIZE - 1);
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         set({
           posts: data as Post[],
           hasMore: data.length >= PAGE_SIZE,
         });
-      } else {
-        // Fallback to mock data
+      } else if (error) {
+        // Supabase hatasi - sadece dev modda mock data goster
+        if (__DEV__) {
+          const mockPosts = buildMockPostsWithJoins();
+          const sorted = applyCategoryToMockPosts(mockPosts, category);
+          set({
+            posts: sorted.slice(0, PAGE_SIZE) as Post[],
+            hasMore: sorted.length > PAGE_SIZE,
+          });
+        } else {
+          set({ posts: [], hasMore: false, error: error.message });
+        }
+      }
+    } catch (err: any) {
+      if (__DEV__) {
         const mockPosts = buildMockPostsWithJoins();
-        const sorted = applyCategoryToMockPosts(mockPosts, category);
+        const sorted = applyCategoryToMockPosts(mockPosts, get().category);
         set({
           posts: sorted.slice(0, PAGE_SIZE) as Post[],
           hasMore: sorted.length > PAGE_SIZE,
+          error: err?.message || 'Gonderiler yuklenirken hata olustu',
+        });
+      } else {
+        set({
+          posts: [],
+          hasMore: false,
+          error: err?.message || 'Gonderiler yuklenirken hata olustu',
         });
       }
-    } catch (err: any) {
-      const mockPosts = buildMockPostsWithJoins();
-      const sorted = applyCategoryToMockPosts(mockPosts, get().category);
-      set({
-        posts: sorted.slice(0, PAGE_SIZE) as Post[],
-        hasMore: sorted.length > PAGE_SIZE,
-        error: err?.message || 'Gonderiler yuklenirken hata olustu',
-      });
     }
 
     set({ loading: false });
@@ -239,18 +251,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           posts: [...posts, ...(data as Post[])],
           hasMore: data.length >= PAGE_SIZE,
         });
-      } else if (error) {
-        // Mock data pagination
-        const allMock = applyCategoryToMockPosts(buildMockPostsWithJoins(), category);
-        const nextPage = allMock.slice(from, to + 1);
-        if (nextPage.length > 0) {
-          set({
-            posts: [...posts, ...nextPage],
-            hasMore: allMock.length > to + 1,
-          });
-        } else {
-          set({ hasMore: false });
-        }
       } else {
         set({ hasMore: false });
       }
@@ -275,11 +275,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     if (!error && data) {
       set({ selectedPost: data as Post });
+    } else if (error) {
+      // Supabase hatasi - sadece dev modda mock data goster
+      if (__DEV__) {
+        const allMock = buildMockPostsWithJoins();
+        const mockPost = allMock.find((p) => p.id === id) || null;
+        set({ selectedPost: mockPost });
+      } else {
+        set({ selectedPost: null });
+      }
     } else {
-      // Fallback: find from mock data with joins
-      const allMock = buildMockPostsWithJoins();
-      const mockPost = allMock.find((p) => p.id === id) || null;
-      set({ selectedPost: mockPost });
+      set({ selectedPost: null });
     }
   },
 
@@ -290,12 +296,18 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       set({ comments: data as Comment[] });
+    } else if (error) {
+      // Supabase hatasi - sadece dev modda mock data goster
+      if (__DEV__) {
+        const mockComments = buildMockCommentsWithUser(postId);
+        set({ comments: mockComments as Comment[] });
+      } else {
+        set({ comments: [] });
+      }
     } else {
-      // Fallback to mock comments
-      const mockComments = buildMockCommentsWithUser(postId);
-      set({ comments: mockComments as Comment[] });
+      set({ comments: [] });
     }
   },
 

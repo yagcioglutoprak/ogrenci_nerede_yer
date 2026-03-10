@@ -98,12 +98,12 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .order('overall_rating', { ascending: false })
         .range(0, PAGE_SIZE - 1);
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
-      } else {
-        // Fallback to mock data when Supabase returns empty or error
+      } else if (error) {
+        // Fallback to mock data only on actual errors (e.g. network failure)
         const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
-        set({ venues: mockFiltered, hasMore: false });
+        set({ venues: mockFiltered, hasMore: false, error: error.message });
       }
     } catch (err: any) {
       const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, get().filters);
@@ -173,10 +173,12 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
     if (!error && data) {
       set({ selectedVenue: data as Venue });
-    } else {
-      // Fallback: find venue from mock data
+    } else if (error) {
+      // Fallback: find venue from mock data only on actual errors
       const mockVenue = MOCK_VENUES.find((v) => v.id === id) || null;
       set({ selectedVenue: mockVenue });
+    } else {
+      set({ selectedVenue: null });
     }
     set({ loading: false });
   },
@@ -188,10 +190,10 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       .eq('venue_id', venueId)
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       set({ reviews: data as Review[] });
-    } else {
-      // Fallback: filter mock reviews for this venue and join user data
+    } else if (error) {
+      // Fallback: filter mock reviews for this venue only on actual errors
       const mockReviews = MOCK_REVIEWS
         .filter((r) => r.venue_id === venueId)
         .map((r) => ({
@@ -200,6 +202,8 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         }))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       set({ reviews: mockReviews as Review[] });
+    } else {
+      set({ reviews: [] });
     }
   },
 
@@ -219,17 +223,17 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .order('overall_rating', { ascending: false })
         .limit(20);
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         set({ venues: data as Venue[] });
-      } else {
-        // Fallback: search mock data
+      } else if (error) {
+        // Fallback: search mock data only on actual errors
         const q = query.toLowerCase();
         const mockResults = MOCK_VENUES.filter(
           (v) =>
             v.name.toLowerCase().includes(q) ||
             v.address.toLowerCase().includes(q),
         );
-        set({ venues: mockResults });
+        set({ venues: mockResults, error: error.message });
       }
     } catch (err: any) {
       const q = query.toLowerCase();
@@ -252,7 +256,7 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     let coverUrl = venue.cover_image_url;
     if (coverUrl && (coverUrl.startsWith('file://') || coverUrl.startsWith('ph://'))) {
       const { url } = await uploadImage(coverUrl, 'venues');
-      coverUrl = url || coverUrl; // Fallback to local URI if upload fails
+      coverUrl = url || null; // Don't store local file:// URI if upload fails
     }
 
     const { data, error } = await supabase

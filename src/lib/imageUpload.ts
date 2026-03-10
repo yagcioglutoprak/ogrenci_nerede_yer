@@ -84,7 +84,7 @@ export async function uploadImage(
 /**
  * Upload multiple local images to Supabase Storage.
  * Returns array of public URLs (skips failed uploads).
- * If all uploads fail, returns the original local URIs as fallback.
+ * Returns empty array if all uploads fail — callers must handle this case.
  */
 export async function uploadImages(
   localUris: string[],
@@ -100,12 +100,8 @@ export async function uploadImages(
     .filter((r) => r.url !== null)
     .map((r) => r.url as string);
 
-  // If at least one upload succeeded, return uploaded URLs
-  // If all failed, return original URIs (they still display locally)
-  if (uploadedUrls.length > 0) {
-    return uploadedUrls;
-  }
-
-  // Fallback: return original local URIs so the app still works
-  return localUris;
+  // Return only successfully uploaded URLs.
+  // If all uploads failed, return empty array — callers must handle the empty case.
+  // Never return local file:// URIs as they only work on the uploading device.
+  return uploadedUrls;
 }

@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import type { User } from '../types';
 import { MOCK_USERS } from '../lib/mockData';
 
 // Dev mode: auto-login with mock user when no Supabase session
 const DEV_AUTO_LOGIN = __DEV__;
 
+// Track auth listener subscription so we can clean up on re-initialization
+let authSubscription: { unsubscribe: () => void } | null = null;
+
 interface AuthState {
   user: User | null;
-  session: any | null;
+  session: Session | null;
   loading: boolean;
   initialized: boolean;
   error: string | null;
@@ -28,6 +32,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   initialize: async () => {
+    // Clean up previous listener on re-initialization (e.g. hot reload)
+    if (authSubscription) {
+      authSubscription.unsubscribe();
+      authSubscription = null;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -41,13 +51,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ session, user: profile, initialized: true, error: null });
       } else if (DEV_AUTO_LOGIN) {
         // Dev: auto-login with first mock user
-        set({ session: { user: { id: MOCK_USERS[0].id } }, user: MOCK_USERS[0], initialized: true, error: null });
+        set({ session: { user: { id: MOCK_USERS[0].id } } as any, user: MOCK_USERS[0], initialized: true, error: null });
       } else {
         set({ session: null, user: null, initialized: true, error: null });
       }
 
       // Auth state değişikliklerini dinle
-      supabase.auth.onAuthStateChange(async (_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
           const { data: profile } = await supabase
             .from('users')
@@ -60,9 +70,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ session: null, user: null });
         }
       });
+      authSubscription = subscription;
     } catch (err: any) {
       if (DEV_AUTO_LOGIN) {
-        set({ session: { user: { id: MOCK_USERS[0].id } }, user: MOCK_USERS[0], initialized: true, error: null });
+        set({ session: { user: { id: MOCK_USERS[0].id } } as any, user: MOCK_USERS[0], initialized: true, error: null });
       } else {
         set({
           initialized: true,
@@ -74,39 +85,51 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signInWithEmail: async (email, password) => {
     set({ loading: true, error: null });
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    const errorMessage = error?.message || null;
-    set({ loading: false, error: errorMessage });
-    return { error: errorMessage };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const errorMessage = error?.message || null;
+      set({ loading: false, error: errorMessage });
+      return { error: errorMessage };
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Giriş yapılırken hata oluştu';
+      set({ loading: false, error: errorMessage });
+      return { error: errorMessage };
+    }
   },
 
   signUpWithEmail: async (email, password, username) => {
     set({ loading: true, error: null });
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
 
-    if (error) {
-      set({ loading: false, error: error.message });
-      return { error: error.message };
-    }
-
-    if (data.user) {
-      // Kullanıcı profili oluştur
-      const { error: profileError } = await supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        username,
-        full_name: username,
-        xp_points: 0,
-      });
-
-      if (profileError) {
-        set({ loading: false, error: profileError.message });
-        return { error: profileError.message };
+      if (error) {
+        set({ loading: false, error: error.message });
+        return { error: error.message };
       }
-    }
 
-    set({ loading: false, error: null });
-    return { error: null };
+      if (data.user) {
+        // Kullanıcı profili oluştur
+        const { error: profileError } = await supabase.from('users').insert({
+          id: data.user.id,
+          email,
+          username,
+          full_name: username,
+          xp_points: 0,
+        });
+
+        if (profileError) {
+          set({ loading: false, error: profileError.message });
+          return { error: profileError.message };
+        }
+      }
+
+      set({ loading: false, error: null });
+      return { error: null };
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Kayıt olurken hata oluştu';
+      set({ loading: false, error: errorMessage });
+      return { error: errorMessage };
+    }
   },
 
   signOut: async () => {

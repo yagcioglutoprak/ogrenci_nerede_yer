@@ -435,9 +435,12 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
           const match = payload.new as any;
           if (!match) return;
 
+          const { myBuddy } = get();
+          if (!myBuddy) return;
+          // Skip events not related to this user's buddy
+          if (match.requester_buddy_id !== myBuddy.id && match.target_buddy_id !== myBuddy.id) return;
+
           if (match.status === 'accepted') {
-            const { myBuddy } = get();
-            if (myBuddy && (match.requester_buddy_id === myBuddy.id || match.target_buddy_id === myBuddy.id)) {
               const { data: fullMatch } = await supabase
                 .from('buddy_matches')
                 .select('*, requester:meal_buddies!requester_buddy_id(*, user:users(*)), target:meal_buddies!target_buddy_id(*, user:users(*))')
@@ -446,7 +449,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
               if (fullMatch) {
                 set({ activeMatch: fullMatch as BuddyMatch, pendingMatches: [] });
               }
-            }
           }
 
           if (match.status === 'pending') {

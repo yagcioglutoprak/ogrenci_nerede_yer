@@ -113,16 +113,21 @@ export const useEventStore = create<EventState>((set, get) => ({
         } as Event;
         set({ selectedEvent: event });
       } else {
-        // Fallback to mock data
-        const mockEvent = findMockEventByPostId(postId);
-        set({ selectedEvent: mockEvent });
+        set({ selectedEvent: null });
       }
     } catch (err: any) {
-      const mockEvent = findMockEventByPostId(postId);
-      set({
-        selectedEvent: mockEvent,
-        error: err?.message || 'Etkinlik yuklenirken hata olustu',
-      });
+      if (__DEV__) {
+        const mockEvent = findMockEventByPostId(postId);
+        set({
+          selectedEvent: mockEvent,
+          error: err?.message || 'Etkinlik yuklenirken hata olustu',
+        });
+      } else {
+        set({
+          selectedEvent: null,
+          error: err?.message || 'Etkinlik yuklenirken hata olustu',
+        });
+      }
     }
 
     set({ loading: false });
@@ -154,24 +159,25 @@ export const useEventStore = create<EventState>((set, get) => ({
         })) as Event[];
         set({ events });
       } else {
-        // Fallback to mock data
+        set({ events: [] });
+      }
+    } catch (err: any) {
+      if (__DEV__) {
         const allMock = buildMockEventsWithJoins();
         const upcoming = allMock
           .filter((e) => e.status === 'upcoming' && new Date(e.event_date) > new Date())
           .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
           .slice(0, 20);
-        set({ events: upcoming });
+        set({
+          events: upcoming,
+          error: err?.message || 'Etkinlikler yuklenirken hata olustu',
+        });
+      } else {
+        set({
+          events: [],
+          error: err?.message || 'Etkinlikler yuklenirken hata olustu',
+        });
       }
-    } catch (err: any) {
-      const allMock = buildMockEventsWithJoins();
-      const upcoming = allMock
-        .filter((e) => e.status === 'upcoming' && new Date(e.event_date) > new Date())
-        .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
-        .slice(0, 20);
-      set({
-        events: upcoming,
-        error: err?.message || 'Etkinlikler yuklenirken hata olustu',
-      });
     }
 
     set({ loading: false });
@@ -219,6 +225,8 @@ export const useEventStore = create<EventState>((set, get) => ({
         .single();
 
       if (eventError || !event) {
+        // Clean up orphaned post
+        await supabase.from('posts').delete().eq('id', post.id);
         set({ loading: false });
         return { error: eventError?.message || 'Etkinlik olusturulamadi' };
       }
@@ -377,13 +385,15 @@ export const useEventStore = create<EventState>((set, get) => ({
       if (!error && data && data.length > 0) {
         set({ attendees: data as EventAttendee[] });
       } else {
-        // Fallback to mock data
-        const mockAttendees = buildMockAttendeesWithUser(eventId);
-        set({ attendees: mockAttendees });
+        set({ attendees: [] });
       }
     } catch {
-      const mockAttendees = buildMockAttendeesWithUser(eventId);
-      set({ attendees: mockAttendees });
+      if (__DEV__) {
+        const mockAttendees = buildMockAttendeesWithUser(eventId);
+        set({ attendees: mockAttendees });
+      } else {
+        set({ attendees: [] });
+      }
     }
   },
 
@@ -398,7 +408,10 @@ export const useEventStore = create<EventState>((set, get) => ({
       if (!error && data && data.length > 0) {
         set({ messages: data as EventMessage[] });
       } else {
-        // Fallback to mock data
+        set({ messages: [] });
+      }
+    } catch {
+      if (__DEV__) {
         const mockMessages = MOCK_EVENT_MESSAGES
           .filter((m) => m.event_id === eventId)
           .map((m) => ({
@@ -406,15 +419,9 @@ export const useEventStore = create<EventState>((set, get) => ({
             user: MOCK_USERS.find((u) => u.id === m.user_id),
           }));
         set({ messages: mockMessages });
+      } else {
+        set({ messages: [] });
       }
-    } catch {
-      const mockMessages = MOCK_EVENT_MESSAGES
-        .filter((m) => m.event_id === eventId)
-        .map((m) => ({
-          ...m,
-          user: MOCK_USERS.find((u) => u.id === m.user_id),
-        }));
-      set({ messages: mockMessages });
     }
   },
 
