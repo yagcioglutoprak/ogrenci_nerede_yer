@@ -1,13 +1,14 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
-  Platform,
-  ViewToken,
+  Pressable,
+  Linking,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -16,50 +17,104 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../lib/constants';
 import { haptic } from '../lib/haptics';
-import { MOCK_STORIES } from '../lib/mockData';
+import { MOCK_STORIES, MOCK_VENUES } from '../lib/mockData';
 import type { Story } from '../types';
 
+// Lookup venue name by ID
+function getVenueName(venueId?: string): string | null {
+  if (!venueId) return null;
+  const venue = MOCK_VENUES.find((v) => v.id === venueId);
+  return venue?.name || null;
+}
+
 // ---------------------------------------------------------------------------
-// Single reel item — owns its own VideoPlayer
+// Bouncing arrow hint — "Videoya Git"
 // ---------------------------------------------------------------------------
 
-function ReelItem({
+function SwipeUpHint() {
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.swipeHint, animStyle]}>
+      <Ionicons name="chevron-up" size={20} color="rgba(255,255,255,0.8)" />
+      <Text style={styles.swipeHintText}>Videoya Git</Text>
+    </Animated.View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Progress bar — shows current position among reels
+// ---------------------------------------------------------------------------
+
+function ProgressBars({ count, activeIndex, top }: { count: number; activeIndex: number; top: number }) {
+  return (
+    <View style={[styles.progressContainer, { top: top + Spacing.sm }]}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.progressBar,
+            { backgroundColor: i <= activeIndex ? '#FFFFFF' : 'rgba(255,255,255,0.3)' },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Single reel view — one video at a time
+// ---------------------------------------------------------------------------
+
+function ActiveReel({
   story,
-  isActive,
-  width,
-  height,
-  insets,
-  onClose,
-  onVenuePress,
+  venueName,
 }: {
   story: Story;
-  isActive: boolean;
-  width: number;
-  height: number;
-  insets: { top: number; bottom: number };
-  onClose: () => void;
-  onVenuePress: (venueId: string) => void;
+  venueName: string | null;
 }) {
   const player = useVideoPlayer(story.video_url, (p) => {
     p.loop = true;
-    p.volume = 1;
   });
 
   const { isPlaying } = useEvent(player, 'playingChange', {
     isPlaying: player.playing,
   });
 
-  // Play/pause based on visibility
+  // Auto-play on mount
   useEffect(() => {
-    if (isActive) {
-      player.play();
-    } else {
+    player.play();
+    return () => {
       player.pause();
-    }
-  }, [isActive]);
+    };
+  }, []);
 
   const togglePlayback = useCallback(() => {
     if (isPlaying) {
@@ -71,8 +126,7 @@ function ReelItem({
   }, [isPlaying]);
 
   return (
-    <View style={{ width, height }}>
-      {/* Video */}
+    <>
       <VideoView
         player={player}
         style={StyleSheet.absoluteFill}
@@ -80,15 +134,14 @@ function ReelItem({
         nativeControls={false}
       />
 
-      {/* Tap to play/pause */}
-      <TouchableOpacity
-        style={StyleSheet.absoluteFill}
-        activeOpacity={1}
+      {/* Invisible center tap to toggle play/pause */}
+      <Pressable
+        style={styles.centerTapZone}
         onPress={togglePlayback}
       />
 
       {/* Paused indicator */}
-      {!isPlaying && isActive && (
+      {!isPlaying && (
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)}
@@ -100,48 +153,12 @@ function ReelItem({
           </View>
         </Animated.View>
       )}
-
-      {/* Top gradient + close button */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.6)', 'transparent']}
-        style={[styles.topGradient, { paddingTop: insets.top + Spacing.sm }]}
-        pointerEvents="box-none"
-      >
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="close" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-      </LinearGradient>
-
-      {/* Bottom gradient + info */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={[styles.bottomGradient, { paddingBottom: insets.bottom + Spacing.xl }]}
-        pointerEvents="box-none"
-      >
-        <Text style={styles.storyTitle}>{story.title}</Text>
-
-        {story.venue_id && (
-          <TouchableOpacity
-            style={styles.venueChip}
-            onPress={() => onVenuePress(story.venue_id!)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="restaurant" size={14} color="#FFFFFF" />
-            <Text style={styles.venueChipText}>Mekani Gor</Text>
-            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.7)" />
-          </TouchableOpacity>
-        )}
-      </LinearGradient>
-    </View>
+    </>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Reels screen — vertical paging FlatList
+// Main Reels screen
 // ---------------------------------------------------------------------------
 
 export default function ReelsScreen() {
@@ -150,74 +167,144 @@ export default function ReelsScreen() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const initialIndex = parseInt(initialIndexParam || '0', 10);
-  const [activeIndex, setActiveIndex] = useState(initialIndex);
-  const flatListRef = useRef<FlatList>(null);
-
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setActiveIndex(viewableItems[0].index);
-        haptic.selection();
-      }
-    },
-    [],
+  const initialIndex = Math.min(
+    parseInt(initialIndexParam || '0', 10),
+    MOCK_STORIES.length - 1,
   );
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+  const story = MOCK_STORIES[currentIndex];
+  const venueName = getVenueName(story.venue_id);
+
+  const goNext = useCallback(() => {
+    if (currentIndex < MOCK_STORIES.length - 1) {
+      setCurrentIndex((i) => i + 1);
+      haptic.selection();
+    }
+  }, [currentIndex]);
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((i) => i - 1);
+      haptic.selection();
+    }
+  }, [currentIndex]);
 
   const handleClose = useCallback(() => {
     router.back();
   }, []);
 
-  const handleVenuePress = useCallback((venueId: string) => {
-    router.push(`/venue/${venueId}`);
-  }, []);
+  const handleVenuePress = useCallback(() => {
+    if (story.venue_id) {
+      router.push(`/venue/${story.venue_id}`);
+    }
+  }, [story.venue_id]);
 
-  const getItemLayout = useCallback(
-    (_: any, index: number) => ({
-      length: height,
-      offset: height * index,
-      index,
+  const handleSwipeUpToVideo = useCallback(() => {
+    if (story.external_url) {
+      Linking.openURL(story.external_url);
+    } else if (story.video_url) {
+      Linking.openURL(story.video_url);
+    }
+  }, [story.external_url, story.video_url]);
+
+  // Pan responder for vertical swipes
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => {
+        // Only capture vertical gestures
+        return Math.abs(gs.dy) > 20 && Math.abs(gs.dy) > Math.abs(gs.dx);
+      },
+      onPanResponderRelease: (
+        _: GestureResponderEvent,
+        gs: PanResponderGestureState,
+      ) => {
+        if (gs.dy < -80) {
+          // Swipe up → open video URL
+          handleSwipeUpToVideo();
+        } else if (gs.dy > 80) {
+          // Swipe down → close
+          handleClose();
+        }
+      },
     }),
-    [height],
-  );
+  ).current;
 
-  const renderItem = useCallback(
-    ({ item, index }: { item: Story; index: number }) => (
-      <ReelItem
-        story={item}
-        isActive={index === activeIndex}
-        width={width}
-        height={height}
-        insets={insets}
-        onClose={handleClose}
-        onVenuePress={handleVenuePress}
-      />
-    ),
-    [activeIndex, width, height, insets],
+  // Tap zones: left 30% = prev, right 30% = next
+  const TAP_ZONE = width * 0.3;
+
+  const handleTap = useCallback(
+    (evt: GestureResponderEvent) => {
+      const x = evt.nativeEvent.locationX;
+      if (x < TAP_ZONE) {
+        goPrev();
+      } else if (x > width - TAP_ZONE) {
+        goNext();
+      }
+      // Middle 40% does nothing (handled by center play/pause)
+    },
+    [TAP_ZONE, width, goPrev, goNext],
   );
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panResponder.panHandlers}>
       <StatusBar style="light" />
-      <FlatList
-        ref={flatListRef}
-        data={MOCK_STORIES}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        pagingEnabled
-        horizontal={false}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={height}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        getItemLayout={getItemLayout}
-        initialScrollIndex={initialIndex}
-        removeClippedSubviews={Platform.OS === 'android'}
+
+      {/* Video */}
+      <ActiveReel
+        key={story.id}
+        story={story}
+        venueName={venueName}
       />
+
+      {/* Left/Right tap zones */}
+      <Pressable style={[styles.tapZone, { left: 0, width: TAP_ZONE }]} onPress={goPrev} />
+      <Pressable style={[styles.tapZone, { right: 0, width: TAP_ZONE }]} onPress={goNext} />
+
+      {/* Progress bars */}
+      <ProgressBars count={MOCK_STORIES.length} activeIndex={currentIndex} top={insets.top} />
+
+      {/* Top: close button */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.5)', 'transparent']}
+        style={[styles.topGradient, { paddingTop: insets.top + Spacing.xl + Spacing.sm }]}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          style={styles.closeButton}
+          onPress={handleClose}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
+        </Pressable>
+      </LinearGradient>
+
+      {/* Bottom: venue name + title + swipe hint */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.75)']}
+        style={[styles.bottomGradient, { paddingBottom: insets.bottom + Spacing.lg }]}
+        pointerEvents="box-none"
+      >
+        {/* Venue name + story title — tappable to go to venue */}
+        <Pressable
+          onPress={handleVenuePress}
+          style={styles.venueInfoTouchable}
+          disabled={!story.venue_id}
+        >
+          {venueName && (
+            <View style={styles.venueNameRow}>
+              <Ionicons name="restaurant" size={14} color={Colors.accent} />
+              <Text style={styles.venueName}>{venueName}</Text>
+              <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.5)" />
+            </View>
+          )}
+          <Text style={styles.storyTitle}>{story.title}</Text>
+        </Pressable>
+
+        {/* Swipe up hint */}
+        <SwipeUpHint />
+      </LinearGradient>
     </View>
   );
 }
@@ -232,17 +319,49 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
 
+  // Tap zones (invisible)
+  tapZone: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    zIndex: 5,
+  },
+  centerTapZone: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '30%',
+    right: '30%',
+    zIndex: 4,
+  },
+
+  // Progress bars
+  progressContainer: {
+    position: 'absolute',
+    left: Spacing.md,
+    right: Spacing.md,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 20,
+  },
+  progressBar: {
+    flex: 1,
+    height: 2.5,
+    borderRadius: 2,
+  },
+
   // Pause overlay
   pauseOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 3,
   },
   pauseCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: 4,
@@ -255,16 +374,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
+    paddingBottom: Spacing.xxxl,
+    zIndex: 10,
   },
   closeButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -276,32 +393,44 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl * 2,
+    paddingTop: Spacing.xxxl * 3,
+    zIndex: 10,
+  },
+  venueInfoTouchable: {
+    marginBottom: Spacing.lg,
+  },
+  venueNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs + 2,
+    marginBottom: Spacing.xs,
+  },
+  venueName: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+    color: Colors.accent,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   storyTitle: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.heading,
     color: '#FFFFFF',
-    marginBottom: Spacing.md,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  venueChip: {
-    flexDirection: 'row',
+
+  // Swipe up hint
+  swipeHint: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.3)',
+    gap: 2,
   },
-  venueChipText: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
+  swipeHintText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 0.5,
   },
 });
