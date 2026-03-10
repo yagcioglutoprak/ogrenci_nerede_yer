@@ -99,11 +99,22 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .range(0, PAGE_SIZE - 1);
 
       if (!error && data) {
-        set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
+        if (data.length > 0) {
+          set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
+        } else if (__DEV__) {
+          // Dev: show mock venues when DB is empty
+          const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
+          set({ venues: mockFiltered, hasMore: false });
+        } else {
+          set({ venues: [], hasMore: false });
+        }
       } else if (error) {
-        // Fallback to mock data only on actual errors (e.g. network failure)
-        const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
-        set({ venues: mockFiltered, hasMore: false, error: error.message });
+        if (__DEV__) {
+          const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
+          set({ venues: mockFiltered, hasMore: false });
+        } else {
+          set({ venues: [], hasMore: false, error: error.message });
+        }
       }
     } catch (err: any) {
       const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, get().filters);
@@ -173,8 +184,7 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
     if (!error && data) {
       set({ selectedVenue: data as Venue });
-    } else if (error) {
-      // Fallback: find venue from mock data only on actual errors
+    } else if (__DEV__) {
       const mockVenue = MOCK_VENUES.find((v) => v.id === id) || null;
       set({ selectedVenue: mockVenue });
     } else {
@@ -190,10 +200,9 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       .eq('venue_id', venueId)
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       set({ reviews: data as Review[] });
-    } else if (error) {
-      // Fallback: filter mock reviews for this venue only on actual errors
+    } else if (__DEV__) {
       const mockReviews = MOCK_REVIEWS
         .filter((r) => r.venue_id === venueId)
         .map((r) => ({
@@ -224,16 +233,25 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .limit(20);
 
       if (!error && data) {
-        set({ venues: data as Venue[] });
-      } else if (error) {
-        // Fallback: search mock data only on actual errors
+        if (data.length > 0) {
+          set({ venues: data as Venue[] });
+        } else if (__DEV__) {
+          const q = query.toLowerCase();
+          const mockResults = MOCK_VENUES.filter(
+            (v) => v.name.toLowerCase().includes(q) || v.address.toLowerCase().includes(q),
+          );
+          set({ venues: mockResults });
+        } else {
+          set({ venues: [] });
+        }
+      } else if (error && __DEV__) {
         const q = query.toLowerCase();
         const mockResults = MOCK_VENUES.filter(
-          (v) =>
-            v.name.toLowerCase().includes(q) ||
-            v.address.toLowerCase().includes(q),
+          (v) => v.name.toLowerCase().includes(q) || v.address.toLowerCase().includes(q),
         );
-        set({ venues: mockResults, error: error.message });
+        set({ venues: mockResults });
+      } else if (error) {
+        set({ venues: [], error: error.message });
       }
     } catch (err: any) {
       const q = query.toLowerCase();
