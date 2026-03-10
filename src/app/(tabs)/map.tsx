@@ -10,13 +10,12 @@ import {
   Platform,
   ScrollView,
   FlatList,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassView from '../../components/ui/GlassView';
-import RatingBar from '../../components/ui/RatingBar';
+import VenueBottomSheet from '../../components/venue/VenueBottomSheet';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, Callout, Region } from 'react-native-maps';
+import MapView, { Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -133,6 +132,7 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
 
   // Filter state
   const [filterPrice, setFilterPrice] = useState<number[]>([]);
@@ -222,6 +222,7 @@ export default function MapScreen() {
 
   const handleMarkerPress = (venue: Venue) => {
     haptic.light();
+    setSelectedVenue(venue);
     mapRef.current?.animateToRegion(
       {
         latitude: venue.latitude,
@@ -231,10 +232,6 @@ export default function MapScreen() {
       },
       MapConfig.MARKER_ANIMATION_DURATION,
     );
-  };
-
-  const handleCalloutPress = (venue: Venue) => {
-    router.push(`/venue/${venue.id}`);
   };
 
   const handleSelectSearchResult = (venue: Venue) => {
@@ -297,6 +294,9 @@ export default function MapScreen() {
         showsCompass={false}
         userInterfaceStyle={isDark ? 'dark' : 'light'}
         mapPadding={{ top: insets.top + 60, right: 0, bottom: insets.bottom + 60, left: 0 }}
+        onPress={() => {
+          if (selectedVenue) setSelectedVenue(null);
+        }}
       >
         {clusteredItems.map((item) => {
           if (item.type === 'cluster') {
@@ -338,32 +338,9 @@ export default function MapScreen() {
                 key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
                 tracksViewChanges={false}
+                onPress={() => handleMarkerPress(venue)}
               >
                 <View style={styles.greyDot} />
-
-                <Callout tooltip onPress={() => handleCalloutPress(venue)}>
-                  <View style={styles.calloutContainer}>
-                    <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
-                      <View style={styles.greyDotCallout}>
-                        <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
-                          {venue.name}
-                        </Text>
-                        {venue.google_rating != null && (
-                          <View style={styles.greyDotCalloutRating}>
-                            <Ionicons name="logo-google" size={12} color="#4285F4" />
-                            <Text style={[styles.greyDotCalloutScore, { color: colors.textSecondary }]}>
-                              {venue.google_rating.toFixed(1)}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={styles.greyDotCalloutCta}>
-                          <Ionicons name="add-circle" size={14} color={Colors.primary} />
-                          <Text style={styles.greyDotCalloutCtaText}>Ilk degerlendirmeyi yap!</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </Callout>
               </Marker>
             );
           }
@@ -385,32 +362,13 @@ export default function MapScreen() {
                   </View>
                   <View style={[styles.tagPointer, { borderTopColor: colors.tagUnreviewed }]} />
                 </View>
-
-                <Callout tooltip onPress={() => handleCalloutPress(venue)}>
-                  <View style={styles.calloutContainer}>
-                    <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
-                      <View style={styles.greyDotCallout}>
-                        <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
-                          {venue.name}
-                        </Text>
-                        <Text style={[styles.mutedCalloutAddr, { color: colors.textTertiary }]} numberOfLines={1}>
-                          {venue.address}
-                        </Text>
-                        <View style={styles.greyDotCalloutCta}>
-                          <Ionicons name="star-outline" size={14} color={Colors.primary} />
-                          <Text style={styles.greyDotCalloutCtaText}>Degerlendir</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </Callout>
               </Marker>
             );
           }
 
           // ── Tier 3: Reviewed ONY venue — native logo marker ──
           // `image` prop renders natively, bypassing Fabric AIRMapMarker crash.
-          // Tap → zoom to venue + show callout. Callout tap → venue detail page.
+          // Tap → zoom to venue + open bottom sheet.
           return (
           <Marker
             key={venue.id}
@@ -421,58 +379,7 @@ export default function MapScreen() {
             image={MARKER_LOGO}
             onPress={() => handleMarkerPress(venue)}
             tracksViewChanges={false}
-          >
-            <Callout tooltip onPress={() => handleCalloutPress(venue)}>
-              <View style={styles.calloutContainer}>
-                <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
-                  <View style={styles.calloutInner}>
-                    <Text style={[styles.calloutName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
-                    {venue.editorial_rating != null && (
-                      <View style={[styles.calloutOnyRow, { backgroundColor: colors.primarySoft }]}>
-                        <Image source={require('../../../assets/logo-icon.png')} style={styles.calloutOnyLogo} resizeMode="contain" />
-                        <RatingBar
-                          rating={venue.editorial_rating}
-                          maxRating={10}
-                          size="md"
-                          color={Colors.primary}
-                          showValue
-                          barWidth={110}
-                        />
-                      </View>
-                    )}
-                    <View style={styles.calloutUserRow}>
-                      <RatingBar
-                        rating={venue.overall_rating}
-                        maxRating={5}
-                        size="sm"
-                        color={Colors.star}
-                        icon="star"
-                        showValue
-                        barWidth={90}
-                      />
-                      <Text style={[styles.calloutPrice, { color: colors.textSecondary }]}>
-                        {'₺'.repeat(venue.price_range)}
-                      </Text>
-                    </View>
-                    <View style={styles.calloutActions}>
-                      <TouchableOpacity
-                        style={styles.calloutRateBtn}
-                        onPress={() => router.push(`/venue/${venue.id}?rate=true`)}
-                        activeOpacity={0.8}
-                      >
-                        <Ionicons name="star-outline" size={13} color="#FFF" />
-                        <Text style={styles.calloutRateBtnText}>Puan Ver</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.calloutDetailBtn} activeOpacity={0.7}>
-                        <Text style={styles.calloutDetailBtnText}>Detaylar</Text>
-                        <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </Callout>
-          </Marker>
+          />
           );
         })}
       </MapView>
@@ -721,6 +628,12 @@ export default function MapScreen() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Venue Bottom Sheet */}
+      <VenueBottomSheet
+        venue={selectedVenue}
+        onDismiss={() => setSelectedVenue(null)}
+      />
     </View>
   );
 }
@@ -924,121 +837,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  greyDotCallout: {
-    padding: Spacing.md,
-    gap: Spacing.xs,
-    minWidth: 180,
-  },
-  greyDotCalloutName: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.headingBold,
-  },
-  greyDotCalloutRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  greyDotCalloutScore: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.bodySemiBold,
-  },
-  greyDotCalloutCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
-  },
-  greyDotCalloutCtaText: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.primary,
-  },
-
-  mutedCalloutAddr: {
-    fontSize: FontSize.xs,
-    marginTop: 2,
-  },
-
-  // Callout — Liquid Glass
-  calloutContainer: {
-    minWidth: 240,
-    maxWidth: 300,
-  },
-  callout: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  calloutInner: {
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    minWidth: 200,
-  },
-  calloutName: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.headingBold,
-    marginBottom: 2,
-  },
-  calloutOnyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    marginHorizontal: -Spacing.xs,
-  },
-  calloutOnyLogo: {
-    width: 24,
-    height: 24,
-  },
-  calloutUserRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  calloutPrice: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.bodySemiBold,
-  },
-  calloutActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.xs,
-  },
-  calloutRateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-  },
-  calloutRateBtnText: {
-    fontSize: FontSize.xs + 1,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-  },
-  calloutDetailBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  calloutDetailBtnText: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.primary,
-  },
-
   // Loading — Liquid Glass
   loadingPill: {
     position: 'absolute',
