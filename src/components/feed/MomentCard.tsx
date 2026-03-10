@@ -89,7 +89,7 @@ function LiveDot() {
   );
 }
 
-export default function MomentCard({
+function MomentCard({
   post,
   onLike,
   onJoinMoment,
@@ -408,3 +408,5 @@ const styles = StyleSheet.create({
     color: MOMENT_ORANGE,
   },
 });
+
+export default React.memo(MomentCard);

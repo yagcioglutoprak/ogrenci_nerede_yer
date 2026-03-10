@@ -3,7 +3,8 @@ import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, SpringConfig } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import GlassView from '../../components/ui/GlassView';
@@ -43,7 +44,6 @@ const TABS: TabDef[] = [
   { name: 'profile', title: 'Profil', iconFocused: 'person', iconOutline: 'person-outline' as IoniconsName },
 ];
 
-const SPRING_CONFIG = { damping: 15, stiffness: 180, mass: 0.7 };
 const ADD_BUTTON_SIZE = 56;
 const ADD_BUTTON_LIFT = 18;
 const CENTER_SPACER_WIDTH = ADD_BUTTON_SIZE + 4;
@@ -61,7 +61,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
   return (
     <View style={iosStyles.addButtonArea}>
       <Pressable
-        onPress={onPress}
+        onPress={() => { haptic.medium(); onPress(); }}
         onLongPress={onLongPress}
         accessibilityRole="button"
         accessibilityLabel="Ekle"
@@ -101,8 +101,8 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, bad
   const iconY = useSharedValue(isFocused ? -2 : 0);
 
   React.useEffect(() => {
-    scale.value = withSpring(isFocused ? 1 : 0, SPRING_CONFIG);
-    iconY.value = withSpring(isFocused ? -2 : 0, SPRING_CONFIG);
+    scale.value = withSpring(isFocused ? 1 : 0, SpringConfig.default);
+    iconY.value = withSpring(isFocused ? -2 : 0, SpringConfig.default);
   }, [isFocused, scale, iconY]);
 
   const dotStyle = useAnimatedStyle(() => ({
@@ -134,7 +134,7 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, bad
               color={color}
             />
             {badge != null && badge > 0 && (
-              <View style={iosStyles.badge}>
+              <View style={[iosStyles.badge, { borderColor: isDark ? '#121212' : '#FFFFFF' }]}>
                 <Text style={iosStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
               </View>
             )}
@@ -189,6 +189,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     state.routes.findIndex((r: any) => r.name === name);
 
   const handlePress = (name: string) => {
+    haptic.light();
     const idx = findRouteIndex(name);
     const route = state.routes[idx];
     const event = navigation.emit({

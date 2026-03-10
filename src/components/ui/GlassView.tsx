@@ -4,19 +4,7 @@ import { BlurView } from 'expo-blur';
 import { Colors, DarkColors } from '../../lib/constants';
 import { useIsDarkMode } from '../../hooks/useThemeColors';
 
-let ExpoGlassView: React.ComponentType<any> | null = null;
-let isGlassAvailable = false;
-
-try {
-  const glassModule = require('expo-glass-effect');
-  ExpoGlassView = glassModule.GlassView ?? null;
-  isGlassAvailable =
-    typeof glassModule.isGlassEffectAPIAvailable === 'function'
-      ? glassModule.isGlassEffectAPIAvailable()
-      : false;
-} catch {
-  // expo-glass-effect not available
-}
+const isGlassAvailable = false;
 
 type GlassEffect = 'clear' | 'regular';
 
@@ -54,20 +42,6 @@ export default function GlassView({
       <View style={[{ backgroundColor: resolvedFallback }, style]}>
         {children}
       </View>
-    );
-  }
-
-  // iOS 26+ with native Liquid Glass API
-  if (isGlassAvailable && ExpoGlassView) {
-    return (
-      <ExpoGlassView
-        style={style}
-        effect={effect}
-        interactive={interactive}
-        tintColor={tintColor}
-      >
-        {children}
-      </ExpoGlassView>
     );
   }
 

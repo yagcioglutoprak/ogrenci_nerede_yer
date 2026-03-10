@@ -7,24 +7,39 @@ import { registerForPushNotifications } from '../lib/notifications';
 export function useNotifications() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const responseListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     if (!user) return;
+    let isActive = true;
 
-    registerForPushNotifications(user.id);
+    const setupNotifications = async () => {
+      try {
+        await registerForPushNotifications(user.id);
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data;
-      if (data?.route) {
-        router.push(data.route as string);
-      }
-    });
+        if (!isActive) return;
 
-    return () => {
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+        responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          if (data?.route) {
+            router.push(data.route as string);
+          }
+        });
+      } catch {
+        // Notifications not available in Expo Go simulator
       }
     };
-  }, [user]);
+
+    setupNotifications();
+
+    return () => {
+      isActive = false;
+
+      try {
+        responseListener.current?.remove();
+      } catch {
+        // Cleanup failed silently
+      }
+    };
+  }, [router, user]);
 }

@@ -56,6 +56,15 @@ export const Colors = {
   tabBarBorder: '#F0F0F3',
   shadow: '#1B1B1F',
 
+  // Tag & muted colors
+  tagUnreviewed: '#ECECF0',
+  tagUnreviewedBorder: 'rgba(0,0,0,0.06)',
+  textMuted: 'rgba(0,0,0,0.45)',
+
+  // Message unread colors
+  messageUnreadBg: 'rgba(226,55,68,0.04)',
+  messageUnreadBorder: 'rgba(226,55,68,0.12)',
+
   // Glass effect colors (iOS 26 Liquid Glass / BlurView fallback)
   glass: {
     background: 'rgba(255,255,255,0.78)',
@@ -121,6 +130,15 @@ export const DarkColors: ThemeColors = {
   tabBarBg: '#121212',
   tabBarBorder: '#232325',
   shadow: '#000000',
+
+  // Tag & muted colors
+  tagUnreviewed: 'rgba(60,60,60,0.9)',
+  tagUnreviewedBorder: 'rgba(255,255,255,0.1)',
+  textMuted: 'rgba(255,255,255,0.55)',
+
+  // Message unread colors
+  messageUnreadBg: 'rgba(226,55,68,0.08)',
+  messageUnreadBorder: 'rgba(226,55,68,0.20)',
 
   // Glass effect — dark mode
   glass: {
@@ -279,3 +297,28 @@ export const ISTANBUL_SEMTLER = [
   'Bakirkoy', 'Fatih', 'Beyoglu', 'Maltepe', 'Atasehir',
   'Sariyer', 'Kartal', 'Pendik', 'Umraniye', 'Beylikduzu',
 ] as const;
+
+// Map configuration
+export const MapConfig = {
+  CLUSTER_ZOOM_THRESHOLD: 0.012,
+  MARKER_ANIMATION_DURATION: 500,
+  SEARCH_DEBOUNCE_MS: 300,
+  MAX_SEARCH_RESULTS: 5,
+  DEFAULT_ZOOM_DELTA: 0.01,
+  CLUSTER_PADDING: 0.002,
+  MIN_CLUSTER_DELTA: 0.005,
+} as const;
+
+// Shared animation configs
+export const SpringConfig = {
+  default: { damping: 15, stiffness: 180, mass: 0.7 },
+  snappy: { damping: 18, stiffness: 200 },
+  gentle: { damping: 15, stiffness: 120 },
+  bouncy: { damping: 12, stiffness: 200 },
+} as const;
+
+export const AnimationConfig = {
+  staggerInterval: 50,
+  maxStaggerDelay: 250,
+  fadeInDuration: 300,
+} as const;

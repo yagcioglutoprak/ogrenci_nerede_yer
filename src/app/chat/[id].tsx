@@ -9,14 +9,16 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, SlideInUp } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import Avatar from '../../components/ui/Avatar';
 import AttachmentSheet from '../../components/chat/AttachmentSheet';
 import VenuePickerModal from '../../components/chat/VenuePickerModal';
@@ -43,6 +45,8 @@ export default function ChatScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
+  const isDark = useIsDarkMode();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
 
   const messages = useMessageStore((s) => s.messages);
@@ -84,6 +88,7 @@ export default function ChatScreen() {
     const trimmed = draft.trim();
     if (!trimmed || !user || !conversationId) return;
 
+    haptic.light();
     sendMessage(conversationId, user.id, trimmed, otherUserId);
     setDraft('');
   }, [draft, user, conversationId, otherUserId]);
@@ -125,20 +130,29 @@ export default function ChatScreen() {
     });
   }, [user, conversationId, otherUserId, sendMessage]);
 
+  // Check if previous message is from the same sender (for grouping)
+  const isSameSenderAsPrev = useCallback((index: number) => {
+    if (index === 0) return false;
+    return messages[index - 1].sender_id === messages[index].sender_id;
+  }, [messages]);
+
   const renderMessage = useCallback(({ item, index }: { item: DirectMessage; index: number }) => {
     const isOwn = item.sender_id === user?.id;
     const time = formatTime(item.created_at);
+    const grouped = isSameSenderAsPrev(index);
 
     const showDateHeader = index === 0 ||
       new Date(messages[index - 1].created_at).toDateString() !== new Date(item.created_at).toDateString();
 
     const dateHeader = showDateHeader ? (
       <View style={styles.dateSeparator}>
-        <View style={[styles.datePill, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+        <View style={[styles.datePill, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
           <Text style={[styles.datePillText, { color: colors.textTertiary }]}>
             {formatDateLabel(item.created_at)}
           </Text>
         </View>
+        <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
       </View>
     ) : null;
 
@@ -176,58 +190,108 @@ export default function ChatScreen() {
       );
     }
 
-    // Text message (default)
+    // Text message
+    const bubbleContent = (
+      <View style={styles.bubbleInner}>
+        <Text style={[styles.bubbleText, { color: isOwn ? '#FFF' : colors.text }]}>
+          {item.content}
+        </Text>
+        <View style={styles.bubbleMeta}>
+          <Text style={[styles.bubbleTime, { color: isOwn ? 'rgba(255,255,255,0.55)' : colors.textTertiary }]}>
+            {time}
+          </Text>
+          {isOwn && item.is_read && (
+            <Ionicons name="checkmark-done" size={13} color="rgba(255,255,255,0.55)" style={{ marginLeft: 4 }} />
+          )}
+        </View>
+      </View>
+    );
+
     return (
       <Animated.View entering={FadeIn.duration(200)}>
         {dateHeader}
-        <View
-          style={[
-            styles.bubble,
-            isOwn ? styles.ownBubble : styles.otherBubble,
-            { backgroundColor: isOwn ? Colors.primary : colors.backgroundSecondary },
-          ]}
-        >
-          <Text style={[styles.bubbleText, { color: isOwn ? '#FFF' : colors.text }]}>
-            {item.content}
-          </Text>
-          <View style={styles.bubbleMeta}>
-            <Text style={[styles.bubbleTime, { color: isOwn ? 'rgba(255,255,255,0.6)' : colors.textTertiary }]}>
-              {time}
-            </Text>
-            {isOwn && item.is_read && (
-              <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.6)" style={{ marginLeft: Spacing.xs }} />
-            )}
-          </View>
+        <View style={[
+          styles.bubbleRow,
+          isOwn ? styles.ownRow : styles.otherRow,
+          grouped && { marginTop: 2 },
+        ]}>
+          {isOwn ? (
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.bubble,
+                styles.ownBubble,
+                grouped && styles.ownBubbleGrouped,
+              ]}
+            >
+              {bubbleContent}
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.bubble,
+                styles.otherBubble,
+                grouped && styles.otherBubbleGrouped,
+                {
+                  backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+                  borderColor: isDark ? colors.border : 'transparent',
+                  borderWidth: isDark ? StyleSheet.hairlineWidth : 0,
+                },
+              ]}
+            >
+              {bubbleContent}
+            </View>
+          )}
         </View>
       </Animated.View>
     );
-  }, [user?.id, messages, colors]);
+  }, [user?.id, messages, colors, isDark, isSameSenderAsPrev]);
 
   if (!user) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.centeredState}>
-          <Ionicons name="lock-closed-outline" size={48} color={colors.textTertiary} />
+          <View style={[styles.lockCircle, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
+            <Ionicons name="lock-closed-outline" size={32} color={colors.textTertiary} />
+          </View>
+          <Text style={[styles.stateTitle, { color: colors.text }]}>Giris Yap</Text>
           <Text style={[styles.stateText, { color: colors.textSecondary }]}>
             Mesajlari gormek icin giris yap
           </Text>
-          <TouchableOpacity style={styles.primaryAction} onPress={() => router.push('/auth/login')}>
-            <Text style={styles.primaryActionText}>Giris Yap</Text>
+          <TouchableOpacity onPress={() => router.push('/auth/login')} activeOpacity={0.8}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryAction}
+            >
+              <Text style={styles.primaryActionText}>Giris Yap</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+  const canSend = draft.trim().length > 0;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, {
+        backgroundColor: colors.background,
+        shadowColor: isDark ? '#000' : colors.shadow,
+      }]}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => { haptic.light(); router.back(); }}
+          style={styles.backButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Geri"
+          accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -235,24 +299,35 @@ export default function ChatScreen() {
           onPress={() => otherUser && router.push(`/user/${otherUser.id}`)}
           activeOpacity={0.7}
         >
-          <Avatar
-            uri={otherUser?.avatar_url}
-            name={otherUser?.full_name || otherUser?.username || '?'}
-            size={36}
-          />
+          <View style={styles.avatarWrap}>
+            <Avatar
+              uri={otherUser?.avatar_url}
+              name={otherUser?.full_name || otherUser?.username || '?'}
+              size={40}
+            />
+            <View style={[styles.onlineDot, { borderColor: colors.background }]} />
+          </View>
           <View style={styles.headerInfo}>
             <Text style={[styles.headerName, { color: colors.text }]} numberOfLines={1}>
               {otherUser?.full_name || otherUser?.username || 'Kullanici'}
             </Text>
             {otherUser?.university && (
-              <Text style={[styles.headerUniversity, { color: colors.textTertiary }]} numberOfLines={1}>
+              <Text style={[styles.headerSubtext, { color: colors.textTertiary }]} numberOfLines={1}>
                 {otherUser.university}
               </Text>
             )}
           </View>
         </TouchableOpacity>
 
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={[styles.headerAction, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}
+          onPress={() => otherUser && router.push(`/user/${otherUser.id}`)}
+          activeOpacity={0.7}
+          accessibilityLabel="Profili gor"
+          accessibilityRole="button"
+        >
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {/* Chat body */}
@@ -266,48 +341,86 @@ export default function ChatScreen() {
           data={messages}
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
-          contentContainerStyle={styles.messageList}
+          contentContainerStyle={[styles.messageList, { paddingBottom: Spacing.md }]}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
           onLayout={scrollToBottom}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
-              <View style={[styles.emptyChatIcon, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.textTertiary} />
-              </View>
-              <Text style={[styles.stateText, { color: colors.textSecondary }]}>
-                Henuz mesaj yok — ilk adimi sen at!
-              </Text>
+              <Animated.View entering={FadeInUp.delay(200).springify()}>
+                <View style={[styles.emptyChatIcon, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.textTertiary} />
+                </View>
+              </Animated.View>
+              <Animated.Text
+                entering={FadeInUp.delay(350).springify()}
+                style={[styles.emptyTitle, { color: colors.text }]}
+              >
+                Sohbete basla!
+              </Animated.Text>
+              <Animated.Text
+                entering={FadeInUp.delay(450).springify()}
+                style={[styles.stateText, { color: colors.textSecondary }]}
+              >
+                Ilk mesaji gondererek sohbeti baslat
+              </Animated.Text>
             </View>
           }
         />
 
-        {/* Input */}
-        <View style={[styles.inputBar, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+        {/* Input Bar */}
+        <View style={[
+          styles.inputBar,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: isDark ? colors.border : colors.borderLight,
+            paddingBottom: Math.max(insets.bottom, Spacing.sm),
+          },
+        ]}>
           <TouchableOpacity
-            style={[styles.attachButton, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => setAttachmentSheetVisible(true)}
+            style={[styles.attachButton, {
+              backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+            }]}
+            onPress={() => { haptic.light(); setAttachmentSheetVisible(true); }}
             activeOpacity={0.7}
+            accessibilityLabel="Ek ekle"
+            accessibilityRole="button"
           >
-            <Ionicons name="add" size={22} color={colors.textSecondary} />
+            <Ionicons name="add" size={24} color={Colors.primary} />
           </TouchableOpacity>
-          <TextInput
-            style={[styles.inputField, { color: colors.text, backgroundColor: colors.backgroundSecondary }]}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Mesaj yaz..."
-            placeholderTextColor={colors.textTertiary}
-            multiline
-            maxLength={2000}
-            selectionColor={Colors.primary}
-          />
+
+          <View style={[styles.inputWrap, {
+            backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+            borderColor: isDark ? colors.border : 'transparent',
+            borderWidth: isDark ? StyleSheet.hairlineWidth : 0,
+          }]}>
+            <TextInput
+              style={[styles.inputField, { color: colors.text }]}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Mesaj yaz..."
+              placeholderTextColor={colors.textTertiary}
+              multiline
+              maxLength={2000}
+              selectionColor={Colors.primary}
+            />
+          </View>
+
           <TouchableOpacity
             onPress={handleSend}
-            style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
-            disabled={!draft.trim()}
+            disabled={!canSend}
             activeOpacity={0.7}
+            accessibilityLabel="Mesaj gonder"
+            accessibilityRole="button"
           >
-            <Ionicons name="send" size={20} color="#FFF" />
+            <LinearGradient
+              colors={canSend ? [Colors.primary, Colors.primaryDark] : [colors.textTertiary, colors.textTertiary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.sendButton, !canSend && { opacity: 0.35 }]}
+            >
+              <Ionicons name="send" size={18} color="#FFF" style={{ marginLeft: 2 }} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -338,14 +451,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header
+  // ─── Header ─────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    gap: Spacing.md,
+    gap: Spacing.sm,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerProfile: {
     flex: 1,
@@ -353,55 +476,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
+  avatarWrap: {
+    position: 'relative',
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+  },
   headerInfo: {
     flex: 1,
   },
   headerName: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
+    letterSpacing: -0.2,
   },
-  headerUniversity: {
+  headerSubtext: {
     fontSize: FontSize.xs,
     fontFamily: FontFamily.body,
     marginTop: 1,
   },
-  headerSpacer: {
-    width: Spacing.xl,
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  // Messages
+  // ─── Messages ───────────────────────────────────────
   messageList: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
+    paddingTop: Spacing.lg,
     flexGrow: 1,
   },
   dateSeparator: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.lg,
+    marginVertical: Spacing.xl,
+    gap: Spacing.md,
+  },
+  dateLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
   },
   datePill: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.xs + 1,
     borderRadius: BorderRadius.full,
   },
   datePillText: {
     fontSize: FontSize.xs,
     fontFamily: FontFamily.bodySemiBold,
+    letterSpacing: 0.2,
   },
-  bubble: {
-    maxWidth: '78%',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
+
+  // ─── Bubble ─────────────────────────────────────────
+  bubbleRow: {
     marginBottom: Spacing.sm,
   },
+  ownRow: {
+    alignItems: 'flex-end',
+  },
+  otherRow: {
+    alignItems: 'flex-start',
+  },
+  bubble: {
+    maxWidth: '80%',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
   ownBubble: {
-    alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  ownBubbleGrouped: {
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
   },
   otherBubble: {
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 6,
+  },
+  otherBubbleGrouped: {
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
+  },
+  bubbleInner: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm + 2,
+    paddingBottom: Spacing.sm,
   },
   bubbleText: {
     fontSize: FontSize.md,
@@ -412,84 +585,105 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: Spacing.xs,
+    marginTop: 3,
+    gap: 2,
   },
   bubbleTime: {
-    fontSize: FontSize.xs,
+    fontSize: 10,
     fontFamily: FontFamily.body,
+    letterSpacing: 0.1,
   },
 
-  // Input
+  // ─── Input Bar ──────────────────────────────────────
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
     gap: Spacing.sm,
   },
   attachButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
-  inputField: {
+  inputWrap: {
     flex: 1,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  inputField: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.body,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.xxl,
+    paddingTop: Platform.OS === 'ios' ? Spacing.sm + 2 : Spacing.sm,
+    paddingBottom: Platform.OS === 'ios' ? Spacing.sm + 2 : Spacing.sm,
     maxHeight: 100,
+    minHeight: 40,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
+    marginBottom: 2,
   },
 
-  // States
+  // ─── States ─────────────────────────────────────────
   centeredState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.lg,
+    gap: Spacing.md,
     paddingHorizontal: Spacing.xxxl,
+  },
+  lockCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  stateTitle: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
   },
   emptyChat: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: Spacing.xxxl * 3,
-    gap: Spacing.lg,
+    gap: Spacing.md,
   },
   emptyChatIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
   },
   stateText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.sm,
     fontFamily: FontFamily.body,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   primaryAction: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xxl,
+    paddingHorizontal: Spacing.xxl + 4,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
+    marginTop: Spacing.md,
   },
   primaryActionText: {
     color: '#FFF',

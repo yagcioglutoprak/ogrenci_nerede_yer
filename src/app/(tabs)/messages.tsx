@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,28 +6,36 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  TextInput,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  FadeIn,
+  SlideInRight,
+} from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, AnimationConfig } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { useIsDarkMode } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
-import ScreenHeader from '../../components/ui/ScreenHeader';
 import type { Conversation } from '../../types';
 
-const MAX_STAGGER_DELAY = 200;
-const STAGGER_INTERVAL = 40;
 
 export default function MessagesScreen() {
   const colors = useThemeColors();
+  const isDark = useIsDarkMode();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const conversations = useMessageStore((s) => s.conversations);
   const loading = useMessageStore((s) => s.loading);
@@ -47,6 +55,73 @@ export default function MessagesScreen() {
     if (user) fetchConversations(user.id);
   }, [user?.id]);
 
+  const filteredConversations = useMemo(() =>
+    conversations.filter((c) => {
+      if (!searchQuery.trim()) return true;
+      const name = (c.other_user?.full_name || c.other_user?.username || '').toLowerCase();
+      return name.includes(searchQuery.toLowerCase());
+    }),
+    [conversations, searchQuery]
+  );
+
+  const recentActive = useMemo(() =>
+    conversations.filter((c) => (c.unread_count ?? 0) > 0).slice(0, 6),
+    [conversations]
+  );
+
+  const renderActiveRow = () => {
+    if (recentActive.length === 0) return null;
+    return (
+      <Animated.View entering={FadeIn.delay(100).duration(500)}>
+        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Aktif</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.activeRow}
+        >
+          {recentActive.map((c, i) => (
+            <Animated.View key={c.id} entering={FadeInRight.delay(i * 60).springify().damping(14)}>
+              <TouchableOpacity
+                style={styles.activeItem}
+                onPress={() => router.push(`/chat/${c.id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.activeAvatarWrap}>
+                  <LinearGradient
+                    colors={[Colors.primary, Colors.accent]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.activeRing}
+                  />
+                  <View style={[styles.activeAvatarInner, { backgroundColor: colors.background }]}>
+                    <Avatar
+                      uri={c.other_user?.avatar_url}
+                      name={c.other_user?.full_name || c.other_user?.username || '?'}
+                      size={48}
+                    />
+                  </View>
+                  {(c.unread_count ?? 0) > 0 && (
+                    <View style={[styles.activeBadge, { borderColor: colors.background }]}>
+                      <Text style={styles.activeBadgeText}>
+                        {c.unread_count! > 9 ? '9+' : c.unread_count}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={[styles.activeName, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {(c.other_user?.full_name || c.other_user?.username || '').split(' ')[0]}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </ScrollView>
+      </Animated.View>
+    );
+  };
+
   const renderConversation = useCallback(({ item, index }: { item: Conversation; index: number }) => {
     const hasUnread = (item.unread_count ?? 0) > 0;
     const isMySent = item.last_message_sender_id === user?.id;
@@ -56,15 +131,37 @@ export default function MessagesScreen() {
         : item.last_message_text
       : 'Henuz mesaj yok';
 
-    const staggerDelay = Math.min(index * STAGGER_INTERVAL, MAX_STAGGER_DELAY);
+    const staggerDelay = Math.min(index * AnimationConfig.staggerInterval, AnimationConfig.maxStaggerDelay);
+
+    const cardBg = hasUnread ? colors.messageUnreadBg : colors.background;
+
+    const cardBorder = hasUnread ? colors.messageUnreadBorder : colors.borderLight;
 
     return (
       <Animated.View entering={FadeInDown.delay(staggerDelay).springify().damping(16).stiffness(120)}>
         <TouchableOpacity
-          style={[styles.conversationRow, { backgroundColor: colors.background }]}
-          onPress={() => router.push(`/chat/${item.id}`)}
-          activeOpacity={0.7}
+          style={[
+            styles.conversationCard,
+            {
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+            },
+          ]}
+          onPress={() => { haptic.light(); router.push(`/chat/${item.id}`); }}
+          activeOpacity={0.65}
+          accessibilityRole="button"
+          accessibilityLabel={(item.other_user?.full_name || 'Kullanici') + ' ile sohbet' + (hasUnread ? ', ' + item.unread_count + ' okunmamis mesaj' : '')}
         >
+          {/* Unread accent bar */}
+          {hasUnread && (
+            <LinearGradient
+              colors={[Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.unreadAccent}
+            />
+          )}
+
           <View style={styles.avatarContainer}>
             <Avatar
               uri={item.other_user?.avatar_url}
@@ -72,7 +169,7 @@ export default function MessagesScreen() {
               size={52}
             />
             {hasUnread && (
-              <View style={[styles.unreadDot, { borderColor: colors.background }]} />
+              <View style={[styles.onlineDot, { borderColor: cardBg }]} />
             )}
           </View>
 
@@ -88,32 +185,46 @@ export default function MessagesScreen() {
               >
                 {item.other_user?.full_name || item.other_user?.username || 'Kullanici'}
               </Text>
-              <Text style={[styles.conversationTime, { color: hasUnread ? Colors.primary : colors.textTertiary }]}>
+              <Text style={[
+                styles.conversationTime,
+                { color: hasUnread ? Colors.primary : colors.textTertiary },
+              ]}>
                 {getRelativeTime(item.last_message_at)}
               </Text>
             </View>
-            <Text
-              style={[
-                styles.conversationPreview,
-                { color: hasUnread ? colors.text : colors.textSecondary },
-                hasUnread && styles.conversationPreviewUnread,
-              ]}
-              numberOfLines={1}
-            >
-              {previewText}
-            </Text>
+
+            <View style={styles.previewRow}>
+              <Text
+                style={[
+                  styles.conversationPreview,
+                  { color: hasUnread ? colors.text : colors.textSecondary },
+                  hasUnread && styles.conversationPreviewUnread,
+                ]}
+                numberOfLines={1}
+              >
+                {previewText}
+              </Text>
+              {hasUnread && (item.unread_count ?? 0) > 0 && (
+                <LinearGradient
+                  colors={[Colors.primary, Colors.accent]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.unreadBadge}
+                >
+                  <Text style={styles.unreadBadgeText}>
+                    {item.unread_count! > 99 ? '99+' : item.unread_count}
+                  </Text>
+                </LinearGradient>
+              )}
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
     );
   }, [user?.id, colors]);
 
-  const renderSeparator = useCallback(() => (
-    <View style={[styles.separator, { backgroundColor: colors.borderLight }]} />
-  ), [colors.borderLight]);
-
   const renderSkeletonRow = () => (
-    <View style={styles.conversationRow}>
+    <View style={[styles.conversationCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
       <View style={[styles.skeletonAvatar, { backgroundColor: colors.backgroundSecondary }]} />
       <View style={styles.conversationBody}>
         <View style={[styles.skeletonName, { backgroundColor: colors.backgroundSecondary }]} />
@@ -126,16 +237,25 @@ export default function MessagesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.centeredState}>
-          <Ionicons name="lock-closed-outline" size={48} color={colors.textTertiary} />
+          <View style={[styles.lockCircle, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
+            <Ionicons name="lock-closed-outline" size={32} color={colors.textTertiary} />
+          </View>
           <Text style={[styles.stateTitle, { color: colors.text }]}>Giris Yap</Text>
           <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
             Mesajlarini gormek icin giris yapman gerekiyor
           </Text>
           <TouchableOpacity
-            style={styles.primaryAction}
             onPress={() => router.push('/auth/login')}
+            activeOpacity={0.8}
           >
-            <Text style={styles.primaryActionText}>Giris Yap</Text>
+            <LinearGradient
+              colors={[Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryAction}
+            >
+              <Text style={styles.primaryActionText}>Giris Yap</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -146,35 +266,63 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <LinearGradient
-        colors={[colors.background, colors.backgroundSecondary]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Header */}
+      <Animated.View entering={FadeInDown.duration(400).springify().damping(18)} style={styles.header}>
+        <View>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Mesajlar</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textTertiary }]}>
+            {conversations.length > 0
+              ? `${conversations.length} sohbet`
+              : 'Sohbetlerin burada'}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/chat/new')}
+          activeOpacity={0.7}
+        >
+          <LinearGradient
+            colors={[Colors.primary, Colors.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.composeButton}
+          >
+            <Ionicons name="create-outline" size={20} color="#FFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
-      <ScreenHeader
-        title="Mesajlar"
-        rightAction={{
-          icon: 'create-outline',
-          onPress: () => router.push('/chat/new'),
-          color: Colors.primary,
-        }}
-      />
+      {/* Search bar */}
+      <Animated.View entering={FadeInDown.delay(80).springify().damping(16)} style={styles.searchWrap}>
+        <View style={[styles.searchBar, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary, borderColor: isDark ? colors.border : 'transparent' }]}>
+          <Ionicons name="search" size={18} color={colors.textTertiary} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Sohbet ara..."
+            placeholderTextColor={colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </Animated.View>
 
       {showSkeleton ? (
-        <View>
+        <View style={styles.listContent}>
           {renderSkeletonRow()}
-          {renderSeparator()}
           {renderSkeletonRow()}
-          {renderSeparator()}
           {renderSkeletonRow()}
         </View>
       ) : (
         <FlatList
-          data={conversations}
+          data={filteredConversations}
           keyExtractor={(item) => item.id}
           renderItem={renderConversation}
-          ItemSeparatorComponent={renderSeparator}
-          contentContainerStyle={conversations.length === 0 ? styles.emptyList : styles.listContent}
+          ListHeaderComponent={!searchQuery ? renderActiveRow : null}
+          contentContainerStyle={filteredConversations.length === 0 ? styles.emptyList : styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -186,18 +334,21 @@ export default function MessagesScreen() {
           }
           ListEmptyComponent={
             <View style={styles.centeredState}>
-              <View style={[styles.stateIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <View style={[styles.emptyCircle, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
                 <Ionicons name="chatbubbles-outline" size={36} color={colors.textTertiary} />
               </View>
-              <Text style={[styles.stateTitle, { color: colors.text }]}>Henuz mesajin yok</Text>
+              <Text style={[styles.stateTitle, { color: colors.text }]}>
+                {searchQuery ? 'Sonuc bulunamadi' : 'Henuz mesajin yok'}
+              </Text>
               <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
-                Birinin profiline gidip mesaj atarak sohbete baslayabilirsin
+                {searchQuery
+                  ? 'Baska bir isimle aramayı dene'
+                  : 'Birinin profiline gidip mesaj atarak sohbete baslayabilirsin'}
               </Text>
             </View>
           }
         />
       )}
-
     </SafeAreaView>
   );
 }
@@ -207,31 +358,159 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-
-  // Conversation Row
-  conversationRow: {
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+  },
+  headerTitle: {
+    fontSize: FontSize.xxxl,
+    fontFamily: FontFamily.heading,
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    marginTop: 2,
+  },
+  composeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  // Search
+  searchWrap: {
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.body,
+    paddingVertical: 0,
+  },
+
+  // Active / Stories row
+  sectionLabel: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    paddingHorizontal: Spacing.xxl,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  activeRow: {
+    paddingHorizontal: Spacing.xxl,
     gap: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  activeItem: {
+    alignItems: 'center',
+    width: 64,
+  },
+  activeAvatarWrap: {
+    width: 58,
+    height: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 29,
+  },
+  activeAvatarInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  activeBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontFamily: FontFamily.headingBold,
+  },
+  activeName: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodyMedium,
+    marginTop: Spacing.xs,
+    textAlign: 'center',
+  },
+
+  // Conversation card
+  conversationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.xl,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md + 2,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    gap: Spacing.md,
+    overflow: 'hidden',
+  },
+  unreadAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
   },
   avatarContainer: {
     position: 'relative',
   },
-  unreadDot: {
+  onlineDot: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    bottom: 1,
+    right: 1,
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
+    backgroundColor: '#22C55E',
+    borderWidth: 2.5,
   },
   conversationBody: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 3,
   },
   conversationTop: {
     flexDirection: 'row',
@@ -251,19 +530,35 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontFamily: FontFamily.body,
   },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
   conversationPreview: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.body,
     lineHeight: 18,
+    flex: 1,
   },
   conversationPreviewUnread: {
     fontFamily: FontFamily.bodyMedium,
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: Spacing.xl + 52 + Spacing.lg, // align with text, past avatar
+  unreadBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontFamily: FontFamily.headingBold,
   },
   listContent: {
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.xxxl * 3,
   },
 
@@ -296,14 +591,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xxxl,
     gap: Spacing.md,
   },
-  stateIconCircle: {
+  lockCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
-    borderWidth: 1,
+  },
+  emptyCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
   stateTitle: {
     fontSize: FontSize.lg,
@@ -316,24 +618,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   primaryAction: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xxl,
+    paddingHorizontal: Spacing.xxl + 4,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
     marginTop: Spacing.md,
   },
   primaryActionText: {
     color: '#FFF',
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
-  },
-
-  // Compose button
-  composeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

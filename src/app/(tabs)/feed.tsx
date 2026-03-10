@@ -360,6 +360,9 @@ export default function FeedScreen() {
                 style={styles.categoryChip}
                 onPress={() => handleCategoryChange(cat.key)}
                 activeOpacity={0.7}
+                accessibilityRole="tab"
+                accessibilityLabel={cat.label + ' kategorisi'}
+                accessibilityState={{ selected: isActive }}
               >
                 <Ionicons
                   name={cat.icon}

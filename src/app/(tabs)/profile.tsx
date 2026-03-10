@@ -33,6 +33,7 @@ import {
   FontSize,
   FontFamily,
 } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
 import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
 import EmptyState from '../../components/ui/EmptyState';
@@ -446,8 +447,10 @@ export default function ProfileScreen() {
                 />
                 <TouchableOpacity
                   style={styles.tabButton}
-                  onPress={() => setActiveTab('favorites')}
+                  onPress={() => { haptic.selection(); setActiveTab('favorites'); }}
                   activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: activeTab === 'favorites' }}
                 >
                   <Ionicons
                     name={activeTab === 'favorites' ? 'heart' : 'heart-outline'}
@@ -465,8 +468,10 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.tabButton}
-                  onPress={() => setActiveTab('posts')}
+                  onPress={() => { haptic.selection(); setActiveTab('posts'); }}
                   activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: activeTab === 'posts' }}
                 >
                   <Ionicons
                     name={activeTab === 'posts' ? 'grid' : 'grid-outline'}
@@ -484,8 +489,10 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.tabButton}
-                  onPress={() => setActiveTab('lists')}
+                  onPress={() => { haptic.selection(); setActiveTab('lists'); }}
                   activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: activeTab === 'lists' }}
                 >
                   <Ionicons
                     name={activeTab === 'lists' ? 'list' : 'list-outline'}

@@ -34,9 +34,9 @@ import {
   FontSize,
   FontFamily,
 } from '../../lib/constants';
-import StarRating from '../../components/ui/StarRating';
 import RatingBar from '../../components/ui/RatingBar';
 import CircleRating from '../../components/ui/CircleRating';
+import CirclePicker from '../../components/ui/CirclePicker';
 import Avatar from '../../components/ui/Avatar';
 import type { Review, SocialVideo } from '../../types';
 import GlassView from '../../components/ui/GlassView';
@@ -478,12 +478,26 @@ export default function VenueDetailScreen() {
             INFO SECTION
         ============================ */}
         <View style={styles.infoSection}>
-          {/* Address */}
+          {/* Address + Directions */}
           <View style={styles.infoRow}>
             <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
               <Ionicons name="location" size={16} color={Colors.primary} />
             </View>
-            <Text style={[styles.infoText, { color: colors.text }]}>{venue.address}</Text>
+            <Text style={[styles.infoText, { color: colors.text, flex: 1 }]}>{venue.address}</Text>
+            <TouchableOpacity
+              style={styles.directionsBtn}
+              onPress={() => {
+                const url = Platform.select({
+                  ios: `maps:?daddr=${venue.latitude},${venue.longitude}&dirflg=w`,
+                  default: `https://www.google.com/maps/dir/?api=1&destination=${venue.latitude},${venue.longitude}&travelmode=walking`,
+                });
+                Linking.openURL(url);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="navigate" size={14} color="#FFF" />
+              <Text style={styles.directionsBtnText}>Yol Tarifi</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Price */}
@@ -668,30 +682,45 @@ export default function VenueDetailScreen() {
 
               <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalFormContent}>
                 {/* Taste */}
-                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.rateFormRow}>
                   <View style={styles.rateFormLabel}>
-                    <Ionicons name="restaurant" size={20} color={Colors.primary} />
+                    <Ionicons name="restaurant" size={18} color={Colors.primary} />
                     <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
                   </View>
-                  <StarRating rating={ratingTaste} interactive onRatingChange={setRatingTaste} size={32} />
+                  <CirclePicker
+                    value={ratingTaste}
+                    onValueChange={setRatingTaste}
+                    color={Colors.primary}
+                    icons={['thumbs-down', 'sad-outline', 'remove-outline', 'happy-outline', 'flame']}
+                  />
                 </View>
 
                 {/* Value */}
-                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.rateFormRow}>
                   <View style={styles.rateFormLabel}>
-                    <Ionicons name="pricetag" size={20} color={Colors.accent} />
+                    <Ionicons name="pricetag" size={18} color={Colors.accent} />
                     <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Fiyat/Performans</Text>
                   </View>
-                  <StarRating rating={ratingValue} interactive onRatingChange={setRatingValue} size={32} />
+                  <CirclePicker
+                    value={ratingValue}
+                    onValueChange={setRatingValue}
+                    color={Colors.accent}
+                    icons={['trending-down', 'remove-outline', 'swap-horizontal', 'trending-up', 'diamond']}
+                  />
                 </View>
 
                 {/* Ortam */}
-                <View style={[styles.rateFormRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.rateFormRow}>
                   <View style={styles.rateFormLabel}>
-                    <Ionicons name="cafe" size={20} color={Colors.verified} />
+                    <Ionicons name="cafe" size={18} color={Colors.verified} />
                     <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Ortam</Text>
                   </View>
-                  <StarRating rating={ratingFriendliness} interactive onRatingChange={setRatingFriendliness} size={32} />
+                  <CirclePicker
+                    value={ratingFriendliness}
+                    onValueChange={setRatingFriendliness}
+                    color={Colors.verified}
+                    icons={['thunderstorm', 'cloudy', 'partly-sunny', 'sunny', 'sparkles']}
+                  />
                 </View>
 
                 {/* Comment */}
@@ -978,6 +1007,20 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 22,
   },
+  directionsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs + 2,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
+  },
+  directionsBtnText: {
+    fontSize: FontSize.sm + 1,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
+  },
   tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1226,21 +1269,17 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   rateFormRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
   },
   rateFormLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   rateFormLabelText: {
-    fontSize: FontSize.md,
-    fontWeight: '600',
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
     color: Colors.text,
   },
   rateCommentInput: {

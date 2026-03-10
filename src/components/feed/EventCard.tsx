@@ -52,7 +52,7 @@ function getRelativeTime(dateString: string): string {
   return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
-export default function EventCard({
+function EventCard({
   post,
   event,
   currentUserId,
@@ -389,3 +389,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+export default React.memo(EventCard);

@@ -15,8 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassView from '../../components/ui/GlassView';
 import RatingBar from '../../components/ui/RatingBar';
-import CircleRating from '../../components/ui/CircleRating';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Callout, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +26,7 @@ import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import {
   Colors,
   DEFAULT_REGION,
+  MapConfig,
   PriceRanges,
   Spacing,
   BorderRadius,
@@ -34,7 +34,14 @@ import {
   FontFamily,
 } from '../../lib/constants';
 import { MOCK_GOOGLE_PLACES_VENUES } from '../../lib/mockData';
+import { haptic } from '../../lib/haptics';
 import type { Venue } from '../../types';
+
+// Native marker images — rendered by Apple Maps / Google Maps natively,
+// completely bypassing React's view hierarchy (avoids Fabric crash).
+// Native marker image — rendered by Apple Maps / Google Maps natively,
+// bypassing React's view hierarchy (avoids Fabric AIRMapMarker crash).
+const MARKER_LOGO = require('../../../assets/logo-icon.png');
 
 // ── Clustering types ──
 interface ClusterGroup {
@@ -48,7 +55,6 @@ type ClusterItem =
   | { type: 'cluster'; cluster: ClusterGroup };
 
 // ── Grid-based clustering ──
-const CLUSTER_ZOOM_THRESHOLD = 0.012;
 
 function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
   // Only cluster non-google_places venues
@@ -62,7 +68,7 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
     items.push({ type: 'venue' as const, venue: v });
   }
 
-  if (region.latitudeDelta < CLUSTER_ZOOM_THRESHOLD) {
+  if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) {
     for (const v of onyVenues) {
       items.push({ type: 'venue' as const, venue: v });
     }
@@ -108,14 +114,13 @@ const getMarkerTier = (venue: Venue): MarkerTier => {
   return 'unreviewed';
 };
 
-const getPriceSymbol = (priceRange: number) => '₺'.repeat(priceRange);
-const isEfsane = (venue: Venue) => venue.level >= 4;
 
 export default function MapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
+  const insets = useSafeAreaInsets();
 
   const { venues, loading, error, fetchVenues, searchVenues, filters, setFilters, clearError } =
     useVenueStore();
@@ -137,20 +142,29 @@ export default function MapScreen() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // ── Merge ONY venues with Google Places ──
-  const allVenues = useMemo(
-    () => [...venues, ...MOCK_GOOGLE_PLACES_VENUES],
-    [venues],
-  );
+  // ── Merge ONY venues with Google Places, filtered to visible region ──
+  const visibleVenues = useMemo(() => {
+    const all = [...venues, ...MOCK_GOOGLE_PLACES_VENUES];
+    const latHalf = region.latitudeDelta / 2 + 0.005; // small buffer
+    const lngHalf = region.longitudeDelta / 2 + 0.005;
+    return all.filter(
+      (v) =>
+        v.latitude >= region.latitude - latHalf &&
+        v.latitude <= region.latitude + latHalf &&
+        v.longitude >= region.longitude - lngHalf &&
+        v.longitude <= region.longitude + lngHalf,
+    );
+  }, [venues, region]);
 
   // ── Memoized clusters ──
   const clusteredItems = useMemo(
-    () => clusterVenues(allVenues, region),
-    [allVenues, region],
+    () => clusterVenues(visibleVenues, region),
+    [visibleVenues, region],
   );
 
   const handleClusterPress = useCallback(
     (cluster: ClusterGroup) => {
+      haptic.light();
       // Compute bounding box of cluster venues
       let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
       for (const v of cluster.venues) {
@@ -159,13 +173,13 @@ export default function MapScreen() {
         if (v.longitude < minLng) minLng = v.longitude;
         if (v.longitude > maxLng) maxLng = v.longitude;
       }
-      const pad = 0.002;
+      const pad = MapConfig.CLUSTER_PADDING;
       mapRef.current?.animateToRegion(
         {
           latitude: (minLat + maxLat) / 2,
           longitude: (minLng + maxLng) / 2,
-          latitudeDelta: Math.max(maxLat - minLat + pad, 0.005),
-          longitudeDelta: Math.max(maxLng - minLng + pad, 0.005),
+          latitudeDelta: Math.max(maxLat - minLat + pad, MapConfig.MIN_CLUSTER_DELTA),
+          longitudeDelta: Math.max(maxLng - minLng + pad, MapConfig.MIN_CLUSTER_DELTA),
         },
         600,
       );
@@ -207,14 +221,15 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = (venue: Venue) => {
+    haptic.light();
     mapRef.current?.animateToRegion(
       {
         latitude: venue.latitude,
         longitude: venue.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+        latitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
+        longitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
       },
-      500,
+      MapConfig.MARKER_ANIMATION_DURATION,
     );
   };
 
@@ -223,20 +238,22 @@ export default function MapScreen() {
   };
 
   const handleSelectSearchResult = (venue: Venue) => {
+    haptic.selection();
     setSearchQuery(venue.name);
     setShowSearchResults(false);
     mapRef.current?.animateToRegion(
       {
         latitude: venue.latitude,
         longitude: venue.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+        latitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
+        longitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
       },
       800,
     );
   };
 
   const applyFilters = () => {
+    haptic.success();
     setFilters({
       ...filters,
       priceRange: filterPrice.length > 0 ? filterPrice : undefined,
@@ -246,6 +263,7 @@ export default function MapScreen() {
   };
 
   const clearFilters = () => {
+    haptic.light();
     setFilterPrice([]);
     setFilterMinRating(0);
     setFilters({});
@@ -265,15 +283,6 @@ export default function MapScreen() {
     }
   }, [userLocation]);
 
-  const getPriceLabel = (priceRange: number) => {
-    return PriceRanges.find((p) => p.value === priceRange)?.label ?? '';
-  };
-
-  const renderStars = (rating: number) => {
-    return (
-      <RatingBar rating={rating} size="sm" color={Colors.primary} showValue={false} barWidth={60} />
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -287,24 +296,35 @@ export default function MapScreen() {
         showsMyLocationButton={false}
         showsCompass={false}
         userInterfaceStyle={isDark ? 'dark' : 'light'}
-        mapPadding={{ top: 100, right: 0, bottom: 80, left: 0 }}
+        mapPadding={{ top: insets.top + 60, right: 0, bottom: insets.bottom + 60, left: 0 }}
       >
         {clusteredItems.map((item) => {
           if (item.type === 'cluster') {
             const { cluster } = item;
             const count = cluster.venues.length;
-            const size = Math.min(40 + count * 2, 56);
             return (
-              <Marker
-                key={cluster.id}
-                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-                onPress={() => handleClusterPress(cluster)}
-                tracksViewChanges={false}
-              >
-                <View style={[styles.clusterBubble, { width: size, height: size, borderRadius: size / 2 }]}>
-                  <Text style={styles.clusterText}>{count}</Text>
-                </View>
-              </Marker>
+              <React.Fragment key={cluster.id}>
+                {/* Logo — tappable, zooms into cluster area */}
+                <Marker
+                  coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                  image={MARKER_LOGO}
+                  onPress={() => handleClusterPress(cluster)}
+                  tracksViewChanges={false}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                />
+                {/* Count label below the logo */}
+                <Marker
+                  coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                  tracksViewChanges={false}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  centerOffset={{ x: 0, y: 28 }}
+                  tappable={false}
+                >
+                  <View style={styles.clusterCountBadge}>
+                    <Text style={styles.clusterCountText}>{count}</Text>
+                  </View>
+                </Marker>
+              </React.Fragment>
             );
           }
 
@@ -323,7 +343,7 @@ export default function MapScreen() {
 
                 <Callout tooltip onPress={() => handleCalloutPress(venue)}>
                   <View style={styles.calloutContainer}>
-                    <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
+                    <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
                       <View style={styles.greyDotCallout}>
                         <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
                           {venue.name}
@@ -358,17 +378,17 @@ export default function MapScreen() {
                 tracksViewChanges={false}
               >
                 <View style={styles.tagWrapper}>
-                  <View style={[styles.tagUnreviewed, { backgroundColor: isDark ? 'rgba(60,60,60,0.9)' : '#ECECF0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
-                    <Text style={[styles.tagUnreviewedText, { color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]} numberOfLines={1}>
+                  <View style={[styles.tagUnreviewed, { backgroundColor: colors.tagUnreviewed, borderColor: colors.tagUnreviewedBorder }]}>
+                    <Text style={[styles.tagUnreviewedText, { color: colors.textMuted }]} numberOfLines={1}>
                       {venue.name}
                     </Text>
                   </View>
-                  <View style={[styles.tagPointer, { borderTopColor: isDark ? 'rgba(60,60,60,0.9)' : '#ECECF0' }]} />
+                  <View style={[styles.tagPointer, { borderTopColor: colors.tagUnreviewed }]} />
                 </View>
 
                 <Callout tooltip onPress={() => handleCalloutPress(venue)}>
                   <View style={styles.calloutContainer}>
-                    <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
+                    <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
                       <View style={styles.greyDotCallout}>
                         <Text style={[styles.greyDotCalloutName, { color: colors.text }]} numberOfLines={1}>
                           {venue.name}
@@ -388,20 +408,9 @@ export default function MapScreen() {
             );
           }
 
-          // ── Tier 3: Reviewed ONY venue — colored tag ──
-          const venueIsEfsane = isEfsane(venue);
-          const tagContent = (
-            <>
-              <Text style={styles.tagReviewedText} numberOfLines={1}>
-                {venue.name}
-              </Text>
-              <Ionicons name="star" size={10} color="rgba(255,255,255,0.85)" style={{ marginLeft: 6 }} />
-              <Text style={styles.tagReviewedRating}>
-                {venue.overall_rating.toFixed(1)}
-              </Text>
-            </>
-          );
-
+          // ── Tier 3: Reviewed ONY venue — native logo marker ──
+          // `image` prop renders natively, bypassing Fabric AIRMapMarker crash.
+          // Tap → zoom to venue + show callout. Callout tap → venue detail page.
           return (
           <Marker
             key={venue.id}
@@ -409,56 +418,55 @@ export default function MapScreen() {
               latitude: venue.latitude,
               longitude: venue.longitude,
             }}
+            image={MARKER_LOGO}
             onPress={() => handleMarkerPress(venue)}
             tracksViewChanges={false}
           >
-            <View style={styles.tagWrapper}>
-              {venueIsEfsane ? (
-                <LinearGradient
-                  colors={[Colors.gradientStart, Colors.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.tagReviewed}
-                >
-                  {tagContent}
-                </LinearGradient>
-              ) : (
-                <View style={styles.tagReviewed}>
-                  {tagContent}
-                </View>
-              )}
-              <View style={[styles.tagPointer, { borderTopColor: venueIsEfsane ? Colors.gradientEnd : Colors.primary }]} />
-            </View>
-
             <Callout tooltip onPress={() => handleCalloutPress(venue)}>
               <View style={styles.calloutContainer}>
-                <View style={[styles.callout, { backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.92)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.6)' }]}>
-                  <View style={styles.calloutBody}>
-                    {venue.cover_image_url && (
-                      <Image
-                        source={{ uri: venue.cover_image_url }}
-                        style={styles.calloutImage}
-                      />
+                <View style={[styles.callout, { backgroundColor: colors.glass.background, borderColor: colors.glass.border }]}>
+                  <View style={styles.calloutInner}>
+                    <Text style={[styles.calloutName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
+                    {venue.editorial_rating != null && (
+                      <View style={[styles.calloutOnyRow, { backgroundColor: colors.primarySoft }]}>
+                        <Image source={require('../../../assets/logo-icon.png')} style={styles.calloutOnyLogo} resizeMode="contain" />
+                        <RatingBar
+                          rating={venue.editorial_rating}
+                          maxRating={10}
+                          size="md"
+                          color={Colors.primary}
+                          showValue
+                          barWidth={110}
+                        />
+                      </View>
                     )}
-                    <View style={styles.calloutInfo}>
-                      <Text style={[styles.calloutName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
-                      <View style={styles.calloutRatingRow}>
-                        <Image source={require('../../../assets/logo.png')} style={styles.calloutLogoIcon} resizeMode="contain" />
-                        <View style={styles.calloutStars}>{renderStars(venue.overall_rating)}</View>
-                        <Text style={[styles.calloutRatingText, { color: colors.text }]}>{venue.overall_rating.toFixed(1)}</Text>
-                      </View>
-                      <View style={styles.calloutBadges}>
-                        <View style={[styles.calloutPriceBadge, { backgroundColor: colors.primarySoft }]}>
-                          <Text style={styles.calloutPriceText}>{getPriceLabel(venue.price_range)}</Text>
-                        </View>
-                        {venue.editorial_rating != null && (
-                          <CircleRating score={venue.editorial_rating} size="sm" color={Colors.accent} />
-                        )}
-                        <View style={styles.calloutDetailLink}>
-                          <Text style={styles.calloutDetailText}>Detaylar</Text>
-                          <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
-                        </View>
-                      </View>
+                    <View style={styles.calloutUserRow}>
+                      <RatingBar
+                        rating={venue.overall_rating}
+                        maxRating={5}
+                        size="sm"
+                        color={Colors.star}
+                        icon="star"
+                        showValue
+                        barWidth={90}
+                      />
+                      <Text style={[styles.calloutPrice, { color: colors.textSecondary }]}>
+                        {'₺'.repeat(venue.price_range)}
+                      </Text>
+                    </View>
+                    <View style={styles.calloutActions}>
+                      <TouchableOpacity
+                        style={styles.calloutRateBtn}
+                        onPress={() => router.push(`/venue/${venue.id}?rate=true`)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="star-outline" size={13} color="#FFF" />
+                        <Text style={styles.calloutRateBtnText}>Puan Ver</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.calloutDetailBtn} activeOpacity={0.7}>
+                        <Text style={styles.calloutDetailBtnText}>Detaylar</Text>
+                        <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
@@ -481,6 +489,7 @@ export default function MapScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               selectionColor={Colors.primary}
+              accessibilityLabel="Mekan veya semt ara"
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity
@@ -490,15 +499,19 @@ export default function MapScreen() {
                   fetchVenues();
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Aramayi temizle"
+                accessibilityRole="button"
               >
                 <Ionicons name="close-circle-outline" size={18} color={colors.textTertiary} />
               </TouchableOpacity>
             )}
-            <View style={styles.searchDivider} />
+            <View style={[styles.searchDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => setShowFilters(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Filtreleri ac"
+              accessibilityRole="button"
             >
               <Ionicons
                 name={hasActiveFilters ? 'options' : 'options-outline'}
@@ -523,12 +536,12 @@ export default function MapScreen() {
               </View>
             ) : (
               <FlatList
-                data={venues.slice(0, 5)}
+                data={venues.slice(0, MapConfig.MAX_SEARCH_RESULTS)}
                 keyExtractor={(item) => item.id}
                 keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.searchDropdownItem}
+                    style={[styles.searchDropdownItem, { borderBottomColor: colors.borderLight }]}
                     onPress={() => handleSelectSearchResult(item)}
                     activeOpacity={0.7}
                   >
@@ -583,9 +596,11 @@ export default function MapScreen() {
 
       {/* Buddy FAB */}
       <TouchableOpacity
-        style={styles.buddyFab}
+        style={[styles.buddyFab, { bottom: Math.max(insets.bottom, 8) + 110 }]}
         onPress={() => router.push('/buddy')}
         activeOpacity={0.8}
+        accessibilityLabel="Yemek arkadasi bul"
+        accessibilityRole="button"
       >
         <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.buddyFabGradient}>
           <Ionicons name="people" size={20} color="#FFF" />
@@ -594,11 +609,13 @@ export default function MapScreen() {
 
       {/* My Location — Liquid Glass */}
       {userLocation && (
-        <GlassView style={[styles.myLocationBlur, { borderColor: colors.glass.border }]}>
+        <GlassView style={[styles.myLocationBlur, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]}>
           <TouchableOpacity
             style={styles.myLocationButton}
             onPress={centerOnUser}
             activeOpacity={0.7}
+            accessibilityLabel="Konumuma git"
+            accessibilityRole="button"
           >
             <Ionicons name="location" size={20} color={Colors.primary} />
           </TouchableOpacity>
@@ -641,6 +658,8 @@ export default function MapScreen() {
                         );
                       }}
                       activeOpacity={0.7}
+                      accessibilityLabel={price.label + ' ' + price.description}
+                      accessibilityState={{ selected: isActive }}
                     >
                       <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
                         {price.label}
@@ -664,6 +683,8 @@ export default function MapScreen() {
                       style={[styles.filterChip, isActive && styles.filterChipActive, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
                       onPress={() => setFilterMinRating(rating)}
                       activeOpacity={0.7}
+                      accessibilityLabel={rating > 0 ? 'Minimum ' + rating + ' puan' : 'Tum puanlar'}
+                      accessibilityState={{ selected: isActive }}
                     >
                       <View style={styles.ratingChipContent}>
                         {rating > 0 ? (
@@ -674,9 +695,12 @@ export default function MapScreen() {
                             </Text>
                           </>
                         ) : (
-                          <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
-                            Hepsi
-                          </Text>
+                          <>
+                            <Ionicons name="checkmark-circle" size={14} color={isActive ? '#FFFFFF' : colors.textSecondary} />
+                            <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive, !isActive && { color: colors.text }]}>
+                              Tumu
+                            </Text>
+                          </>
                         )}
                       </View>
                     </TouchableOpacity>
@@ -687,10 +711,10 @@ export default function MapScreen() {
 
             {/* Action Buttons */}
             <View style={styles.filterActions}>
-              <TouchableOpacity style={[styles.filterClearButton, { borderColor: colors.border }]} onPress={clearFilters} activeOpacity={0.7}>
+              <TouchableOpacity style={[styles.filterClearButton, { borderColor: colors.border }]} onPress={clearFilters} activeOpacity={0.7} accessibilityLabel="Filtreleri temizle" accessibilityRole="button">
                 <Text style={[styles.filterClearText, { color: colors.textSecondary }]}>Temizle</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.filterApplyButton} onPress={applyFilters} activeOpacity={0.85}>
+              <TouchableOpacity style={styles.filterApplyButton} onPress={applyFilters} activeOpacity={0.85} accessibilityLabel="Filtreleri uygula" accessibilityRole="button">
                 <Text style={styles.filterApplyText}>Uygula</Text>
               </TouchableOpacity>
             </View>
@@ -854,35 +878,6 @@ const styles = StyleSheet.create({
   tagWrapper: {
     alignItems: 'center',
   },
-  // Reviewed ONY — solid red tag
-  tagReviewed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    maxWidth: 170,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  tagReviewedText: {
-    fontSize: 12,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  tagReviewedRating: {
-    fontSize: 11,
-    fontFamily: FontFamily.headingBold,
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: -0.2,
-    marginLeft: 2,
-  },
   // Unreviewed ONY — light grey tag
   tagUnreviewed: {
     flexDirection: 'row',
@@ -981,101 +976,67 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  calloutBody: {
-    flexDirection: 'row',
-  },
-  calloutImage: {
-    width: 72,
-    height: '100%' as any,
-    minHeight: 80,
-    backgroundColor: Colors.shimmer,
-  },
-  calloutInfo: {
-    flex: 1,
+  calloutInner: {
     padding: Spacing.md,
+    gap: Spacing.sm,
+    minWidth: 200,
   },
   calloutName: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
-    marginBottom: Spacing.xs,
+    marginBottom: 2,
   },
-  calloutRatingRow: {
+  calloutOnyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.sm,
-  },
-  calloutStars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 1,
-  },
-  calloutRatingText: {
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: Colors.text,
-    marginLeft: Spacing.xs,
-  },
-  calloutBadges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-  },
-  calloutPriceBadge: {
-    backgroundColor: Colors.primarySoft,
+    gap: Spacing.sm,
     borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: -Spacing.xs,
   },
-  calloutPriceText: {
+  calloutOnyLogo: {
+    width: 24,
+    height: 24,
+  },
+  calloutUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  calloutPrice: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+  calloutActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.xs,
+  },
+  calloutRateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+  },
+  calloutRateBtnText: {
+    fontSize: FontSize.xs + 1,
     fontFamily: FontFamily.headingBold,
-    color: Colors.primary,
+    color: '#FFFFFF',
   },
-  calloutOnyBadge: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    backgroundColor: Colors.accentSoft,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-  },
-  calloutOnyLabel: {
-    fontSize: 9,
-    fontFamily: FontFamily.heading,
-    color: Colors.accent,
-    marginRight: 3,
-  },
-  calloutOnyScore: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.heading,
-    color: Colors.accent,
-  },
-  calloutOnyMax: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: Colors.accentLight,
-  },
-  calloutDetailLink: {
+  calloutDetailBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
-  calloutDetailText: {
+  calloutDetailBtnText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.bodySemiBold,
     color: Colors.primary,
-  },
-  calloutEditorialBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  calloutLogoIcon: {
-    width: 22,
-    height: 22,
   },
 
   // Loading — Liquid Glass
@@ -1098,7 +1059,6 @@ const styles = StyleSheet.create({
   // Buddy FAB
   buddyFab: {
     position: 'absolute',
-    bottom: 190,
     right: 16,
     borderRadius: 22,
     overflow: 'hidden',
@@ -1119,7 +1079,6 @@ const styles = StyleSheet.create({
   myLocationBlur: {
     position: 'absolute',
     right: Spacing.lg,
-    bottom: 100,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -1257,21 +1216,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Cluster marker styles
-  clusterBubble: {
+  // Cluster count badge — positioned at top-right of the native logo marker
+  clusterCountBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 5,
   },
-  clusterText: {
+  clusterCountText: {
     color: '#FFFFFF',
     fontFamily: FontFamily.heading,
-    fontSize: 15,
+    fontSize: 11,
     letterSpacing: -0.3,
   },
 });

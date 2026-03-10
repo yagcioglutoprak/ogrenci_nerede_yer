@@ -40,7 +40,7 @@ function getRelativeTime(dateString: string): string {
   return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
-export default function QuestionCard({
+function QuestionCard({
   post,
   topAnswers,
   totalAnswers,
@@ -346,3 +346,5 @@ const styles = StyleSheet.create({
     color: QUESTION_COLOR,
   },
 });
+
+export default React.memo(QuestionCard);

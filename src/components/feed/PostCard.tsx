@@ -23,6 +23,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Colors, Spacing, FontSize, FontFamily, BorderRadius } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -47,7 +48,7 @@ interface PostCardProps {
   currentUserId?: string;
 }
 
-export default function PostCard({
+function PostCard({
   post,
   onLike,
   onComment,
@@ -85,6 +86,7 @@ export default function PostCard({
   };
 
   const handleLike = useCallback(() => {
+    haptic.light();
     likeScale.value = withSequence(
       withSpring(1.35, { damping: 4, stiffness: 400 }),
       withSpring(0.85, { damping: 4, stiffness: 400 }),
@@ -94,6 +96,7 @@ export default function PostCard({
   }, [post.id, onLike]);
 
   const handleBookmark = useCallback(() => {
+    haptic.selection();
     bookmarkScale.value = withSequence(
       withSpring(1.3, { damping: 4, stiffness: 400 }),
       withSpring(1, { damping: 8, stiffness: 300 }),
@@ -102,6 +105,7 @@ export default function PostCard({
   }, [post.id, onBookmark]);
 
   const handleShare = useCallback(async () => {
+    haptic.light();
     const venueName = post.venue?.name ? ` @ ${post.venue.name}` : '';
     const message = `${post.caption || ''}${venueName}\n\nOgrenci Nerede Yer? uygulamasinda kesfet!`;
     try {
@@ -229,6 +233,8 @@ export default function PostCard({
               onPress={handleLike}
               style={[styles.actionButton, likeAnimStyle]}
               hitSlop={8}
+              accessibilityLabel="Begeni"
+              accessibilityRole="button"
             >
               <Ionicons
                 name={post.is_liked ? 'heart' : 'heart-outline'}
@@ -242,6 +248,8 @@ export default function PostCard({
               onPress={() => onComment?.(post.id)}
               activeOpacity={0.5}
               hitSlop={8}
+              accessibilityLabel="Yorum yap"
+              accessibilityRole="button"
             >
               <Ionicons name="chatbubble-outline" size={22} color={colors.text} />
             </TouchableOpacity>
@@ -251,6 +259,8 @@ export default function PostCard({
               onPress={handleShare}
               activeOpacity={0.5}
               hitSlop={8}
+              accessibilityLabel="Paylas"
+              accessibilityRole="button"
             >
               <Ionicons name="share-outline" size={22} color={colors.text} />
             </TouchableOpacity>
@@ -272,6 +282,8 @@ export default function PostCard({
             onPress={handleBookmark}
             style={[styles.actionButton, bookmarkAnimStyle]}
             hitSlop={8}
+            accessibilityLabel="Kaydet"
+            accessibilityRole="button"
           >
             <Ionicons name="bookmark-outline" size={22} color={colors.text} />
           </AnimatedPressable>
@@ -496,3 +508,5 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xs,
   },
 });
+
+export default React.memo(PostCard);
