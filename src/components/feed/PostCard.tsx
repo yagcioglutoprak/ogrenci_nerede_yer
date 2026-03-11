@@ -14,15 +14,17 @@ import {
   Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withSequence,
+  withDelay,
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Colors, Spacing, FontSize, FontFamily, BorderRadius } from '../../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily, BorderRadius, SpringConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
@@ -75,6 +77,14 @@ function PostCard({
     transform: [{ scale: bookmarkScale.value }],
   }));
 
+  // Double-tap heart overlay animation
+  const heartScale = useSharedValue(0);
+  const heartOpacity = useSharedValue(0);
+  const heartAnimStyle = useAnimatedStyle(() => ({
+    opacity: heartOpacity.value,
+    transform: [{ scale: heartScale.value }],
+  }));
+
   const images = post.images ?? [];
   const hasMultipleImages = images.length > 1;
   const timeSince = getRelativeTime(post.created_at);
@@ -112,6 +122,38 @@ function PostCard({
       await Share.share({ message: message.trim() });
     } catch {}
   }, [post]);
+
+  // Double-tap heart: fire like + animate overlay
+  const triggerDoubleTapHeart = useCallback(() => {
+    haptic.medium();
+    onLike?.(post.id);
+
+    // Like button bounce (same as handleLike)
+    likeScale.value = withSequence(
+      withSpring(1.35, { damping: 4, stiffness: 400 }),
+      withSpring(0.85, { damping: 4, stiffness: 400 }),
+      withSpring(1, { damping: 8, stiffness: 300 }),
+    );
+
+    // Heart overlay: scale in with overshoot, hold, then fade out
+    heartOpacity.value = 1;
+    heartScale.value = withSequence(
+      withSpring(1.2, SpringConfig.bouncy),
+      withSpring(1, SpringConfig.default),
+      withDelay(600, withTiming(0, { duration: 300 })),
+    );
+    heartOpacity.value = withDelay(
+      800,
+      withTiming(0, { duration: 300 }),
+    );
+  }, [post.id, onLike]);
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(triggerDoubleTapHeart)();
+    });
 
   return (
     <View style={[styles.card, { backgroundColor: colors.background }]}>
@@ -151,76 +193,85 @@ function PostCard({
       {/* Image Carousel — rounded, with margins */}
       {images.length > 0 && (
         <View style={styles.imageWrapper}>
-          <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
-            <FlatList
-              ref={flatListRef}
-              data={images}
-              keyExtractor={(item) => item.id}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              snapToInterval={IMAGE_WIDTH}
-              decelerationRate="fast"
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item.image_url }}
-                  style={styles.postImage}
-                  resizeMode="cover"
+          <GestureDetector gesture={doubleTapGesture}>
+            <Animated.View>
+              <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
+                <FlatList
+                  ref={flatListRef}
+                  data={images}
+                  keyExtractor={(item) => item.id}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  snapToInterval={IMAGE_WIDTH}
+                  decelerationRate="fast"
+                  renderItem={({ item }) => (
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={styles.postImage}
+                      resizeMode="cover"
+                    />
+                  )}
                 />
-              )}
-            />
 
-            {/* Venue tag — glass pill overlaid on image bottom */}
-            {post.venue && (
-              <TouchableOpacity
-                onPress={() => post.venue && onVenuePress?.(post.venue.id)}
-                activeOpacity={0.8}
-                style={styles.venuePillWrapper}
-              >
-                {Platform.OS === 'ios' ? (
-                  <GlassView style={styles.venuePillGlass} fallbackColor="rgba(0,0,0,0.55)">
-                    <Ionicons name="location" size={12} color="#FFFFFF" />
-                    <Text style={styles.venuePillText} numberOfLines={1}>
-                      {post.venue.name}
-                    </Text>
-                  </GlassView>
-                ) : (
-                  <View style={styles.venuePillAndroid}>
-                    <Ionicons name="location" size={12} color="#FFFFFF" />
-                    <Text style={styles.venuePillText} numberOfLines={1}>
-                      {post.venue.name}
-                    </Text>
+                {/* Venue tag — glass pill overlaid on image bottom */}
+                {post.venue && (
+                  <TouchableOpacity
+                    onPress={() => post.venue && onVenuePress?.(post.venue.id)}
+                    activeOpacity={0.8}
+                    style={styles.venuePillWrapper}
+                  >
+                    {Platform.OS === 'ios' ? (
+                      <GlassView style={styles.venuePillGlass} fallbackColor="rgba(0,0,0,0.55)">
+                        <Ionicons name="location" size={12} color="#FFFFFF" />
+                        <Text style={styles.venuePillText} numberOfLines={1}>
+                          {post.venue.name}
+                        </Text>
+                      </GlassView>
+                    ) : (
+                      <View style={styles.venuePillAndroid}>
+                        <Ionicons name="location" size={12} color="#FFFFFF" />
+                        <Text style={styles.venuePillText} numberOfLines={1}>
+                          {post.venue.name}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {/* Pagination dots */}
+                {hasMultipleImages && (
+                  <View style={styles.pagination}>
+                    {images.map((_, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.dot,
+                          index === activeImageIndex && styles.dotActive,
+                        ]}
+                      />
+                    ))}
                   </View>
                 )}
-              </TouchableOpacity>
-            )}
 
-            {/* Pagination dots */}
-            {hasMultipleImages && (
-              <View style={styles.pagination}>
-                {images.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.dot,
-                      index === activeImageIndex && styles.dotActive,
-                    ]}
-                  />
-                ))}
+                {/* Image counter */}
+                {hasMultipleImages && (
+                  <GlassView style={styles.imageCounter} fallbackColor="rgba(0, 0, 0, 0.55)">
+                    <Text style={styles.imageCounterText}>
+                      {activeImageIndex + 1}/{images.length}
+                    </Text>
+                  </GlassView>
+                )}
+
+                {/* Double-tap heart overlay */}
+                <Animated.View style={[styles.heartOverlay, heartAnimStyle]} pointerEvents="none">
+                  <Ionicons name="heart" size={80} color="#FFFFFF" style={styles.heartIcon} />
+                </Animated.View>
               </View>
-            )}
-
-            {/* Image counter */}
-            {hasMultipleImages && (
-              <GlassView style={styles.imageCounter} fallbackColor="rgba(0, 0, 0, 0.55)">
-                <Text style={styles.imageCounterText}>
-                  {activeImageIndex + 1}/{images.length}
-                </Text>
-              </GlassView>
-            )}
-          </View>
+            </Animated.View>
+          </GestureDetector>
         </View>
       )}
 
@@ -459,6 +510,18 @@ const styles = StyleSheet.create({
     color: Colors.textOnDark,
     fontSize: FontSize.xs,
     fontFamily: FontFamily.bodySemiBold,
+  },
+
+  // Double-tap heart overlay
+  heartOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heartIcon: {
+    textShadowColor: 'rgba(0, 0, 0, 0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
   },
 
   // Bottom section

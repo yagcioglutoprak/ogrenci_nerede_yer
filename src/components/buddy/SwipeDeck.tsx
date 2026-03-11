@@ -1,10 +1,19 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, Animated, PanResponder,
-} from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedReaction,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import Avatar from '../ui/Avatar';
 import type { MealBuddy } from '../../types';
@@ -36,9 +45,11 @@ export default function SwipeDeck({ buddies, onSwipeRight, onSwipeLeft, userLoca
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const position = useRef(new Animated.ValueXY()).current;
 
-  // Refs to avoid stale closures in PanResponder
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  // Refs to avoid stale closures in the runOnJS callback
   const indexRef = useRef(0);
   const buddiesRef = useRef(buddies);
   const callbacksRef = useRef({ onSwipeRight, onSwipeLeft });
@@ -51,10 +62,11 @@ export default function SwipeDeck({ buddies, onSwipeRight, onSwipeLeft, userLoca
   useEffect(() => {
     setCurrentIndex(0);
     indexRef.current = 0;
-    position.setValue({ x: 0, y: 0 });
+    translateX.value = 0;
+    translateY.value = 0;
   }, [buddies]);
 
-  const handleSwipeComplete = (direction: 'left' | 'right') => {
+  const handleSwipeComplete = useCallback((direction: 'left' | 'right') => {
     const buddy = buddiesRef.current[indexRef.current];
     if (!buddy) return;
 
@@ -64,72 +76,108 @@ export default function SwipeDeck({ buddies, onSwipeRight, onSwipeLeft, userLoca
       callbacksRef.current.onSwipeLeft(buddy);
     }
 
-    position.setValue({ x: 0, y: 0 });
+    translateX.value = 0;
+    translateY.value = 0;
     const nextIndex = indexRef.current + 1;
     indexRef.current = nextIndex;
     setCurrentIndex(nextIndex);
-  };
+  }, []);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, { dx, dy }) =>
-        Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5,
-      onPanResponderMove: Animated.event(
-        [null, { dx: position.x, dy: position.y }],
-        { useNativeDriver: false },
-      ),
-      onPanResponderRelease: (_, { dx, dy }) => {
-        if (dx > SWIPE_THRESHOLD) {
-          Animated.timing(position, {
-            toValue: { x: SCREEN_WIDTH + 100, y: dy },
-            duration: 250,
-            useNativeDriver: false,
-          }).start(() => handleSwipeComplete('right'));
-        } else if (dx < -SWIPE_THRESHOLD) {
-          Animated.timing(position, {
-            toValue: { x: -SCREEN_WIDTH - 100, y: dy },
-            duration: 250,
-            useNativeDriver: false,
-          }).start(() => handleSwipeComplete('left'));
-        } else {
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            friction: 5,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    }),
-  ).current;
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-5, 5])
+    .failOffsetY([-5, 5])
+    .onUpdate((event) => {
+      'worklet';
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+    })
+    .onEnd((event) => {
+      'worklet';
+      if (event.translationX > SWIPE_THRESHOLD) {
+        translateX.value = withTiming(SCREEN_WIDTH + 100, { duration: 250 }, () => {
+          runOnJS(handleSwipeComplete)('right');
+        });
+        translateY.value = withTiming(event.translationY, { duration: 250 });
+      } else if (event.translationX < -SWIPE_THRESHOLD) {
+        translateX.value = withTiming(-SCREEN_WIDTH - 100, { duration: 250 }, () => {
+          runOnJS(handleSwipeComplete)('left');
+        });
+        translateY.value = withTiming(event.translationY, { duration: 250 });
+      } else {
+        translateX.value = withSpring(0, SpringConfig.snappy);
+        translateY.value = withSpring(0, SpringConfig.snappy);
+      }
+    });
 
-  const rotate = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: ['-10deg', '0deg', '10deg'],
+  // Animated style for top card: translate + rotate
+  const topCardStyle = useAnimatedStyle(() => {
+    'worklet';
+    const rotate = interpolate(
+      translateX.value,
+      [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+      [-10, 0, 10],
+    );
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotate}deg` },
+      ],
+    };
   });
 
-  const likeOpacity = position.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
+  // Like overlay opacity
+  const likeOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
+    const opacity = interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
   });
 
-  const nopeOpacity = position.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
+  // Nope overlay opacity
+  const nopeOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
+    const opacity = interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
   });
 
-  const nextCardScale = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: [1, 0.92, 1],
-    extrapolate: 'clamp',
-  });
+  // Next card scale + opacity driven by the top card's translateX
+  const nextCardAnimatedScale = useSharedValue(0.92);
+  const nextCardAnimatedOpacity = useSharedValue(0.5);
 
-  const nextCardOpacity = position.x.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: [1, 0.5, 1],
-    extrapolate: 'clamp',
+  useAnimatedReaction(
+    () => translateX.value,
+    (tx) => {
+      nextCardAnimatedScale.value = interpolate(
+        Math.abs(tx),
+        [0, SCREEN_WIDTH],
+        [0.92, 1],
+        Extrapolation.CLAMP,
+      );
+      nextCardAnimatedOpacity.value = interpolate(
+        Math.abs(tx),
+        [0, SCREEN_WIDTH],
+        [0.5, 1],
+        Extrapolation.CLAMP,
+      );
+    },
+  );
+
+  const behindCardStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: nextCardAnimatedScale.value }],
+      opacity: nextCardAnimatedOpacity.value,
+    };
   });
 
   if (currentIndex >= buddies.length) {
@@ -153,131 +201,129 @@ export default function SwipeDeck({ buddies, onSwipeRight, onSwipeLeft, userLoca
       ? getDistanceKm(userLocation.latitude, userLocation.longitude, buddy.latitude, buddy.longitude)
       : null;
 
-    const topStyle = {
-      transform: [
-        ...position.getTranslateTransform(),
-        { rotate },
-      ],
-    };
+    const cardContent = (
+      <View style={[
+        styles.cardInner,
+        {
+          backgroundColor: isDark ? colors.surface : '#FAFEFF',
+          borderColor: isDark ? 'rgba(6,182,212,0.2)' : 'rgba(6,182,212,0.12)',
+        },
+      ]}>
+        {/* Like / Nope overlays */}
+        {isTop && (
+          <>
+            <Animated.View style={[styles.labelWrap, styles.likeWrap, likeOverlayStyle]}>
+              <LinearGradient
+                colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+                style={styles.labelBadge}
+              >
+                <Ionicons name="heart" size={18} color="#FFF" />
+                <Text style={styles.labelText}>ESLES</Text>
+              </LinearGradient>
+            </Animated.View>
+            <Animated.View style={[styles.labelWrap, styles.nopeWrap, nopeOverlayStyle]}>
+              <View style={[styles.labelBadge, { backgroundColor: Colors.error }]}>
+                <Ionicons name="close" size={18} color="#FFF" />
+                <Text style={styles.labelText}>GEC</Text>
+              </View>
+            </Animated.View>
+          </>
+        )}
 
-    const behindStyle = {
-      transform: [{ scale: nextCardScale }],
-      opacity: nextCardOpacity,
-    };
+        {/* Avatar section */}
+        <View style={styles.avatarSection}>
+          <LinearGradient
+            colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarRing}
+          >
+            <View style={[styles.avatarInner, { backgroundColor: isDark ? colors.surface : '#FAFEFF' }]}>
+              <Avatar
+                uri={buddy.user?.avatar_url}
+                name={buddy.user?.full_name || buddy.user?.username || '?'}
+                size={100}
+              />
+            </View>
+          </LinearGradient>
 
-    return (
-      <Animated.View
-        key={buddy.id}
-        style={[styles.card, isTop ? topStyle : behindStyle]}
-        {...(isTop ? panResponder.panHandlers : {})}
-      >
-        <View style={[
-          styles.cardInner,
-          {
-            backgroundColor: isDark ? colors.surface : '#FAFEFF',
-            borderColor: isDark ? 'rgba(6,182,212,0.2)' : 'rgba(6,182,212,0.12)',
-          },
-        ]}>
-          {/* Like / Nope overlays */}
-          {isTop && (
-            <>
-              <Animated.View style={[styles.labelWrap, styles.likeWrap, { opacity: likeOpacity }]}>
-                <LinearGradient
-                  colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
-                  style={styles.labelBadge}
-                >
-                  <Ionicons name="heart" size={18} color="#FFF" />
-                  <Text style={styles.labelText}>ESLES</Text>
-                </LinearGradient>
-              </Animated.View>
-              <Animated.View style={[styles.labelWrap, styles.nopeWrap, { opacity: nopeOpacity }]}>
-                <View style={[styles.labelBadge, { backgroundColor: Colors.error }]}>
-                  <Ionicons name="close" size={18} color="#FFF" />
-                  <Text style={styles.labelText}>GEC</Text>
-                </View>
-              </Animated.View>
-            </>
+          {/* XP badge */}
+          {buddy.user?.xp_points != null && (
+            <View style={styles.xpBadge}>
+              <Ionicons name="star" size={10} color={Colors.accent} />
+              <Text style={styles.xpText}>{buddy.user.xp_points} XP</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Info section */}
+        <View style={styles.infoSection}>
+          <Text style={[styles.cardName, { color: colors.text }]}>
+            {buddy.user?.full_name || 'Anonim'}
+          </Text>
+
+          {buddy.user?.university && (
+            <View style={styles.metaRow}>
+              <Ionicons name="school-outline" size={14} color={BUDDY_COLOR} />
+              <Text style={[styles.cardUni, { color: colors.textSecondary }]}>
+                {buddy.user.university}
+              </Text>
+            </View>
           )}
 
-          {/* Avatar section */}
-          <View style={styles.avatarSection}>
-            <LinearGradient
-              colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.avatarRing}
-            >
-              <View style={[styles.avatarInner, { backgroundColor: isDark ? colors.surface : '#FAFEFF' }]}>
-                <Avatar
-                  uri={buddy.user?.avatar_url}
-                  name={buddy.user?.full_name || buddy.user?.username || '?'}
-                  size={100}
-                />
-              </View>
-            </LinearGradient>
-
-            {/* XP badge */}
-            {buddy.user?.xp_points != null && (
-              <View style={styles.xpBadge}>
-                <Ionicons name="star" size={10} color={Colors.accent} />
-                <Text style={styles.xpText}>{buddy.user.xp_points} XP</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Info section */}
-          <View style={styles.infoSection}>
-            <Text style={[styles.cardName, { color: colors.text }]}>
-              {buddy.user?.full_name || 'Anonim'}
-            </Text>
-
-            {buddy.user?.university && (
-              <View style={styles.metaRow}>
-                <Ionicons name="school-outline" size={14} color={BUDDY_COLOR} />
-                <Text style={[styles.cardUni, { color: colors.textSecondary }]}>
-                  {buddy.user.university}
-                </Text>
-              </View>
-            )}
-
-            {buddy.note && (
-              <View style={[styles.noteCard, {
-                backgroundColor: isDark ? 'rgba(6,182,212,0.08)' : 'rgba(6,182,212,0.06)',
-              }]}>
-                <Ionicons name="chatbubble-outline" size={13} color={BUDDY_COLOR} />
-                <Text style={[styles.cardNote, { color: colors.text }]} numberOfLines={2}>
-                  "{buddy.note}"
-                </Text>
-              </View>
-            )}
-
-            {dist !== null && (
-              <View style={styles.distRow}>
-                <LinearGradient
-                  colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
-                  style={styles.distBadge}
-                >
-                  <Ionicons name="location" size={13} color="#FFF" />
-                  <Text style={styles.distText}>
-                    {dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)} km`}
-                  </Text>
-                </LinearGradient>
-              </View>
-            )}
-          </View>
-
-          {/* Swipe hints */}
-          <View style={styles.hintRow}>
-            <View style={styles.hintItem}>
-              <Ionicons name="close-circle" size={18} color={Colors.error} />
-              <Text style={[styles.hintText, { color: colors.textTertiary }]}>Sola kaydir</Text>
+          {buddy.note && (
+            <View style={[styles.noteCard, {
+              backgroundColor: isDark ? 'rgba(6,182,212,0.08)' : 'rgba(6,182,212,0.06)',
+            }]}>
+              <Ionicons name="chatbubble-outline" size={13} color={BUDDY_COLOR} />
+              <Text style={[styles.cardNote, { color: colors.text }]} numberOfLines={2}>
+                "{buddy.note}"
+              </Text>
             </View>
-            <View style={styles.hintItem}>
-              <Ionicons name="heart-circle" size={18} color={BUDDY_COLOR} />
-              <Text style={[styles.hintText, { color: colors.textTertiary }]}>Saga kaydir</Text>
+          )}
+
+          {dist !== null && (
+            <View style={styles.distRow}>
+              <LinearGradient
+                colors={[BUDDY_COLOR, BUDDY_COLOR_DARK]}
+                style={styles.distBadge}
+              >
+                <Ionicons name="location" size={13} color="#FFF" />
+                <Text style={styles.distText}>
+                  {dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)} km`}
+                </Text>
+              </LinearGradient>
             </View>
+          )}
+        </View>
+
+        {/* Swipe hints */}
+        <View style={styles.hintRow}>
+          <View style={styles.hintItem}>
+            <Ionicons name="close-circle" size={18} color={Colors.error} />
+            <Text style={[styles.hintText, { color: colors.textTertiary }]}>Sola kaydir</Text>
+          </View>
+          <View style={styles.hintItem}>
+            <Ionicons name="heart-circle" size={18} color={BUDDY_COLOR} />
+            <Text style={[styles.hintText, { color: colors.textTertiary }]}>Saga kaydir</Text>
           </View>
         </View>
+      </View>
+    );
+
+    if (isTop) {
+      return (
+        <GestureDetector gesture={panGesture} key={buddy.id}>
+          <Animated.View style={[styles.card, topCardStyle]}>
+            {cardContent}
+          </Animated.View>
+        </GestureDetector>
+      );
+    }
+
+    return (
+      <Animated.View key={buddy.id} style={[styles.card, behindCardStyle]}>
+        {cardContent}
       </Animated.View>
     );
   };

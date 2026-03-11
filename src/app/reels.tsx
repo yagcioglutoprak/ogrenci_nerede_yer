@@ -6,9 +6,6 @@ import {
   useWindowDimensions,
   Pressable,
   Linking,
-  PanResponder,
-  GestureResponderEvent,
-  PanResponderGestureState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -25,29 +23,31 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withSpring,
+  interpolate,
+  Extrapolation,
+  runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily } from '../lib/constants';
 import { haptic } from '../lib/haptics';
 import { MOCK_STORIES, MOCK_VENUES } from '../lib/mockData';
 import type { Story } from '../types';
 
-// Lookup venue name by ID
 function getVenueName(venueId?: string): string | null {
   if (!venueId) return null;
-  const venue = MOCK_VENUES.find((v) => v.id === venueId);
-  return venue?.name || null;
+  return MOCK_VENUES.find((v) => v.id === venueId)?.name || null;
 }
 
 // ---------------------------------------------------------------------------
-// Bouncing arrow hint — "Videoya Git"
+// Bouncing arrow hint
 // ---------------------------------------------------------------------------
 
 function SwipeUpHint() {
-  const translateY = useSharedValue(0);
+  const ty = useSharedValue(0);
 
   useEffect(() => {
-    translateY.value = withRepeat(
+    ty.value = withRepeat(
       withSequence(
         withTiming(-8, { duration: 600, easing: Easing.inOut(Easing.ease) }),
         withTiming(0, { duration: 600, easing: Easing.inOut(Easing.ease) }),
@@ -58,7 +58,7 @@ function SwipeUpHint() {
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: ty.value }],
   }));
 
   return (
@@ -70,10 +70,18 @@ function SwipeUpHint() {
 }
 
 // ---------------------------------------------------------------------------
-// Progress bar — shows current position among reels
+// Progress bars
 // ---------------------------------------------------------------------------
 
-function ProgressBars({ count, activeIndex, top }: { count: number; activeIndex: number; top: number }) {
+function ProgressBars({
+  count,
+  activeIndex,
+  top,
+}: {
+  count: number;
+  activeIndex: number;
+  top: number;
+}) {
   return (
     <View style={[styles.progressContainer, { top: top + Spacing.sm }]}>
       {Array.from({ length: count }).map((_, i) => (
@@ -81,7 +89,10 @@ function ProgressBars({ count, activeIndex, top }: { count: number; activeIndex:
           key={i}
           style={[
             styles.progressBar,
-            { backgroundColor: i <= activeIndex ? '#FFFFFF' : 'rgba(255,255,255,0.3)' },
+            {
+              backgroundColor:
+                i <= activeIndex ? '#FFFFFF' : 'rgba(255,255,255,0.3)',
+            },
           ]}
         />
       ))}
@@ -90,16 +101,10 @@ function ProgressBars({ count, activeIndex, top }: { count: number; activeIndex:
 }
 
 // ---------------------------------------------------------------------------
-// Single reel view — one video at a time
+// Single reel — owns its own VideoPlayer
 // ---------------------------------------------------------------------------
 
-function ActiveReel({
-  story,
-  venueName,
-}: {
-  story: Story;
-  venueName: string | null;
-}) {
+function ActiveReel({ story }: { story: Story }) {
   const player = useVideoPlayer(story.video_url, (p) => {
     p.loop = true;
   });
@@ -108,19 +113,27 @@ function ActiveReel({
     isPlaying: player.playing,
   });
 
-  // Auto-play on mount
+  const hasPlayedOnce = useRef(false);
+  const [userPaused, setUserPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPlaying) {
+      hasPlayedOnce.current = true;
+      setUserPaused(false);
+    }
+  }, [isPlaying]);
+
   useEffect(() => {
     player.play();
-    return () => {
-      player.pause();
-    };
   }, []);
 
   const togglePlayback = useCallback(() => {
     if (isPlaying) {
       player.pause();
+      setUserPaused(true);
     } else {
       player.play();
+      setUserPaused(false);
     }
     haptic.light();
   }, [isPlaying]);
@@ -134,17 +147,12 @@ function ActiveReel({
         nativeControls={false}
       />
 
-      {/* Invisible center tap to toggle play/pause */}
-      <Pressable
-        style={styles.centerTapZone}
-        onPress={togglePlayback}
-      />
+      <Pressable style={styles.centerTapZone} onPress={togglePlayback} />
 
-      {/* Paused indicator */}
-      {!isPlaying && (
+      {userPaused && hasPlayedOnce.current && (
         <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(150)}
           style={styles.pauseOverlay}
           pointerEvents="none"
         >
@@ -161,9 +169,13 @@ function ActiveReel({
 // Main Reels screen
 // ---------------------------------------------------------------------------
 
+const DISMISS_THRESHOLD = 180;
+
 export default function ReelsScreen() {
   const router = useRouter();
-  const { index: initialIndexParam } = useLocalSearchParams<{ index?: string }>();
+  const { index: initialIndexParam } = useLocalSearchParams<{
+    index?: string;
+  }>();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -176,135 +188,233 @@ export default function ReelsScreen() {
   const story = MOCK_STORIES[currentIndex];
   const venueName = getVenueName(story.venue_id);
 
-  const goNext = useCallback(() => {
-    if (currentIndex < MOCK_STORIES.length - 1) {
-      setCurrentIndex((i) => i + 1);
-      haptic.selection();
-    }
-  }, [currentIndex]);
+  // Refs for stable closures inside worklets / runOnJS
+  const currentIndexRef = useRef(currentIndex);
+  const storyRef = useRef(story);
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+    storyRef.current = story;
+  }, [currentIndex, story]);
 
-  const goPrev = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex((i) => i - 1);
-      haptic.selection();
-    }
-  }, [currentIndex]);
+  // ---- Shared values ----
+  const dismissY = useSharedValue(0);
+  const gestureDir = useSharedValue<'none' | 'vertical' | 'horizontal'>(
+    'none',
+  );
+  const reelFade = useSharedValue(1);
+
+  // ---- Navigation (called from worklet via runOnJS) ----
+  const doGoNext = useCallback(() => {
+    setCurrentIndex((i) => (i < MOCK_STORIES.length - 1 ? i + 1 : i));
+    reelFade.value = withTiming(1, { duration: 200 });
+  }, []);
+
+  const doGoPrev = useCallback(() => {
+    setCurrentIndex((i) => (i > 0 ? i - 1 : i));
+    reelFade.value = withTiming(1, { duration: 200 });
+  }, []);
+
+  // ---- Animated navigation (with crossfade) ----
+  const goNextAnimated = useCallback(() => {
+    if (currentIndexRef.current >= MOCK_STORIES.length - 1) return;
+    haptic.selection();
+    reelFade.value = withTiming(0, { duration: 100 }, (finished) => {
+      if (finished) runOnJS(doGoNext)();
+    });
+  }, [doGoNext]);
+
+  const goPrevAnimated = useCallback(() => {
+    if (currentIndexRef.current <= 0) return;
+    haptic.selection();
+    reelFade.value = withTiming(0, { duration: 100 }, (finished) => {
+      if (finished) runOnJS(doGoPrev)();
+    });
+  }, [doGoPrev]);
 
   const handleClose = useCallback(() => {
     router.back();
   }, []);
 
   const handleVenuePress = useCallback(() => {
-    if (story.venue_id) {
-      router.push(`/venue/${story.venue_id}`);
+    if (storyRef.current.venue_id) {
+      router.push(`/venue/${storyRef.current.venue_id}`);
     }
-  }, [story.venue_id]);
+  }, []);
 
-  const handleSwipeUpToVideo = useCallback(() => {
-    if (story.external_url) {
-      Linking.openURL(story.external_url);
-    } else if (story.video_url) {
-      Linking.openURL(story.video_url);
-    }
-  }, [story.external_url, story.video_url]);
+  const openVideoUrl = useCallback(() => {
+    const s = storyRef.current;
+    const url = s.external_url || s.video_url;
+    if (url) Linking.openURL(url);
+  }, []);
 
-  // Pan responder for vertical swipes
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => {
-        // Only capture vertical gestures
-        return Math.abs(gs.dy) > 20 && Math.abs(gs.dy) > Math.abs(gs.dx);
-      },
-      onPanResponderRelease: (
-        _: GestureResponderEvent,
-        gs: PanResponderGestureState,
-      ) => {
-        if (gs.dy < -80) {
-          // Swipe up → open video URL
-          handleSwipeUpToVideo();
-        } else if (gs.dy > 80) {
-          // Swipe down → close
-          handleClose();
+  // ---- Pan gesture for interactive dismiss & horizontal navigation ----
+  const panGesture = Gesture.Pan()
+    .minDistance(15)
+    .onBegin(() => {
+      gestureDir.value = 'none';
+    })
+    .onUpdate((e) => {
+      // Lock direction on first significant movement
+      if (gestureDir.value === 'none') {
+        if (Math.abs(e.translationY) > 10 || Math.abs(e.translationX) > 10) {
+          gestureDir.value =
+            Math.abs(e.translationY) > Math.abs(e.translationX)
+              ? 'vertical'
+              : 'horizontal';
         }
-      },
-    }),
-  ).current;
+      }
+      // Interactive: follow finger on downward swipe
+      if (gestureDir.value === 'vertical' && e.translationY > 0) {
+        dismissY.value = e.translationY;
+      }
+    })
+    .onEnd((e) => {
+      const isVert = gestureDir.value === 'vertical';
 
-  // Tap zones: left 30% = prev, right 30% = next
+      if (isVert && e.translationY > DISMISS_THRESHOLD) {
+        // Dismiss — animate off-screen then close
+        dismissY.value = withTiming(height, { duration: 250 }, () => {
+          runOnJS(handleClose)();
+        });
+      } else if (isVert && e.translationY < -80) {
+        // Swipe up — open video URL
+        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        runOnJS(openVideoUrl)();
+      } else if (!isVert && e.translationX < -50) {
+        // Swipe left — next reel
+        runOnJS(goNextAnimated)();
+      } else if (!isVert && e.translationX > 50) {
+        // Swipe right — previous reel
+        runOnJS(goPrevAnimated)();
+      } else {
+        // Spring back
+        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+      gestureDir.value = 'none';
+    })
+    .onFinalize((_, success) => {
+      // Safety: if gesture was cancelled mid-drag, spring back
+      if (!success && dismissY.value > 0) {
+        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+      gestureDir.value = 'none';
+    });
+
+  // ---- Animated styles ----
+  const dismissStyle = useAnimatedStyle(() => {
+    const progress = dismissY.value;
+    const scale = interpolate(
+      progress,
+      [0, 400],
+      [1, 0.88],
+      Extrapolation.CLAMP,
+    );
+    const borderRadius = interpolate(
+      progress,
+      [0, 150],
+      [0, 20],
+      Extrapolation.CLAMP,
+    );
+    const opacity = interpolate(
+      progress,
+      [0, 400],
+      [1, 0.7],
+      Extrapolation.CLAMP,
+    );
+    return {
+      transform: [{ translateY: progress > 0 ? progress : 0 }, { scale }],
+      borderRadius,
+      opacity,
+    };
+  });
+
+  const reelStyle = useAnimatedStyle(() => ({
+    opacity: reelFade.value,
+  }));
+
   const TAP_ZONE = width * 0.3;
 
-  const handleTap = useCallback(
-    (evt: GestureResponderEvent) => {
-      const x = evt.nativeEvent.locationX;
-      if (x < TAP_ZONE) {
-        goPrev();
-      } else if (x > width - TAP_ZONE) {
-        goNext();
-      }
-      // Middle 40% does nothing (handled by center play/pause)
-    },
-    [TAP_ZONE, width, goPrev, goNext],
-  );
-
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
+    <View style={styles.outerContainer}>
       <StatusBar style="light" />
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.container, dismissStyle]}>
+          {/* Video with crossfade */}
+          <Animated.View style={[StyleSheet.absoluteFill, reelStyle]}>
+            <ActiveReel key={story.id} story={story} />
+          </Animated.View>
 
-      {/* Video */}
-      <ActiveReel
-        key={story.id}
-        story={story}
-        venueName={venueName}
-      />
+          {/* Left / Right tap zones */}
+          <Pressable
+            style={[styles.tapZone, { left: 0, width: TAP_ZONE }]}
+            onPress={goPrevAnimated}
+          />
+          <Pressable
+            style={[styles.tapZone, { right: 0, width: TAP_ZONE }]}
+            onPress={goNextAnimated}
+          />
 
-      {/* Left/Right tap zones */}
-      <Pressable style={[styles.tapZone, { left: 0, width: TAP_ZONE }]} onPress={goPrev} />
-      <Pressable style={[styles.tapZone, { right: 0, width: TAP_ZONE }]} onPress={goNext} />
+          {/* Progress bars */}
+          <ProgressBars
+            count={MOCK_STORIES.length}
+            activeIndex={currentIndex}
+            top={insets.top}
+          />
 
-      {/* Progress bars */}
-      <ProgressBars count={MOCK_STORIES.length} activeIndex={currentIndex} top={insets.top} />
+          {/* Top: close button */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.5)', 'transparent']}
+            style={[
+              styles.topGradient,
+              { paddingTop: insets.top + Spacing.xl + Spacing.sm },
+            ]}
+            pointerEvents="box-none"
+          >
+            <Pressable
+              style={styles.closeButton}
+              onPress={handleClose}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
+            </Pressable>
+          </LinearGradient>
 
-      {/* Top: close button */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.5)', 'transparent']}
-        style={[styles.topGradient, { paddingTop: insets.top + Spacing.xl + Spacing.sm }]}
-        pointerEvents="box-none"
-      >
-        <Pressable
-          style={styles.closeButton}
-          onPress={handleClose}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
-        </Pressable>
-      </LinearGradient>
+          {/* Bottom: venue name + title + swipe hint */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.75)']}
+            style={[
+              styles.bottomGradient,
+              { paddingBottom: insets.bottom + Spacing.lg },
+            ]}
+            pointerEvents="box-none"
+          >
+            <Pressable
+              onPress={handleVenuePress}
+              style={styles.venueInfoTouchable}
+              disabled={!story.venue_id}
+            >
+              {venueName && (
+                <View style={styles.venueNameRow}>
+                  <Ionicons
+                    name="restaurant"
+                    size={14}
+                    color={Colors.accent}
+                  />
+                  <Text style={styles.venueName}>{venueName}</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color="rgba(255,255,255,0.5)"
+                  />
+                </View>
+              )}
+              <Text style={styles.storyTitle}>{story.title}</Text>
+            </Pressable>
 
-      {/* Bottom: venue name + title + swipe hint */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.75)']}
-        style={[styles.bottomGradient, { paddingBottom: insets.bottom + Spacing.lg }]}
-        pointerEvents="box-none"
-      >
-        {/* Venue name + story title — tappable to go to venue */}
-        <Pressable
-          onPress={handleVenuePress}
-          style={styles.venueInfoTouchable}
-          disabled={!story.venue_id}
-        >
-          {venueName && (
-            <View style={styles.venueNameRow}>
-              <Ionicons name="restaurant" size={14} color={Colors.accent} />
-              <Text style={styles.venueName}>{venueName}</Text>
-              <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.5)" />
-            </View>
-          )}
-          <Text style={styles.storyTitle}>{story.title}</Text>
-        </Pressable>
-
-        {/* Swipe up hint */}
-        <SwipeUpHint />
-      </LinearGradient>
+            <SwipeUpHint />
+          </LinearGradient>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
@@ -314,12 +424,16 @@ export default function ReelsScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
     flex: 1,
     backgroundColor: '#000',
   },
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    overflow: 'hidden',
+  },
 
-  // Tap zones (invisible)
   tapZone: {
     position: 'absolute',
     top: 0,
@@ -335,7 +449,6 @@ const styles = StyleSheet.create({
     zIndex: 4,
   },
 
-  // Progress bars
   progressContainer: {
     position: 'absolute',
     left: Spacing.md,
@@ -350,7 +463,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  // Pause overlay
   pauseOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -367,7 +479,6 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
 
-  // Top gradient
   topGradient: {
     position: 'absolute',
     top: 0,
@@ -386,7 +497,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Bottom gradient
   bottomGradient: {
     position: 'absolute',
     bottom: 0,
@@ -422,7 +532,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
 
-  // Swipe up hint
   swipeHint: {
     alignItems: 'center',
     gap: 2,

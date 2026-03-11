@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInDown,
+  FadeOut,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
@@ -26,7 +27,7 @@ import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useEventStore } from '../../stores/eventStore';
 import { useMessageStore } from '../../stores/messageStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import PostCard from '../../components/feed/PostCard';
 import EventCard from '../../components/feed/EventCard';
@@ -95,8 +96,8 @@ export default function FeedScreen() {
   useEffect(() => {
     const layout = chipLayouts.current[category];
     if (layout) {
-      indicatorX.value = withSpring(layout.x, { damping: 18, stiffness: 200 });
-      indicatorW.value = withSpring(layout.width, { damping: 18, stiffness: 200 });
+      indicatorX.value = withSpring(layout.x, SpringConfig.snappy);
+      indicatorW.value = withSpring(layout.width, SpringConfig.snappy);
     }
   }, [category]);
 
@@ -296,7 +297,7 @@ export default function FeedScreen() {
       }
 
       return (
-        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(18)}>
+        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(18)} exiting={FadeOut.duration(200)}>
           {card}
         </Animated.View>
       );
@@ -408,7 +409,7 @@ export default function FeedScreen() {
 
       {/* Search Bar */}
       {showSearch && (
-        <Animated.View entering={FadeInDown.duration(300)} style={styles.searchBarContainer}>
+        <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOut.duration(200)} style={styles.searchBarContainer}>
           <View style={[styles.searchBar, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
             <Ionicons name="search" size={18} color={colors.textTertiary} />
             <TextInput

@@ -17,6 +17,7 @@ import Animated, {
   FadeInDown,
   FadeInRight,
   FadeIn,
+  FadeOut,
   SlideInRight,
 } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
@@ -84,7 +85,7 @@ export default function MessagesScreen() {
   const renderActiveRow = () => {
     if (recentActive.length === 0) return null;
     return (
-      <Animated.View entering={FadeIn.delay(100).duration(500)}>
+      <Animated.View entering={FadeIn.delay(100).duration(500)} exiting={FadeOut.duration(150)}>
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Aktif</Text>
         <ScrollView
           horizontal
@@ -140,7 +141,7 @@ export default function MessagesScreen() {
     const otherUser = otherBuddy?.user;
 
     return (
-      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)}>
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)} exiting={FadeOut.duration(150)}>
         <Text style={[styles.sectionLabel, { color: BUDDY_COLOR }]}>Yemek Buddy</Text>
         <TouchableOpacity
           style={[styles.buddyMatchCard, {
@@ -211,7 +212,7 @@ export default function MessagesScreen() {
     const cardBorder = hasUnread ? colors.messageUnreadBorder : colors.borderLight;
 
     return (
-      <Animated.View entering={FadeInDown.delay(staggerDelay).springify().damping(16).stiffness(120)}>
+      <Animated.View entering={FadeInDown.delay(staggerDelay).springify().damping(16).stiffness(120)} exiting={FadeOut.duration(150)}>
         <TouchableOpacity
           style={[
             styles.conversationCard,
@@ -340,7 +341,7 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.duration(400).springify().damping(18)} style={styles.header}>
+      <Animated.View entering={FadeInDown.duration(400).springify().damping(18)} exiting={FadeOut.duration(150)} style={styles.header}>
         <View>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Mesajlar</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textTertiary }]}>
@@ -365,7 +366,7 @@ export default function MessagesScreen() {
       </Animated.View>
 
       {/* Search bar */}
-      <Animated.View entering={FadeInDown.delay(80).springify().damping(16)} style={styles.searchWrap}>
+      <Animated.View entering={FadeInDown.delay(80).springify().damping(16)} exiting={FadeOut.duration(150)} style={styles.searchWrap}>
         <View style={[styles.searchBar, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary, borderColor: isDark ? colors.border : 'transparent' }]}>
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput

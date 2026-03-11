@@ -3,19 +3,27 @@ import {
   View,
   Text,
   Image,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   Linking,
   Platform,
   Dimensions,
   ActivityIndicator,
+  Modal,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   interpolate,
   Extrapolation,
+  withTiming,
+  withSpring,
+  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +44,7 @@ import { supabase } from '../../lib/supabase';
 import { MOCK_SOCIAL_VIDEOS, MOCK_POSTS, MOCK_USERS, MOCK_POST_IMAGES } from '../../lib/mockData';
 import GlassView from '../ui/GlassView';
 import RatingBar from '../ui/RatingBar';
+import StarRating from '../ui/StarRating';
 import Avatar from '../ui/Avatar';
 import { haptic } from '../../lib/haptics';
 import type { Venue, Review, Post } from '../../types';
@@ -66,7 +75,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const snapPoints = useMemo(() => ['40%', '95%'], []);
   const prevVenueIdRef = useRef<string | null>(null);
 
-  const { reviews, fetchReviews, toggleFavorite } = useVenueStore();
+  const { reviews, fetchReviews, toggleFavorite, addReview } = useVenueStore();
   const user = useAuthStore((s) => s.user);
 
   const [sheetIndex, setSheetIndex] = useState(-1);
@@ -74,6 +83,37 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const [isFavorited, setIsFavorited] = useState(false);
   const [venuePosts, setVenuePosts] = useState<Post[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Rating modal state
+  const [showRating, setShowRating] = useState(false);
+  const [rateTaste, setRateTaste] = useState(0);
+  const [rateValue, setRateValue] = useState(0);
+  const [rateFriendliness, setRateFriendliness] = useState(0);
+  const [rateComment, setRateComment] = useState('');
+  const [rateSubmitting, setRateSubmitting] = useState(false);
+
+  // Swipe-to-dismiss for rating modal (native gesture handler)
+  const rateTranslateY = useSharedValue(0);
+  const dismissRating = useCallback(() => setShowRating(false), []);
+  const ratePanGesture = Gesture.Pan()
+    .activeOffsetY(12)
+    .failOffsetX([-20, 20])
+    .onUpdate((e) => {
+      if (e.translationY > 0) rateTranslateY.value = e.translationY;
+    })
+    .onEnd((e) => {
+      if (e.translationY > 80 || e.velocityY > 500) {
+        runOnJS(dismissRating)();
+      } else {
+        rateTranslateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+      }
+    });
+  const rateSheetAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: rateTranslateY.value }],
+  }));
+  const rateOverlayAnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(rateTranslateY.value, [0, 300], [1, 0], Extrapolation.CLAMP),
+  }));
 
   // Animated index driven by bottom sheet — used for morph animation
   const animatedIdx = useSharedValue(-1);
@@ -211,8 +251,43 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const handleRate = useCallback(() => {
     if (!venue) return;
     haptic.light();
-    // TODO: open rating modal or navigate
+    setRateTaste(0);
+    setRateValue(0);
+    setRateFriendliness(0);
+    setRateComment('');
+    rateTranslateY.value = 500;
+    setShowRating(true);
+    requestAnimationFrame(() => {
+      rateTranslateY.value = withTiming(0, { duration: 300 });
+    });
   }, [venue]);
+
+  const handleSubmitRating = useCallback(async () => {
+    if (!venue || !user) return;
+    if (rateTaste === 0 || rateValue === 0 || rateFriendliness === 0) {
+      haptic.error();
+      Alert.alert('Eksik Puan', 'Lutfen tum kategorilere puan verin.');
+      return;
+    }
+    setRateSubmitting(true);
+    haptic.light();
+    const { error: err } = await addReview({
+      venue_id: venue.id,
+      user_id: user.id,
+      taste_rating: rateTaste,
+      value_rating: rateValue,
+      friendliness_rating: rateFriendliness,
+      comment: rateComment.trim(),
+    });
+    setRateSubmitting(false);
+    if (err) {
+      haptic.error();
+      Alert.alert('Hata', err);
+    } else {
+      haptic.success();
+      setShowRating(false);
+    }
+  }, [venue, user, rateTaste, rateValue, rateFriendliness, rateComment, addReview]);
 
   const handleSave = useCallback(() => {
     if (!venue || !user) return;
@@ -323,6 +398,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   };
 
   return (
+    <>
     <BottomSheet
       ref={bottomSheetRef}
       index={-1}
@@ -639,6 +715,85 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
         </BottomSheetScrollView>
       )}
     </BottomSheet>
+
+    {/* ── RATING MODAL ── */}
+    <Modal visible={showRating} animationType="none" transparent onRequestClose={() => setShowRating(false)}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.rateModalContainer}>
+        <Animated.View style={[styles.rateModalOverlay, rateOverlayAnimStyle]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissRating} />
+        </Animated.View>
+        <GestureDetector gesture={ratePanGesture}>
+        <Animated.View
+          style={[styles.rateSheet, { backgroundColor: colors.background }, rateSheetAnimStyle]}
+        >
+          <View style={[styles.rateHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.rateTitle, { color: colors.text }]}>Puan Ver</Text>
+          {venue && (
+            <Text style={[styles.rateVenueName, { color: colors.textSecondary }]} numberOfLines={1}>
+              {venue.name}
+            </Text>
+          )}
+
+          {/* 3-axis ratings */}
+          {[
+            { label: RatingCategories[0].label, icon: RatingCategories[0].icon as keyof typeof Ionicons.glyphMap, value: rateTaste, setter: setRateTaste, color: Colors.primary },
+            { label: RatingCategories[1].label, icon: RatingCategories[1].icon as keyof typeof Ionicons.glyphMap, value: rateValue, setter: setRateValue, color: Colors.accent },
+            { label: RatingCategories[2].label, icon: RatingCategories[2].icon as keyof typeof Ionicons.glyphMap, value: rateFriendliness, setter: setRateFriendliness, color: Colors.verified },
+          ].map((cat) => (
+            <View key={cat.label} style={styles.rateCategoryRow}>
+              <View style={styles.rateCategoryLabel}>
+                <Ionicons name={cat.icon} size={18} color={cat.color} />
+                <Text style={[styles.rateCategoryText, { color: colors.text }]}>{cat.label}</Text>
+              </View>
+              <StarRating
+                rating={cat.value}
+                size="lg"
+                interactive
+                onRatingChange={cat.setter}
+                color={cat.color}
+              />
+            </View>
+          ))}
+
+          {/* Comment */}
+          <TextInput
+            style={[styles.rateCommentInput, { color: colors.text, backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            placeholder="Yorumun (istege bagli)..."
+            placeholderTextColor={colors.textTertiary}
+            value={rateComment}
+            onChangeText={setRateComment}
+            multiline
+            maxLength={500}
+            textAlignVertical="top"
+          />
+
+          {/* Actions */}
+          <View style={styles.rateActions}>
+            <TouchableOpacity
+              style={[styles.rateCancelBtn, { borderColor: colors.border }]}
+              onPress={() => setShowRating(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.rateCancelText, { color: colors.textSecondary }]}>Vazgec</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.rateSubmitBtn, (rateTaste === 0 || rateValue === 0 || rateFriendliness === 0) && styles.rateSubmitBtnDisabled]}
+              onPress={handleSubmitRating}
+              activeOpacity={0.85}
+              disabled={rateSubmitting}
+            >
+              {rateSubmitting ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.rateSubmitText}>Gonder</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+        </GestureDetector>
+      </KeyboardAvoidingView>
+    </Modal>
+    </>
   );
 }
 
@@ -1114,5 +1269,96 @@ const styles = StyleSheet.create({
   // ---- BOTTOM SPACER ----
   bottomSpacer: {
     height: Spacing.xxxl + Spacing.xl,
+  },
+
+  // ---- RATING MODAL ----
+  rateModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  rateModalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  rateSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xxl,
+    paddingTop: Spacing.md,
+  },
+  rateHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  rateTitle: {
+    fontSize: FontSize.xl,
+    fontFamily: FontFamily.headingBold,
+    marginBottom: Spacing.xs,
+  },
+  rateVenueName: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodyMedium,
+    marginBottom: Spacing.xl,
+  },
+  rateCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
+  rateCategoryLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    width: 140,
+  },
+  rateCategoryText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+  rateCommentInput: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    fontSize: FontSize.sm,
+    minHeight: 80,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  rateActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  rateCancelBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rateCancelText: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+  },
+  rateSubmitBtn: {
+    flex: 2,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rateSubmitBtnDisabled: {
+    opacity: 0.5,
+  },
+  rateSubmitText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
   },
 });

@@ -1,0 +1,140 @@
+<h2>Bottom Sheet: Collapsed State Content</h2>
+<p class="subtitle">When a user taps a marker, the sheet slides up to ~40% height. What should they see in this peek view?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:20px;background:#1a1a2e;">
+      <!-- Mockup A: Compact preview -->
+      <div style="background:#fff;border-radius:16px 16px 0 0;padding:16px;font-family:system-ui;">
+        <div style="width:40px;height:4px;background:#ccc;border-radius:2px;margin:0 auto 12px;"></div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#E23744,#c0392b);display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:28px;">🍔</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:16px;color:#111;">Tarihi Karakoy Lokantasi</div>
+            <div style="color:#888;font-size:12px;margin-top:2px;">Karakoy, Beyoglu</div>
+            <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+              <span style="background:#E23744;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">9.0</span>
+              <span style="color:#F5A623;">★ 4.2</span>
+              <span style="color:#888;font-size:12px;">₺₺</span>
+            </div>
+          </div>
+          <div style="color:#888;font-size:20px;">✕</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <div style="flex:1;background:#E23744;color:white;text-align:center;padding:10px;border-radius:10px;font-weight:600;font-size:13px;">⭐ Puan Ver</div>
+          <div style="flex:1;background:#06B6D4;color:white;text-align:center;padding:10px;border-radius:10px;font-weight:600;font-size:13px;">🧭 Yol Tarifi</div>
+          <div style="flex:1;border:1px solid #ddd;text-align:center;padding:10px;border-radius:10px;font-weight:600;font-size:13px;color:#333;">♡ Kaydet</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Compact Card + Actions</h3>
+      <p>Thumbnail, name, ratings, price — plus quick action buttons (Rate, Directions, Save). Like Apple Maps but with your rating system.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:20px;background:#1a1a2e;">
+      <!-- Mockup B: Richer preview with image -->
+      <div style="background:#fff;border-radius:16px 16px 0 0;overflow:hidden;font-family:system-ui;">
+        <div style="width:40px;height:4px;background:#ccc;border-radius:2px;margin:8px auto 0;"></div>
+        <div style="height:120px;background:linear-gradient(135deg,#e74c3c,#c0392b);display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="font-size:48px;">🍽️</span>
+          <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:white;border-radius:12px;padding:2px 8px;font-size:11px;">4 foto</div>
+        </div>
+        <div style="padding:12px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:700;font-size:16px;color:#111;">Tarihi Karakoy Lokantasi</div>
+            <div style="color:#888;font-size:18px;">✕</div>
+          </div>
+          <div style="color:#888;font-size:12px;margin-top:2px;">Karakoy, Beyoglu · 450m</div>
+          <div style="display:flex;gap:12px;margin-top:8px;align-items:center;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <div style="width:20px;height:20px;background:#E23744;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <span style="color:white;font-size:8px;font-weight:700;">ONY</span>
+              </div>
+              <span style="font-weight:700;color:#E23744;">9.0</span>
+            </div>
+            <span style="color:#F5A623;">★ 4.2</span>
+            <span style="color:#888;">₺₺</span>
+            <span style="background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:600;">Ogrenci Onayli</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <span style="background:#f5f5f5;padding:3px 8px;border-radius:6px;font-size:11px;color:#555;">Ev Yemegi</span>
+            <span style="background:#f5f5f5;padding:3px 8px;border-radius:6px;font-size:11px;color:#555;">Lokanta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Rich Preview with Hero Image</h3>
+      <p>Hero photo strip at top, then name, ratings, distance, level badge, and tags. More visual, takes up ~45% of screen. Action buttons appear on swipe-up.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:20px;background:#1a1a2e;">
+      <!-- Mockup C: Minimal Apple Maps style -->
+      <div style="background:#fff;border-radius:16px 16px 0 0;padding:16px;font-family:system-ui;">
+        <div style="width:40px;height:4px;background:#ccc;border-radius:2px;margin:0 auto 12px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-weight:700;font-size:17px;color:#111;">Tarihi Karakoy Lokantasi</div>
+            <div style="color:#888;font-size:13px;margin-top:2px;">Ev Yemegi · Karakoy</div>
+          </div>
+          <div style="color:#888;font-size:20px;">✕</div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:14px;">
+          <div style="text-align:center;">
+            <div style="width:52px;height:52px;background:#E23744;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <span style="color:white;font-weight:700;font-size:13px;">🧭</span>
+            </div>
+            <div style="font-size:10px;color:#E23744;margin-top:4px;font-weight:600;">Yol Tarifi</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:52px;height:52px;background:#f0f0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:18px;">⭐</span>
+            </div>
+            <div style="font-size:10px;color:#666;margin-top:4px;font-weight:600;">Puan Ver</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:52px;height:52px;background:#f0f0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:18px;">♡</span>
+            </div>
+            <div style="font-size:10px;color:#666;margin-top:4px;font-weight:600;">Kaydet</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:52px;height:52px;background:#f0f0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:18px;">↗</span>
+            </div>
+            <div style="font-size:10px;color:#666;margin-top:4px;font-weight:600;">Paylas</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid #eee;">
+          <div>
+            <div style="font-size:11px;color:#888;">ONY Puani</div>
+            <div style="font-weight:700;color:#E23744;font-size:15px;">9.0/10</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888;">Kullanici</div>
+            <div style="font-weight:700;color:#F5A623;font-size:15px;">★ 4.2</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888;">Fiyat</div>
+            <div style="font-weight:700;color:#333;font-size:15px;">₺₺</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888;">Mesafe</div>
+            <div style="font-weight:700;color:#333;font-size:15px;">450m</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Apple Maps Style (Icon Grid)</h3>
+      <p>Name + category at top, then icon-based action buttons grid (Directions, Rate, Save, Share), then stats row. Clean, familiar pattern. Most similar to your screenshot.</p>
+    </div>
+  </div>
+</div>

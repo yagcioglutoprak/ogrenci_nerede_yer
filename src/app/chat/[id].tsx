@@ -13,7 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, SlideInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut, SlideInUp } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -159,7 +159,7 @@ export default function ChatScreen() {
     // Image message
     if (item.message_type === 'image' && item.metadata?.image_url) {
       return (
-        <Animated.View entering={FadeIn.duration(200)}>
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
           {dateHeader}
           <ImageBubble
             imageUrl={item.metadata.image_url}
@@ -174,7 +174,7 @@ export default function ChatScreen() {
     // Venue message
     if (item.message_type === 'venue' && item.metadata?.venue_id) {
       return (
-        <Animated.View entering={FadeIn.duration(200)}>
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
           {dateHeader}
           <VenueBubble
             venueId={item.metadata.venue_id}
@@ -208,7 +208,7 @@ export default function ChatScreen() {
     );
 
     return (
-      <Animated.View entering={FadeIn.duration(200)}>
+      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
         {dateHeader}
         <View style={[
           styles.bubbleRow,

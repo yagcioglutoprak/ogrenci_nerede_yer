@@ -10,6 +10,8 @@ import {
   Platform,
   ScrollView,
   FlatList,
+  Animated as RNAnimated,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassView from '../../components/ui/GlassView';
@@ -113,6 +115,24 @@ const getMarkerTier = (venue: Venue): MarkerTier => {
   return 'unreviewed';
 };
 
+
+// Subtle spring-in animation when a marker becomes selected
+function SelectedPop({ children }: { children: React.ReactNode }) {
+  const scale = useRef(new RNAnimated.Value(0.6)).current;
+  useEffect(() => {
+    RNAnimated.spring(scale, {
+      toValue: 1,
+      tension: 140,
+      friction: 6,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+  return (
+    <RNAnimated.View style={{ transform: [{ scale }] }}>
+      {children}
+    </RNAnimated.View>
+  );
+}
 
 export default function MapScreen() {
   const router = useRouter();
@@ -332,53 +352,83 @@ export default function MapScreen() {
           const venue = item.venue;
           const tier = getMarkerTier(venue);
 
+          const isSelected = selectedVenue?.id === venue.id;
+
           // ── Tier 1: Google Places — tiny grey dot ──
           if (tier === 'google_places') {
             return (
               <Marker
-                key={venue.id}
+                key={venue.id + (isSelected ? '_sel' : '')}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
-                tracksViewChanges={false}
+                tracksViewChanges={isSelected}
                 onPress={() => handleMarkerPress(venue)}
               >
-                <View style={styles.greyDot} />
+                {isSelected ? (
+                  <SelectedPop>
+                    <View style={styles.greyDotSelected} />
+                  </SelectedPop>
+                ) : (
+                  <View style={styles.greyDot} />
+                )}
               </Marker>
             );
           }
 
           // ── Tier 2: Unreviewed ONY venue — grey tag ──
           if (tier === 'unreviewed') {
+            const tagContent = (
+              <View style={styles.tagWrapper}>
+                <View style={[
+                  styles.tagUnreviewed,
+                  isSelected
+                    ? { backgroundColor: Colors.primary, borderColor: Colors.primary }
+                    : { backgroundColor: colors.tagUnreviewed, borderColor: colors.tagUnreviewedBorder },
+                ]}>
+                  <Text style={[styles.tagUnreviewedText, { color: isSelected ? '#FFFFFF' : colors.textMuted }]} numberOfLines={1}>
+                    {venue.name}
+                  </Text>
+                </View>
+                <View style={[styles.tagPointer, { borderTopColor: isSelected ? Colors.primary : colors.tagUnreviewed }]} />
+              </View>
+            );
             return (
               <Marker
-                key={venue.id}
+                key={venue.id + (isSelected ? '_sel' : '')}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
                 onPress={() => handleMarkerPress(venue)}
-                tracksViewChanges={false}
+                tracksViewChanges={isSelected}
               >
-                <View style={styles.tagWrapper}>
-                  <View style={[styles.tagUnreviewed, { backgroundColor: colors.tagUnreviewed, borderColor: colors.tagUnreviewedBorder }]}>
-                    <Text style={[styles.tagUnreviewedText, { color: colors.textMuted }]} numberOfLines={1}>
-                      {venue.name}
-                    </Text>
-                  </View>
-                  <View style={[styles.tagPointer, { borderTopColor: colors.tagUnreviewed }]} />
-                </View>
+                {isSelected ? <SelectedPop>{tagContent}</SelectedPop> : tagContent}
               </Marker>
             );
           }
 
           // ── Tier 3: Reviewed ONY venue — native logo marker ──
+          if (isSelected) {
+            return (
+              <Marker
+                key={venue.id + '_sel'}
+                coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+                onPress={() => handleMarkerPress(venue)}
+                tracksViewChanges
+                anchor={{ x: 0.5, y: 1 }}
+              >
+                <SelectedPop>
+                  <View style={styles.selectedLogoWrap}>
+                    <Image source={MARKER_LOGO} style={styles.selectedLogoImage} />
+                  </View>
+                </SelectedPop>
+              </Marker>
+            );
+          }
           return (
-          <Marker
-            key={venue.id}
-            coordinate={{
-              latitude: venue.latitude,
-              longitude: venue.longitude,
-            }}
-            image={MARKER_LOGO}
-            onPress={() => handleMarkerPress(venue)}
-            tracksViewChanges={false}
-          />
+            <Marker
+              key={venue.id}
+              coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+              image={MARKER_LOGO}
+              onPress={() => handleMarkerPress(venue)}
+              tracksViewChanges={false}
+            />
           );
         })}
       </MapView>
@@ -835,6 +885,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
+  },
+  greyDotSelected: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.primary,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  // Selected reviewed logo
+  selectedLogoWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(226, 55, 68, 0.12)',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  selectedLogoImage: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
   },
   // Loading — Liquid Glass
   loadingPill: {
