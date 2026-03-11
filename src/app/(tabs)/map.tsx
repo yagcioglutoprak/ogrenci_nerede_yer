@@ -34,6 +34,7 @@ import {
   FontSize,
   FontFamily,
 } from '../../lib/constants';
+// Google Places venues only shown in dev mode as placeholder data
 import { MOCK_GOOGLE_PLACES_VENUES } from '../../lib/mockData';
 import { haptic } from '../../lib/haptics';
 import type { Venue } from '../../types';
@@ -163,7 +164,7 @@ export default function MapScreen() {
 
   // ── Merge ONY venues with Google Places, filtered to visible region ──
   const visibleVenues = useMemo(() => {
-    const all = [...venues, ...MOCK_GOOGLE_PLACES_VENUES];
+    const all = __DEV__ ? [...venues, ...MOCK_GOOGLE_PLACES_VENUES] : venues;
     const latHalf = region.latitudeDelta / 2 + 0.005; // small buffer
     const lngHalf = region.longitudeDelta / 2 + 0.005;
     return all.filter(

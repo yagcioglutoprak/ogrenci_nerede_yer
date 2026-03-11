@@ -99,30 +99,43 @@ export const useListStore = create<ListState>((set, get) => ({
   },
 
   deleteList: async (id) => {
-    await supabase.from('lists').delete().eq('id', id);
-    set({ userLists: get().userLists.filter(l => l.id !== id) });
+    try {
+      await supabase.from('lists').delete().eq('id', id);
+      set({ userLists: get().userLists.filter(l => l.id !== id) });
+    } catch {
+      // Still remove locally even if Supabase fails
+      set({ userLists: get().userLists.filter(l => l.id !== id) });
+    }
   },
 
   addVenueToList: async (listId, venueId, note) => {
-    const { data: existing } = await supabase
-      .from('list_venues')
-      .select('position')
-      .eq('list_id', listId)
-      .order('position', { ascending: false })
-      .limit(1);
+    try {
+      const { data: existing } = await supabase
+        .from('list_venues')
+        .select('position')
+        .eq('list_id', listId)
+        .order('position', { ascending: false })
+        .limit(1);
 
-    const nextPosition = existing?.length ? existing[0].position + 1 : 0;
+      const nextPosition = existing?.length ? existing[0].position + 1 : 0;
 
-    await supabase.from('list_venues').insert({
-      list_id: listId,
-      venue_id: venueId,
-      position: nextPosition,
-      note,
-    });
+      await supabase.from('list_venues').insert({
+        list_id: listId,
+        venue_id: venueId,
+        position: nextPosition,
+        note,
+      });
+    } catch {
+      // Non-critical — venue may not appear in list until refresh
+    }
   },
 
   removeVenueFromList: async (listId, venueId) => {
-    await supabase.from('list_venues').delete().eq('list_id', listId).eq('venue_id', venueId);
+    try {
+      await supabase.from('list_venues').delete().eq('list_id', listId).eq('venue_id', venueId);
+    } catch {
+      // Non-critical
+    }
   },
 
   toggleListLike: async (listId, userId) => {

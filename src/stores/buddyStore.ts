@@ -424,14 +424,10 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
   },
 
   subscribeToMatchUpdates: (userId) => {
+    if (isMockId(userId)) return null;
+
     try {
-      const channel = supabase
-        .channel(`buddy-match-updates-${userId}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'buddy_matches',
-        }, async (payload) => {
+      const handleMatchChange = async (payload: any) => {
           const match = payload.new as any;
           if (!match) return;
 
@@ -454,7 +450,20 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
           if (match.status === 'pending') {
             get().fetchPendingMatches(userId);
           }
-        })
+      };
+
+      const channel = supabase
+        .channel(`buddy-match-updates-${userId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'buddy_matches',
+        }, handleMatchChange)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'buddy_matches',
+        }, handleMatchChange)
         .subscribe();
       return channel;
     } catch {

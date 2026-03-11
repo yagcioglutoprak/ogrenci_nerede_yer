@@ -33,7 +33,7 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
       supabase.from('venues').select('*', { count: 'exact', head: true }).eq('created_by', userId),
       supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('likes').select('post_id, post:posts!inner(user_id)', { count: 'exact', head: true }).eq('posts.user_id', userId),
+      supabase.from('likes').select('post_id, post:posts!inner(user_id)', { count: 'exact', head: true }).eq('post.user_id', userId),
       supabase.from('event_attendees').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'confirmed'),
       supabase.from('events').select('*', { count: 'exact', head: true }).eq('creator_id', userId),
       supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('post_type', 'moment'),

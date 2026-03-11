@@ -88,10 +88,23 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       if (filters.isVerified) {
         query = query.eq('is_verified', true);
       }
+      if (filters.tags && filters.tags.length > 0) {
+        query = query.contains('tags', filters.tags);
+      }
       if (filters.searchQuery && filters.searchQuery.trim()) {
         query = query.or(
           `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
         );
+      }
+
+      // Geo-bounding box filter
+      if (region) {
+        const delta = region.radius / 111; // ~111 km per degree
+        query = query
+          .gte('latitude', region.lat - delta)
+          .lte('latitude', region.lat + delta)
+          .gte('longitude', region.lng - delta)
+          .lte('longitude', region.lng + delta);
       }
 
       const { data, error } = await query
@@ -148,6 +161,9 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       }
       if (filters.isVerified) {
         query = query.eq('is_verified', true);
+      }
+      if (filters.tags && filters.tags.length > 0) {
+        query = query.contains('tags', filters.tags);
       }
       if (filters.searchQuery && filters.searchQuery.trim()) {
         query = query.or(
@@ -347,17 +363,21 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   },
 
   toggleFavorite: async (venueId, userId) => {
-    const { data: existing } = await supabase
-      .from('favorites')
-      .select('*')
-      .eq('venue_id', venueId)
-      .eq('user_id', userId)
-      .single();
+    try {
+      const { data: existing } = await supabase
+        .from('favorites')
+        .select('*')
+        .eq('venue_id', venueId)
+        .eq('user_id', userId)
+        .single();
 
-    if (existing) {
-      await supabase.from('favorites').delete().eq('venue_id', venueId).eq('user_id', userId);
-    } else {
-      await supabase.from('favorites').insert({ venue_id: venueId, user_id: userId });
+      if (existing) {
+        await supabase.from('favorites').delete().eq('venue_id', venueId).eq('user_id', userId);
+      } else {
+        await supabase.from('favorites').insert({ venue_id: venueId, user_id: userId });
+      }
+    } catch {
+      // Favorite toggle is non-critical — silently ignore
     }
   },
 

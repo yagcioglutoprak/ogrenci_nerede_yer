@@ -310,11 +310,18 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     if (isMockId(userId)) return null;
 
     try {
+      // Subscribe to updates on conversations where this user is a participant
+      // We use two channels since Supabase filters don't support OR on server side
       const channel = supabase
         .channel(`dm-conversations-${userId}`)
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'conversations' },
+          { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `participant_1=eq.${userId}` },
+          () => { get().fetchConversations(userId); },
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `participant_2=eq.${userId}` },
           () => { get().fetchConversations(userId); },
         )
         .subscribe();

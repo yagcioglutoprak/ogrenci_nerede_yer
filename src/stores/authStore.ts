@@ -133,7 +133,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore sign-out errors (e.g. network issues)
+    }
     set({ user: null, session: null, error: null });
   },
 
@@ -141,15 +145,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = get().user;
     if (!user) return { error: 'Kullanıcı bulunamadı' };
 
-    const { error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', user.id);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user.id);
 
-    if (!error) {
-      set({ user: { ...user, ...updates } as User });
+      if (!error) {
+        set({ user: { ...user, ...updates } as User });
+      }
+
+      return { error: error?.message || null };
+    } catch (err: any) {
+      return { error: err?.message || 'Profil guncellenirken hata olustu' };
     }
-
-    return { error: error?.message || null };
   },
 }));

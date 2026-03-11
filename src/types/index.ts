@@ -11,6 +11,7 @@ export interface User {
   university: string | null;
   bio: string | null;
   xp_points: number;
+  last_active_date?: string | null;
   created_at: string;
 }
 

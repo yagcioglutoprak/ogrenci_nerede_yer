@@ -503,6 +503,8 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   subscribeToMessages: (eventId: string) => {
+    if (eventId.startsWith('e-') || eventId.startsWith('mock-') || eventId.startsWith('local-')) return null;
+
     const channel = supabase
       .channel(`event-messages-${eventId}`)
       .on('postgres_changes', {
@@ -535,7 +537,11 @@ export const useEventStore = create<EventState>((set, get) => ({
 
   unsubscribeFromMessages: (channel: any) => {
     if (channel) {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // Ignore cleanup errors
+      }
     }
   },
 
