@@ -118,14 +118,12 @@ const getMarkerTier = (venue: Venue): MarkerTier => {
 
 // Subtle spring-in animation when a marker becomes selected
 function SelectedPop({ children }: { children: React.ReactNode }) {
-  const scale = useRef(new RNAnimated.Value(0.6)).current;
+  const scale = useRef(new RNAnimated.Value(1)).current;
   useEffect(() => {
-    RNAnimated.spring(scale, {
-      toValue: 1,
-      tension: 140,
-      friction: 6,
-      useNativeDriver: true,
-    }).start();
+    RNAnimated.sequence([
+      RNAnimated.timing(scale, { toValue: 1.15, duration: 100, useNativeDriver: true }),
+      RNAnimated.spring(scale, { toValue: 1, tension: 140, friction: 6, useNativeDriver: true }),
+    ]).start();
   }, []);
   return (
     <RNAnimated.View style={{ transform: [{ scale }] }}>
@@ -901,11 +899,11 @@ const styles = StyleSheet.create({
   },
   // Selected reviewed logo
   selectedLogoWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: 'rgba(226, 55, 68, 0.12)',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -916,8 +914,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   selectedLogoImage: {
-    width: 28,
-    height: 28,
+    width: 46,
+    height: 45,
     resizeMode: 'contain',
   },
   // Loading — Liquid Glass
