@@ -332,7 +332,7 @@ export default function VenueDetailScreen() {
 
           {/* Top bar: Back + Share + Favorite */}
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
-            <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+            <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)" interactive>
               <TouchableOpacity
                 style={styles.heroCircleButtonInner}
                 onPress={() => router.back()}
@@ -342,7 +342,7 @@ export default function VenueDetailScreen() {
               </TouchableOpacity>
             </GlassView>
             <View style={styles.heroTopBarRight}>
-              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)" interactive>
                 <TouchableOpacity
                   style={styles.heroCircleButtonInner}
                   onPress={() => {
@@ -354,7 +354,7 @@ export default function VenueDetailScreen() {
                   <Ionicons name="list-outline" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
               </GlassView>
-              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)" interactive>
                 <TouchableOpacity
                   style={styles.heroCircleButtonInner}
                   onPress={handleShareVenue}
@@ -363,7 +363,7 @@ export default function VenueDetailScreen() {
                   <Ionicons name="share-outline" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
               </GlassView>
-              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)">
+              <GlassView style={styles.heroCircleButtonGlass} fallbackColor="rgba(255,255,255,0.2)" interactive>
                 <TouchableOpacity
                   style={styles.heroCircleButtonInner}
                   onPress={handleFavorite}

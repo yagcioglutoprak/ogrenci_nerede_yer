@@ -260,6 +260,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       {/* Glass bar */}
       <GlassView
         style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
+        interactive
       >
         <View style={iosStyles.tabRow}>
           {leftTabs.map(renderTab)}

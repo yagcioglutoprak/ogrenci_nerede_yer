@@ -562,7 +562,7 @@ export default function MapScreen() {
 
       {/* My Location — Liquid Glass */}
       {userLocation && (
-        <GlassView style={[styles.myLocationBlur, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]}>
+        <GlassView style={[styles.myLocationBlur, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]} interactive>
           <TouchableOpacity
             style={styles.myLocationButton}
             onPress={centerOnUser}

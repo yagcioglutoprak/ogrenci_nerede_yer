@@ -46,7 +46,7 @@ export default function Button({
 
   if (variant === 'glass' && Platform.OS === 'ios') {
     return (
-      <GlassView style={[styles.glassWrapper, fullWidth && styles.fullWidth, style]}>
+      <GlassView style={[styles.glassWrapper, fullWidth && styles.fullWidth, style]} interactive>
         <TouchableOpacity
           style={[styles.base, styles.glassInner]}
           onPress={onPress}

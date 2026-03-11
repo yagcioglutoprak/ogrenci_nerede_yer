@@ -493,6 +493,7 @@ export default function FeedScreen() {
         <GlassView
           style={styles.floatingCreateButtonGlass}
           fallbackColor="rgba(226, 55, 68, 0.85)"
+          interactive
         >
           <TouchableOpacity
             style={styles.floatingCreateButtonInner}
