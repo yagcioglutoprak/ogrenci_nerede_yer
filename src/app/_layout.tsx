@@ -7,6 +7,7 @@ import { useFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nuni
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
+import { useBlockStore } from '../stores/blockStore';
 import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
 import { useNotifications } from '../hooks/useNotifications';
 import { Colors } from '../lib/constants';
@@ -50,6 +51,14 @@ export default function RootLayout() {
 
     init().then(() => clearTimeout(timeout));
   }, []);
+
+  // Initialize blockStore once auth is ready
+  useEffect(() => {
+    const user = useAuthStore.getState().user;
+    if (user) {
+      useBlockStore.getState().fetchBlockedUsers(user.id);
+    }
+  }, [initialized]);
 
   if ((!ready && !initialized) || !fontsLoaded) {
     return (
