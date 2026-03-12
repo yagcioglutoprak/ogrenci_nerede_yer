@@ -56,8 +56,8 @@ export default function ScreenHeader({ title, subtitle, leftAction, rightAction,
   const colors = useThemeColors();
 
   if (compact) {
-    const compactContent = (
-      <>
+    return (
+      <View style={[styles.compactContainer, { backgroundColor: colors.background }]}>
         <View style={styles.compactSide}>
           {leftAction && (
             <ActionButtonView action={leftAction} colors={colors} />
@@ -71,56 +71,31 @@ export default function ScreenHeader({ title, subtitle, leftAction, rightAction,
             <ActionButtonView action={rightAction} colors={colors} />
           )}
         </View>
-      </>
-    );
-
-    if (Platform.OS === 'ios') {
-      return (
-        <GlassView style={styles.compactContainer} interactive>
-          {compactContent}
-        </GlassView>
-      );
-    }
-
-    return (
-      <View style={[styles.compactContainer, { backgroundColor: colors.background }]}>
-        {compactContent}
       </View>
-    );
-  }
-
-  const headerContent = (
-    <View style={styles.titleRow}>
-      <View style={styles.titleBlock}>
-        <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>
-        {subtitle && (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
-        )}
-      </View>
-      <View style={styles.actions}>
-        {leftAction && (
-          <ActionButtonView action={leftAction} colors={colors} />
-        )}
-        {rightAction && (
-          <ActionButtonView action={rightAction} colors={colors} />
-        )}
-      </View>
-    </View>
-  );
-
-  if (Platform.OS === 'ios') {
-    return (
-      <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
-        <GlassView style={styles.container} interactive>
-          {headerContent}
-        </GlassView>
-      </Animated.View>
     );
   }
 
   return (
-    <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} style={[styles.container, { backgroundColor: colors.background }]}>
-      {headerContent}
+    <Animated.View
+      entering={FadeInDown.springify().damping(22).stiffness(340)}
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <View style={styles.titleRow}>
+        <View style={styles.titleBlock}>
+          <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>
+          {subtitle && (
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+          )}
+        </View>
+        <View style={styles.actions}>
+          {leftAction && (
+            <ActionButtonView action={leftAction} colors={colors} />
+          )}
+          {rightAction && (
+            <ActionButtonView action={rightAction} colors={colors} />
+          )}
+        </View>
+      </View>
     </Animated.View>
   );
 }
