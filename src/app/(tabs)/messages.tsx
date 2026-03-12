@@ -47,6 +47,8 @@ export default function MessagesScreen() {
   const fetchConversations = useMessageStore((s) => s.fetchConversations);
   const subscribeToConversations = useMessageStore((s) => s.subscribeToConversations);
   const unsubscribeChannel = useMessageStore((s) => s.unsubscribeChannel);
+  const requestCount = useMessageStore((s) => s.requestCount);
+  const fetchMessageRequests = useMessageStore((s) => s.fetchMessageRequests);
 
   // Buddy match state
   const activeMatch = useBuddyStore((s) => s.activeMatch);
@@ -56,6 +58,7 @@ export default function MessagesScreen() {
     if (!user) return;
 
     fetchConversations(user.id);
+    fetchMessageRequests(user.id);
     fetchActiveMatch(user.id);
     const channel = subscribeToConversations(user.id);
     return () => { if (channel) unsubscribeChannel(channel); };
@@ -64,6 +67,7 @@ export default function MessagesScreen() {
   const handleRefresh = useCallback(() => {
     if (user) {
       fetchConversations(user.id);
+      fetchMessageRequests(user.id);
       fetchActiveMatch(user.id);
     }
   }, [user?.id]);
@@ -350,19 +354,42 @@ export default function MessagesScreen() {
               : 'Sohbetlerin burada'}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => router.push('/chat/new')}
-          activeOpacity={0.7}
-        >
-          <LinearGradient
-            colors={[Colors.primary, Colors.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.composeButton}
+        <View style={styles.headerRight}>
+          {requestCount > 0 && (
+            <TouchableOpacity
+              onPress={() => { haptic.light(); router.push('/messages/requests'); }}
+              style={styles.requestsButton}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.requestsButtonText, { color: Colors.primary }]}>
+                İstekler
+              </Text>
+              <LinearGradient
+                colors={[Colors.primary, Colors.accent]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.requestsBadge}
+              >
+                <Text style={styles.requestsBadgeText}>
+                  {requestCount > 99 ? '99+' : requestCount}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => router.push('/chat/new')}
+            activeOpacity={0.7}
           >
-            <Ionicons name="create-outline" size={20} color="#FFF" />
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={[Colors.primary, Colors.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.composeButton}
+            >
+              <Ionicons name="create-outline" size={20} color="#FFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </Animated.View>
 
       {/* Search bar */}
@@ -456,6 +483,33 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.body,
     marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  requestsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  requestsButtonText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+  },
+  requestsBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  requestsBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontFamily: FontFamily.headingBold,
   },
   composeButton: {
     width: 44,
