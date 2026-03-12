@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { supabase } from '../../lib/supabase';
 import { MOCK_USERS, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
-import { Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { useBlockStore } from '../../stores/blockStore';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { User, Post } from '../../types';
@@ -35,6 +37,10 @@ export default function UserProfileScreen() {
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isBlockedByMe = useBlockStore((s) => s.isBlocked(id || ''));
+  const blockUser = useBlockStore((s) => s.blockUser);
+  const unblockUser = useBlockStore((s) => s.unblockUser);
+  const [isBlockedBetween, setIsBlockedBetween] = useState(false);
 
   useEffect(() => {
     if (id) loadUserProfile(id);
@@ -102,6 +108,10 @@ export default function UserProfileScreen() {
           .eq('following_id', userId)
           .single();
         setIsFollowing(!!followData);
+
+        // Check block status
+        const blocked = await useBlockStore.getState().checkBlockedBetween(currentUser.id, userId);
+        setIsBlockedBetween(blocked);
       }
     } catch {
       // Mock fallback
@@ -124,6 +134,7 @@ export default function UserProfileScreen() {
       router.push('/auth/login');
       return;
     }
+    if (isBlockedBetween) return;
 
     const prevFollowing = isFollowing;
     const prevStats = { ...stats };
@@ -171,6 +182,10 @@ export default function UserProfileScreen() {
       router.push('/auth/login');
       return;
     }
+    if (isBlockedBetween) {
+      Alert.alert('Engellendi', 'Bu kullanıcıyla iletişim kuramazsın.');
+      return;
+    }
     const convId = await useMessageStore.getState().fetchOrCreateConversation(currentUser.id, id);
     if (convId) {
       router.push(`/chat/${convId}`);
@@ -209,6 +224,50 @@ export default function UserProfileScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.notFoundBackButtonText}>Geri Dön</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Blocked state
+  if (isBlockedByMe && profileUser) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
+        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{profileUser.username}</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.notFoundContent}>
+          <Ionicons name="ban" size={48} color={colors.textTertiary} />
+          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Bu kullanıcıyı engelledin</Text>
+          <TouchableOpacity
+            style={[styles.notFoundBackButton, { backgroundColor: colors.textTertiary }]}
+            onPress={() => {
+              Alert.alert(
+                'Engeli Kaldır',
+                `${profileUser.full_name || profileUser.username} kullanıcısının engelini kaldırmak istiyor musun?`,
+                [
+                  { text: 'İptal', style: 'cancel' },
+                  {
+                    text: 'Engeli Kaldır',
+                    onPress: async () => {
+                      if (currentUser) {
+                        await unblockUser(currentUser.id, id!);
+                        setIsBlockedBetween(false);
+                        loadUserProfile(id!);
+                      }
+                    },
+                  },
+                ],
+              );
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.notFoundBackButtonText}>Engeli Kaldır</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -281,6 +340,30 @@ export default function UserProfileScreen() {
               >
                 <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
                 <Text style={[styles.messageButtonText, { color: colors.primary }]}>Mesaj At</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.messageButton, { borderColor: Colors.error }]}
+                onPress={() => {
+                  if (!currentUser || !id) return;
+                  Alert.alert(
+                    'Engelle',
+                    `${profileUser.full_name || profileUser.username} kullanıcısını engellemek istediğine emin misin?`,
+                    [
+                      { text: 'İptal', style: 'cancel' },
+                      {
+                        text: 'Engelle',
+                        style: 'destructive',
+                        onPress: async () => {
+                          await blockUser(currentUser.id, id);
+                          setIsBlockedBetween(true);
+                        },
+                      },
+                    ],
+                  );
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="ban" size={16} color={Colors.error} />
               </TouchableOpacity>
             </View>
           )}
