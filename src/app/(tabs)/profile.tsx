@@ -125,6 +125,135 @@ function XPProgressBar({ xp, colors }: { xp: number; colors: any }) {
   );
 }
 
+// Profile Completion Banner
+function ProfileCompletionBanner({ user, colors }: { user: any; colors: any }) {
+  const router = useRouter();
+
+  const fields = [
+    { key: 'full_name', check: !!user.full_name?.trim() },
+    { key: 'username', check: !!user.username?.trim() },
+    { key: 'avatar_url', check: !!user.avatar_url, label: '📷 Fotoğraf Ekle', bg: colors.primarySoft, textColor: Colors.primary },
+    { key: 'bio', check: !!user.bio?.trim(), label: '✏️ Biyografi Yaz', bg: colors.accentSoft, textColor: Colors.accentDark },
+    { key: 'university', check: !!user.university?.trim(), label: '🎓 Üniversite Seç', bg: 'rgba(59,130,246,0.1)', textColor: '#3B82F6' },
+  ];
+
+  const completedCount = fields.filter(f => f.check).length;
+  const percentage = Math.round((completedCount / fields.length) * 100);
+  const missingFields = fields.filter(f => !f.check && f.label);
+
+  // Hooks must be called before any conditional return (Rules of Hooks)
+  const progress = useSharedValue(0);
+  const pct = completedCount / fields.length;
+
+  useEffect(() => {
+    progress.value = withDelay(400, withSpring(pct, SpringConfig.gentle));
+  }, [completedCount]);
+
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%` as any,
+  }));
+
+  if (percentage === 100) return null;
+
+  return (
+    <View style={[completionStyles.card, { backgroundColor: colors.background, borderColor: colors.primarySoft }]}>
+      <View style={completionStyles.header}>
+        <View style={completionStyles.headerLeft}>
+          <Text style={completionStyles.headerEmoji}>🎯</Text>
+          <Text style={[completionStyles.headerTitle, { color: colors.text }]}>Profilini Tamamla</Text>
+        </View>
+        <Text style={[completionStyles.headerPercent, { color: Colors.primary }]}>%{percentage}</Text>
+      </View>
+
+      <View style={[completionStyles.track, { backgroundColor: colors.border }]}>
+        <Animated.View style={[completionStyles.fill, barStyle]}>
+          <LinearGradient
+            colors={[Colors.primary, Colors.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      </View>
+
+      <View style={completionStyles.chipsRow}>
+        {missingFields.map((field) => (
+          <TouchableOpacity
+            key={field.key}
+            style={[completionStyles.chip, { backgroundColor: field.bg }]}
+            onPress={() => { haptic.selection(); router.push('/profile/edit'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={[completionStyles.chipText, { color: field.textColor }]}>
+              {field.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const completionStyles = StyleSheet.create({
+  card: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  headerEmoji: { fontSize: 16 },
+  headerTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+  },
+  headerPercent: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+  },
+  track: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: Spacing.xsm,
+    borderRadius: BorderRadius.sm,
+  },
+  chipText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+});
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
@@ -414,15 +543,20 @@ export default function ProfileScreen() {
               )}
             </Animated.View>
 
+            {/* Profile Completion Banner */}
+            <Animated.View entering={FadeInDown.delay(150).springify().damping(20).stiffness(300)}>
+              <ProfileCompletionBanner user={user} colors={colors} />
+            </Animated.View>
+
             {/* XP Progress Bar */}
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(20).stiffness(300)}>
+            <Animated.View entering={FadeInDown.delay(250).springify().damping(20).stiffness(300)}>
               <View style={{ paddingHorizontal: Spacing.lg, marginTop: Spacing.md }}>
                 <XPProgressBar xp={user.xp_points || 250} colors={colors} />
               </View>
             </Animated.View>
 
             {/* Stats Row — animated counters */}
-            <Animated.View entering={FadeInDown.delay(300).springify().damping(20).stiffness(300)}>
+            <Animated.View entering={FadeInDown.delay(350).springify().damping(20).stiffness(300)}>
               <GlassView
                 style={[styles.statsCard, Platform.OS === 'ios' && styles.statsCardGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
                 fallbackColor={colors.background}
@@ -438,7 +572,7 @@ export default function ProfileScreen() {
             </Animated.View>
 
             {/* Tab Switch — with animated indicator */}
-            <Animated.View entering={FadeInDown.delay(400).springify().damping(20).stiffness(300)}>
+            <Animated.View entering={FadeInDown.delay(450).springify().damping(20).stiffness(300)}>
               <View style={[styles.tabContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <Animated.View
                   style={[
@@ -516,7 +650,7 @@ export default function ProfileScreen() {
 
             {/* Badges Section */}
             {badges.length > 0 && (
-              <Animated.View entering={FadeInDown.delay(450).springify().damping(20).stiffness(300)}>
+              <Animated.View entering={FadeInDown.delay(500).springify().damping(20).stiffness(300)}>
                 <View style={styles.badgesSection}>
                   <View style={styles.badgesSectionHeader}>
                     <Ionicons name="trophy" size={18} color={Colors.accent} />
