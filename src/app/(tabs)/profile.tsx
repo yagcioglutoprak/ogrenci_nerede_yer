@@ -134,7 +134,7 @@ function ProfileCompletionBanner({ user, colors }: { user: any; colors: any }) {
     { key: 'username', check: !!user.username?.trim() },
     { key: 'avatar_url', check: !!user.avatar_url, label: '📷 Fotoğraf Ekle', bg: colors.primarySoft, textColor: Colors.primary },
     { key: 'bio', check: !!user.bio?.trim(), label: '✏️ Biyografi Yaz', bg: colors.accentSoft, textColor: Colors.accentDark },
-    { key: 'university', check: !!user.university?.trim(), label: '🎓 Üniversite Seç', bg: 'rgba(59,130,246,0.1)', textColor: Colors.info },
+    { key: 'university', check: !!user.university?.trim(), label: '🎓 Okul Seç', bg: 'rgba(59,130,246,0.1)', textColor: Colors.info },
   ];
 
   const completedCount = fields.filter(f => f.check).length;

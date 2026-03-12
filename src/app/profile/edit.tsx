@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Alert, Image, ActivityIndicator,
+  FlatList, Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,14 +11,20 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/c
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { uploadImage } from '../../lib/imageUpload';
+import { useDebounce } from '../../hooks/useDebounce';
+import SCHOOLS from '../../data/schools.json';
 
-const UNIVERSITIES = [
-  'İstanbul Üniversitesi', 'İstanbul Teknik Üniversitesi', 'Boğaziçi Üniversitesi',
-  'Marmara Üniversitesi', 'Yıldız Teknik Üniversitesi', 'Galatasaray Üniversitesi',
-  'Medipol Üniversitesi', 'Sabancı Üniversitesi', 'Koç Üniversitesi',
-  'Bahçeşehir Üniversitesi', 'Bilgi Üniversitesi', 'Özyeğin Üniversitesi',
-  'Kültür Üniversitesi', 'Diğer',
-];
+function normalizeTurkish(text: string): string {
+  return text
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ö/g, 'ö')
+    .replace(/Ç/g, 'ç')
+    .toLowerCase();
+}
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -30,8 +37,19 @@ export default function ProfileEditScreen() {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [saving, setSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [showUniPicker, setShowUniPicker] = useState(false);
   const [nameError, setNameError] = useState('');
+
+  const [schoolSearch, setSchoolSearch] = useState('');
+  const [showSchoolPicker, setShowSchoolPicker] = useState(false);
+  const debouncedSearch = useDebounce(schoolSearch, 200);
+
+  const filteredSchools = useMemo(() => {
+    if (!debouncedSearch.trim()) return [];
+    const query = normalizeTurkish(debouncedSearch.trim());
+    return SCHOOLS.filter(
+      (s: { name: string }) => normalizeTurkish(s.name).includes(query)
+    ).slice(0, 20);
+  }, [debouncedSearch]);
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -48,7 +66,6 @@ export default function ProfileEditScreen() {
       if (url) {
         setAvatarUrl(url);
       } else {
-        // Fallback to local URI if upload fails, warn user
         setAvatarUrl(localUri);
         Alert.alert('Uyarı', error || 'Fotoğraf yüklenemedi, yerel dosya kullanılacak');
       }
@@ -79,6 +96,13 @@ export default function ProfileEditScreen() {
     }
   };
 
+  const handleSelectSchool = (name: string) => {
+    setUniversity(name);
+    setSchoolSearch('');
+    setShowSchoolPicker(false);
+    Keyboard.dismiss();
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
@@ -95,7 +119,7 @@ export default function ProfileEditScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.avatarContainer} onPress={handlePickAvatar} disabled={avatarUploading}>
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -153,29 +177,88 @@ export default function ProfileEditScreen() {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Üniversite</Text>
-          <TouchableOpacity
-            style={[styles.input, styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => setShowUniPicker(!showUniPicker)}
-          >
-            <Text style={{ color: university ? colors.text : colors.textTertiary, fontSize: FontSize.md }}>
-              {university || 'Üniversite seçin'}
-            </Text>
-            <Ionicons name="chevron-down" size={18} color={colors.textTertiary} />
-          </TouchableOpacity>
-          {showUniPicker && (
-            <View style={[styles.uniList, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-              <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                {UNIVERSITIES.map((uni) => (
-                  <TouchableOpacity
-                    key={uni}
-                    style={[styles.uniItem, university === uni && { backgroundColor: Colors.primarySoft }]}
-                    onPress={() => { setUniversity(uni); setShowUniPicker(false); }}
-                  >
-                    <Text style={{ color: colors.text, fontSize: FontSize.md, fontFamily: FontFamily.body }}>{uni}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Okul</Text>
+          {university && !showSchoolPicker ? (
+            <TouchableOpacity
+              style={[styles.input, styles.selectedSchool, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
+              onPress={() => setShowSchoolPicker(true)}
+            >
+              <View style={styles.selectedSchoolContent}>
+                <Ionicons name="school-outline" size={18} color={Colors.primary} />
+                <Text style={[styles.selectedSchoolText, { color: colors.text }]} numberOfLines={1}>
+                  {university}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => { setUniversity(''); setShowSchoolPicker(true); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          ) : (
+            <View>
+              <View style={[styles.input, styles.searchInputRow, { borderColor: showSchoolPicker ? Colors.primary : colors.border, backgroundColor: colors.backgroundSecondary }]}>
+                <Ionicons name="search" size={18} color={colors.textTertiary} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  value={schoolSearch}
+                  onChangeText={(text) => {
+                    setSchoolSearch(text);
+                    if (!showSchoolPicker) setShowSchoolPicker(true);
+                  }}
+                  onFocus={() => setShowSchoolPicker(true)}
+                  placeholder="Okul ara..."
+                  placeholderTextColor={colors.textTertiary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {schoolSearch ? (
+                  <TouchableOpacity onPress={() => setSchoolSearch('')}>
+                    <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                ) : null}
+              </View>
+              {showSchoolPicker && debouncedSearch.trim() !== '' && (
+                <View style={[styles.schoolList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  {filteredSchools.length > 0 ? (
+                    <FlatList
+                      data={filteredSchools}
+                      keyExtractor={(item) => item.name}
+                      keyboardShouldPersistTaps="handled"
+                      style={{ maxHeight: 200 }}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={[styles.schoolItem, university === item.name && { backgroundColor: colors.primarySoft }]}
+                          onPress={() => handleSelectSchool(item.name)}
+                        >
+                          <View style={styles.schoolItemContent}>
+                            <Ionicons
+                              name={item.type === 'university' ? 'school-outline' : 'book-outline'}
+                              size={16}
+                              color={university === item.name ? Colors.primary : colors.textTertiary}
+                            />
+                            <View style={styles.schoolItemText}>
+                              <Text style={[styles.schoolName, { color: colors.text }]} numberOfLines={1}>
+                                {item.name}
+                              </Text>
+                              <Text style={[styles.schoolLocation, { color: colors.textTertiary }]} numberOfLines={1}>
+                                {item.location}
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  ) : (
+                    <View style={styles.noResults}>
+                      <Text style={[styles.noResultsText, { color: colors.textTertiary }]}>
+                        Sonuç bulunamadı
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -219,9 +302,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  pickerBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  uniList: { borderWidth: 1, borderRadius: BorderRadius.md, overflow: 'hidden' },
-  uniItem: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  selectedSchool: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  selectedSchoolContent: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+  },
+  selectedSchoolText: {
+    fontSize: FontSize.md, fontFamily: FontFamily.body, flex: 1,
+  },
+  searchInputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.body,
+    paddingVertical: 0,
+  },
+  schoolList: {
+    borderWidth: 1, borderRadius: BorderRadius.md, marginTop: Spacing.xs,
+    overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+  },
+  schoolItem: {
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+  },
+  schoolItemContent: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+  },
+  schoolItemText: { flex: 1 },
+  schoolName: {
+    fontSize: FontSize.md, fontFamily: FontFamily.body,
+  },
+  schoolLocation: {
+    fontSize: FontSize.xs, fontFamily: FontFamily.body, marginTop: 1,
+  },
+  noResults: {
+    paddingVertical: Spacing.xl, alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: FontSize.sm, fontFamily: FontFamily.body,
+  },
   inlineError: {
     flexDirection: 'row',
     alignItems: 'center',

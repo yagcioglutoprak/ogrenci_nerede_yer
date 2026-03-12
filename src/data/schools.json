@@ -1,0 +1,5362 @@
+[
+  {
+    "name": "100. Yıl Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "15 Temmuz Gazileri Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "15 Temmuz Şehitler Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "15 Temmuz Şehitleri Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "2. Mehmet Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "30 Ağustos Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "50. Yıl Cumhuriyet Feridun Tümer Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "50. Yıl Tahran Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "75. Yıl Cumhuriyet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "75. Yıl Cumhuriyet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "80.Yıl Nuh Çimento Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Abdulkadir Aksu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Abdullah Gül Üniversitesi",
+    "type": "university",
+    "location": "Kayseri"
+  },
+  {
+    "name": "Abdurrahman Gürses Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Abdurrahman Ve Nermin Bilimli Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Abidin Nesimi Fatinoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Acıbadem Mehmet Ali Aydınlar Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Adalar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Adalar"
+  },
+  {
+    "name": "Adana Bilim Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "Adana"
+  },
+  {
+    "name": "Adile Mermerci Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Adnan Menderes Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Adıyaman Üniversitesi",
+    "type": "university",
+    "location": "Adıyaman"
+  },
+  {
+    "name": "Afyon Kocatepe Üniversitesi",
+    "type": "university",
+    "location": "Afyonkarahisar"
+  },
+  {
+    "name": "Afyonkarahisar Sağlık Bilimleri Üniversitesi",
+    "type": "university",
+    "location": "Afyonkarahisar"
+  },
+  {
+    "name": "Ahi Evran Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Ahi Evren Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Ahmet Arayıcı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Ahmet Buhan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Ahmet Keleşoğlu Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ahmet Rasim Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Ahmet Ratıp Paşa Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Ahmet Yesevi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Ahmet Yesevi Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Ahmet Ünal Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Ahmet Şişman Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Akbaba Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Akdeniz Üniversitesi",
+    "type": "university",
+    "location": "Antalya"
+  },
+  {
+    "name": "Akif İnan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Aksaray Üniversitesi",
+    "type": "university",
+    "location": "Aksaray"
+  },
+  {
+    "name": "Aksoy Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Akşemsettin Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Akşemsettin Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Alaeddin Yavaşça Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükcekmece"
+  },
+  {
+    "name": "Alanya Alaaddin Keykubat Üniversitesi",
+    "type": "university",
+    "location": "Antalya"
+  },
+  {
+    "name": "Alanya Hamdullah Emin Paşa Üniversitesi",
+    "type": "university",
+    "location": "Antalya"
+  },
+  {
+    "name": "Alemdağ Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Ali Akkanat Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Ali Fuat Başgil Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Ali Fuat Cebesoy Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Ali Kul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Ali Nar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Ali Osman Keçici Sosyal Bilimler Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Ali Rıza Özderici Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Ali Yakup Cenkçiler Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Ali Şükrü Sula Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Alibeyköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Alibeyköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Aliya İzzetbegoviç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Alkop Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Alparslan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Alparslan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Altınbaş Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Amasya Üniversitesi",
+    "type": "university",
+    "location": "Amasya"
+  },
+  {
+    "name": "Amiral Vehbi Ziya Dümer Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Anadolu Üniversitesi",
+    "type": "university",
+    "location": "Eskişehir"
+  },
+  {
+    "name": "Anka Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Hacı Bayram Veli Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Medipol Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Müzik Ve Güzel Sanatlar Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Sosyal Bilimler Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Yıldırım Beyazıt Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ankara Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Antalya Akev Üniversitesi",
+    "type": "university",
+    "location": "Antalya"
+  },
+  {
+    "name": "Antalya Bilim Üniversitesi",
+    "type": "university",
+    "location": "Antalya"
+  },
+  {
+    "name": "Araştırma Geliştirme Eğitim Ve Uygulama Merkezi Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Ardahan Üniversitesi",
+    "type": "university",
+    "location": "Ardahan"
+  },
+  {
+    "name": "Arnavutköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Arnavutköy Korkmaz Yiğit Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Arnavutköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Artvin Çoruh Üniversitesi",
+    "type": "university",
+    "location": "Artvin"
+  },
+  {
+    "name": "Asiye Ağaoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Asım Kibar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Asım Ülker Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Atakent Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Atakent Şehit Selçuk Paker Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ataköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Ataköy Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Atalar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Atatürk Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Atatürk Üniversitesi",
+    "type": "university",
+    "location": "Erzurum"
+  },
+  {
+    "name": "Ataşehir 100. Yıl Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ataşehir Adıgüzel Meslek Yüksekokulu",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Ataşehir Dilek Sabancı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ataşehir İbrahim Müteferrika Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ataşehir Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ataşehir Remzi Bayraktar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ataşehir Rotary Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Atilla Uras Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Atılım Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Atışalanı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Avcılar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Avcılar Firuzköy Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Avcılar Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Avcılar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Avcılar Saide Zorlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Avrasya Üniversitesi",
+    "type": "university",
+    "location": "Trabzon"
+  },
+  {
+    "name": "Avrupa Meslek Yüksekokulu",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Ayazağa Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Ayazağa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Aydoğan Öztiryaki Tim Sander Dış Ticaret Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Aydın Adnan Menderes Üniversitesi",
+    "type": "university",
+    "location": "Aydın"
+  },
+  {
+    "name": "Aydın Doğan Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ayhan Arı Borsa İstanbul Meslekî Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Ayşe Ege Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Ayşe Erkan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Ayşe Hümeyra Ökten Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Aziz Mahmud Hüdayi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Aziz Sancar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Aziz Sancar Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Ağrı İbrahim Çeçen Üniversitesi",
+    "type": "university",
+    "location": "Ağrı"
+  },
+  {
+    "name": "Ağva Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Aşık Veysel Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Bahattin Yıldız Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Bahçelievler Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Aydın Doğan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Türk Telekom Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Türkiye Gazetesi Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçelievler Şehit Osman Yıldız Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Bahçeşehir Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Bahçeşehir Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Bahçeşehir Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Bakırköy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Bakırköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Bakırköy Göksel Baktagir Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Bakırköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Bakırköy Nüket Ercan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Bakırköy Özyazıcı Özel Eğitim Meslek Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Balıkesir Üniversitesi",
+    "type": "university",
+    "location": "Balıkesir"
+  },
+  {
+    "name": "Bandırma Onyedi Eylül Üniversitesi",
+    "type": "university",
+    "location": "Balıkesir"
+  },
+  {
+    "name": "Barbaros Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bartın Üniversitesi",
+    "type": "university",
+    "location": "Bartın"
+  },
+  {
+    "name": "Batman Üniversitesi",
+    "type": "university",
+    "location": "Batman"
+  },
+  {
+    "name": "Bayburt Üniversitesi",
+    "type": "university",
+    "location": "Bayburt"
+  },
+  {
+    "name": "Baykar Milli Teknoloji Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Bayrampaşa Aliya İzzetbegoviç Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Bayrampaşa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Bayrampaşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Bayrampaşa Saraybosna Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Bağcılar Akşemsettin Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Aydın Doğan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Edip İplik Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Fatih Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Gazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Hikmet Barutçugil Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bagcılar"
+  },
+  {
+    "name": "Bağcılar İbni Sina Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağcılar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Bağlarbaşı Pazarlama Ve Perakende Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Başakşehir Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Başakşehir İstanbul Teknik Üniversitesi İsmail Dede Efendi Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Başakşehir Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Başkent Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Behiye Dr.Nevhiz Işıl Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Behçet Canbaz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Behçet Kemal Çağlar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Beykent Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Beykoz Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Beykoz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Beykoz Barbaros Hayrettin Paşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Beykoz Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Beykoz Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Beylikdüzü Azem Yükseloğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beylikdüzü Aşık Veysel Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beylikdüzü Borsa İstanbul Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beylikdüzü Cahit Zarifoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beylikdüzü Mimar Sinan Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beylikdüzü Şehit Şafak Evran Meslekî Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beyoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Beyoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Beyoğlu Mustafa Kandıralı Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Bezm-i Âlem Vakıf Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Bezmialem Valide Sultan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Beşiktaş Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Beşiktaş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Beşiktaş Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Beşiktaş Sakıp Sabancı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Beşir Balcıoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Beşyol Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükcekmece"
+  },
+  {
+    "name": "Bilecik Şeyh Edebali Üniversitesi",
+    "type": "university",
+    "location": "Bilecik"
+  },
+  {
+    "name": "Bingöl Üniversitesi",
+    "type": "university",
+    "location": "Bingöl"
+  },
+  {
+    "name": "Bingül Erdem Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Binkılıç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Biruni Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Bitlis Eren Üniversitesi",
+    "type": "university",
+    "location": "Bitlis"
+  },
+  {
+    "name": "Bolluca Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Bolu Abant İzzet Baysal Üniversitesi",
+    "type": "university",
+    "location": "Bolu"
+  },
+  {
+    "name": "Borsa İstanbul Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Borsa İstanbul Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Borsa İstanbul Başakşehir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Borsa İstanbul Ispartakule Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Borsa İstanbul Muhsin Yazıcıoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Borsa İstanbul Zeytinburnu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Borusan Asım Kocabıyık Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Boğaziçi Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Boğaziçi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Boğaziçi Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Burak Bora Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Burdur Mehmet Akif Ersoy Üniversitesi",
+    "type": "university",
+    "location": "Burdur"
+  },
+  {
+    "name": "Burhan Felek Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Bursa Teknik Üniversitesi",
+    "type": "university",
+    "location": "Bursa"
+  },
+  {
+    "name": "Bursa Uludağ Üniversitesi",
+    "type": "university",
+    "location": "Bursa"
+  },
+  {
+    "name": "Bülent Akarcalı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Büyükyalı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Büyükçekmece Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Celaliye Mübeccel Hayrettin Gazioğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Hayriye Duruk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Recep Güngör Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükçekmece Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Büyükşehir Hüseyin Yıldız Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Cahit Zarifoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Cağaloğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Cağaloğlu Hüsamettin Yivlik Geleneksel Türk Sanatları Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Cağaloğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Celal Aras Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Celal Aras Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Cemil Meriç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Cemil Meriç Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Cengizhan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Cevizli Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Cibali Şehit İlhan Varank Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Cumhuriyet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Cumhuriyet Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Davutpaşa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Dede Korkut Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Demirören Medya Ve Teknoloji Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Değirmenköy Borsa İstanbul Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Dicle Üniversitesi",
+    "type": "university",
+    "location": "Diyarbakır"
+  },
+  {
+    "name": "Dilnihat Özyeğin Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Dinçkök Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Dokuz Eylül Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "Doç. Dr. Burhan Bahriyeli Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Doğan Cüceloğlu Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükcekmece"
+  },
+  {
+    "name": "Doğuş Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Dr. Kemal Naci Ekşi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Dr. Sadık Ahmet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Dr.Oktay Duran Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Dr.Vasıf Topçu Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Dudullu Amanetoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Durusu Hüseyin Ökten Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Dündar Uçar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Düzce Üniversitesi",
+    "type": "university",
+    "location": "Düzce"
+  },
+  {
+    "name": "E.C.A Elginkan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Eczacı Neşem Özlen Güray Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ege Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "Ekrem Cevahir Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Emin Yükseloğlu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Emlak Konut Bahçekent Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Emlak Konut Mimar Sinan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Enerjisa İstanbul Meslekî Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Erciyes Üniversitesi",
+    "type": "university",
+    "location": "Kayseri"
+  },
+  {
+    "name": "Erenköy Kız Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Erhan Dedeoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Erhan Gedikbaşı Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Erkut Soyak Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ertuğrul Gazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Erzincan Binali Yıldırım Üniversitesi",
+    "type": "university",
+    "location": "Erzincan"
+  },
+  {
+    "name": "Erzurum Teknik Üniversitesi",
+    "type": "university",
+    "location": "Erzurum"
+  },
+  {
+    "name": "Esatpaşa Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Esenler Güzide Özdilek Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Esenler Menderes Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Esenler Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Esenler Tuna Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Esenyurt Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Esenyurt Kıraç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Esenyurt Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Esenyurt Nakipoğlu Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Esenyurt Sezai Karakoç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Esenyurt Toki Ali Duran Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Eskişehir Osmangazi Üniversitesi",
+    "type": "university",
+    "location": "Eskişehir"
+  },
+  {
+    "name": "Eskişehir Teknik Üniversitesi",
+    "type": "university",
+    "location": "Eskişehir"
+  },
+  {
+    "name": "Etiler Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Etiler Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Evliya Çelebi Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Evliya Çelebi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Eyüp Alibeyköy Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüp Şehit Furkan Doğan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüpsultan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüpsultan Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüpsultan Hacı Osman Torun Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüpsultan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eyüpsultan Vatan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Eşref Bitlis Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Fahreddin Kerim Gökay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Faruk Nafiz Çamlıbel Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Faruk Saraç Tasarım Meslek Yüksekokulu",
+    "type": "university",
+    "location": "Bursa"
+  },
+  {
+    "name": "Fatih Atatürk Çağdaş Yaşam Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Fatih Gelenbevi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Fatih Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Fatih Sultan Mehmet Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Fatih Sultan Mehmet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Fatih Sultan Mehmet Vakıf Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Fatih Sultan Mehmet Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Fatin Rüştü Zorlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Fatma Talip Kahraman Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Fatma Zehra Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Fehmi Yılmaz Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Fenerbahce Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Fenerbahçe Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Fethi Gemuhluoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Fevzi Çakmak Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Florya Tevfik Ercan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Fuat Sezgin Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Fuat Sezgin Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Füsun Yönder Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Fındıklı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Fırat Üniversitesi",
+    "type": "university",
+    "location": "Elazığ"
+  },
+  {
+    "name": "Galata Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Galata Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Galatasaray Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Galatasaray Üniversitesi Galatasaray Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Gazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Gazi Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Gazi Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Gaziantep Bilim Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "Gaziantep"
+  },
+  {
+    "name": "Gaziantep Üniversitesi",
+    "type": "university",
+    "location": "Gaziantep"
+  },
+  {
+    "name": "Gaziosmanpaşa Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Gaziosmanpaşa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Gaziosmanpaşa Fahrettin Özüdoğru Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Gaziosmanpaşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Gaziosmanpaşa Süleyman Şah Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Gebze Teknik Üniversitesi",
+    "type": "university",
+    "location": "Kocaeli"
+  },
+  {
+    "name": "General Ali Rıza Ersin Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Giresun Üniversitesi",
+    "type": "university",
+    "location": "Giresun"
+  },
+  {
+    "name": "Göktürk Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Gönüllü Hizmet Vakfı İnal Aydınoğlu Sosyal Bilimler Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Gönüllü Hizmet Vakfı Mustafa Saffet Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Gözcübaba Nusret Sunuk Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Göztepe İhsan Kurşunoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Gülizar Zeki Obdan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Gülten Özaydın Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Gültepe Şehit Cihan Erat Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Gümüşhane Üniversitesi",
+    "type": "university",
+    "location": "Gümüşhane"
+  },
+  {
+    "name": "Gümüşpala Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Gümüşyaka Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Güner Akın Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Güngören Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Güngören Erdem Bayazıt Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Güngören Gençosman Borsa İstanbul Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Güngören İstanbul Ticaret Odası Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Güngören Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Güngören Tuncay Azaphan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Gürlek Nakipoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Gürpınar Azime Yılmaz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Gürpınar Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Gürpınar İsmail Lütfi Çakan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Güzelyurt Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Güç Kardeşler Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Habibler Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Habire Yahşi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Hacettepe Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Hacı Ayşe Ateş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Hacı Bektaş Veli Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Hacı Fatma Gül Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Hacı Fatma Gül Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Hacı Hatice Bayraktar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Hacı İsmail Gündoğdu Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Hacı Mehmet Özdemir Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Hacı Rahime Ulusoy Denizcilik Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Hacı Sabancı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Hacı Şöhret Demiröz Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Hadımköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Hadımköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Hadımköy Toki Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Hakkari Üniversitesi",
+    "type": "university",
+    "location": "Hakkari"
+  },
+  {
+    "name": "Hakkı Demir Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Halide Edip Adıvar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Halide Edip Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Halil Akkanat Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Halil Bekmezci Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Halil İnalcık Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Halil Rıfat Paşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Halit Armay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Haliç Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Halkalı Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Halkalı Borsa İstanbul Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Halkalı Mehmet Akif Ersoy Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Halkalı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Haluk Ündeğer Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Hamidiye Etfal Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Handan Hayrettin Yelkikanat Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Harezmi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Harran Üniversitesi",
+    "type": "university",
+    "location": "Şanlıurfa"
+  },
+  {
+    "name": "Hasan Celal Güzel Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Hasan Ferruh Özgen Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Hasan Kalyoncu Üniversitesi",
+    "type": "university",
+    "location": "Gaziantep"
+  },
+  {
+    "name": "Hasan Polatkan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Hasan Şadoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Hasbahçe Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Hatay Mustafa Kemal Üniversitesi",
+    "type": "university",
+    "location": "Hatay"
+  },
+  {
+    "name": "Haydar Akçelik Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Haydar Akın Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Haydarpaşa Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Haydarpaşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Hayreddin Karaman Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Hayrullah Kefoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Henza Akın Çolakoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Heybeliada Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Adalar"
+  },
+  {
+    "name": "Hezarfen Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Hikmet Nazif Kurşunoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Hitit Üniversitesi",
+    "type": "university",
+    "location": "Çorum"
+  },
+  {
+    "name": "Hürriyet Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Hürriyet Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Hüseyin Avni Sipahi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Hüseyin Avni Sözen Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Hüseyin Bürge Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Hüseyin Erkan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Hüseyin Rahmi Gürpınar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Adalar"
+  },
+  {
+    "name": "Hüsnü M. Özyeğin Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Hüsnü Özyeğin Vakfı Alemdağ Tunç Çapa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Hızır Reis Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Isparta Uygulamalı Bilimler Üniversitesi",
+    "type": "university",
+    "location": "Isparta"
+  },
+  {
+    "name": "Iğdır Üniversitesi",
+    "type": "university",
+    "location": "Iğdır"
+  },
+  {
+    "name": "Işık Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İ Amire Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "İ Sina Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "İ.Ü. Devlet Konservatuvarı Müzik Ve Sahne Sanatları Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "İbb Yavuz Sultan Selim Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "İbb Yavuz Sultan Selim Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "İbn Haldun Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İbrahim Turhan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "İbrahim Turhan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "İbrahim Yirik Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "İbrahim Özaydın Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "İhkib Avcılar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "İhkib Kağıthane Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "İhkib Yenibosna Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "İhsan Doğramacı Bilkent Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "İhsan Mermerci Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "İhsan Nakipoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "İlhan Alanyalı Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "İmmib Erkan Avcı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "İntaş Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "İnönü Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "İnönü Üniversitesi",
+    "type": "university",
+    "location": "Malatya"
+  },
+  {
+    "name": "İskenderun Teknik Üniversitesi",
+    "type": "university",
+    "location": "Hatay"
+  },
+  {
+    "name": "İsmail Biçer Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "İsmet Aktar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "İstanbul 29 Mayıs Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "İstanbul Arel Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "İstanbul Atatürk Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "İstanbul Atlas Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Avni Akyol Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "İstanbul Aydın Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Ayvansaray Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Bilgi Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Bilim Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Büyükşehir Şehit Şerife Bacı Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "İstanbul Erkek Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "İstanbul Esenyurt Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Gedik Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Gelişim Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Havalimanı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "İstanbul Kadıköy Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "İstanbul Kent Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Kültür Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "İstanbul Medeniyet Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Medipol Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Okan Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Prof Faik Somer Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "İstanbul Recep Tayyip Erdoğan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "İstanbul Rumeli Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Sabahattin Zaim Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Teknik Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Teknik Üniversitesi Devlet Konservatuvarı Müzik Ve Sahne Sanatları Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "İstanbul Teknik Üniversitesi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "İstanbul Ticaret Odası 15 Temmuz Şehitleri Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "İstanbul Ticaret Odası Beylikdüzü Osb Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "İstanbul Ticaret Odası Marmara Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "İstanbul Ticaret Odası Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "İstanbul Ticaret Odası Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "İstanbul Ticaret Odası Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "İstanbul Ticaret Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Vali Hayri Kozakçıoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "İstanbul Yeni Yüzyıl Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Üniversitesi - Cerrahpaşa",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Üniversitesi Itri Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "İstanbul Üsküdar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "İstanbul Şehir Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstanbul Şişli Meslek Yüksekokulu",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İstinye Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "İstinye Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İto Başakşehir Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "İto İbrahim Çağlar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "İtosb Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "İzmir Bakırçay Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzmir Demokrasi Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzmir Ekonomi Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzmir Katip Çelebi Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzmir Kavram Meslek Yüksekokulu",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "İzmir Tınaztepe Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzmir Yüksek Teknoloji Enstitüsü",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "İzzet Ünver Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Kabatas Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Kabataş Erkek Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Kadir Has Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Kadir Has Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Kadri Yörükoğlu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Kadriye Moroğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Kadıköy Ahmet Sani Gezici Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadıköy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadıköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadıköy Göztepe Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadıköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadıköy Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadiköy"
+  },
+  {
+    "name": "Kadıköy Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kadırga Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Kafkas Üniversitesi",
+    "type": "university",
+    "location": "Kars"
+  },
+  {
+    "name": "Kahramanmaraş İstiklal Üniversitesi",
+    "type": "university",
+    "location": "Kahramanmaraş"
+  },
+  {
+    "name": "Kahramanmaraş Sütçü İmam Üniversitesi",
+    "type": "university",
+    "location": "Kahramanmaraş"
+  },
+  {
+    "name": "Kandilli Kız Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Kapadokya Üniversitesi",
+    "type": "university",
+    "location": "Nevşehir"
+  },
+  {
+    "name": "Kaptanı Derya Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Karabük Üniversitesi",
+    "type": "university",
+    "location": "Karabük"
+  },
+  {
+    "name": "Karadeniz Teknik Üniversitesi",
+    "type": "university",
+    "location": "Trabzon"
+  },
+  {
+    "name": "Karamanoğlu Mehmetbey Üniversitesi",
+    "type": "university",
+    "location": "Karaman"
+  },
+  {
+    "name": "Kardelen Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Kartal Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Fatma Aliye Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Mehmet Akif Ersoy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Sabiha Gökçen Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Şehit Burak Cantürk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartal Şehit Salih Alışkan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kartaltepe Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Kartaltepe Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Kastamonu Üniversitesi",
+    "type": "university",
+    "location": "Kastamonu"
+  },
+  {
+    "name": "Kasımpaşa Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Katip Mustafa Çelebi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beyoğlu"
+  },
+  {
+    "name": "Katip Çelebi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Kaynarca Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kaynarca Şevket Sabancı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kayseri Üniversitesi",
+    "type": "university",
+    "location": "Kayseri"
+  },
+  {
+    "name": "Kazlıçeşme Abay Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Kazım İşmen Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kazım Karabekir Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Kağıthane Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Kağıthane İto Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Kağıthane Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Kağıthane Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Kaşif Kalkavan Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Kemal Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Kemal Atay Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Kemal Demironaran Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Kemal Hasoğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Kemal Hasoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Kemerburgaz Halis Kutmangil Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Kilis 7 Aralık Üniversitesi",
+    "type": "university",
+    "location": "Kilis"
+  },
+  {
+    "name": "Koca Yusuf Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kocaeli Üniversitesi",
+    "type": "university",
+    "location": "Kocaeli"
+  },
+  {
+    "name": "Kocamustafapaşa Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Kocasinan Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Kocasinan Şehit Samet Kırbaş Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Konya Gıda Ve Tarım Üniversitesi",
+    "type": "university",
+    "location": "Konya"
+  },
+  {
+    "name": "Konya Teknik Üniversitesi",
+    "type": "university",
+    "location": "Konya"
+  },
+  {
+    "name": "Koç Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Kto Karatay Üniversitesi",
+    "type": "university",
+    "location": "Konya"
+  },
+  {
+    "name": "Kuleli Askeri Lisesi (''kapatıldı, Milli Savunma Üniversitesi'ne verildi)''",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Kumburgaz Mehmet Erçağ Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Kumburgaz Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Kurtköy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kurtköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kurtuluş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Köy Hizmetleri Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Kütahya Dumlupınar Üniversitesi",
+    "type": "university",
+    "location": "Kütahya"
+  },
+  {
+    "name": "Kütahya Sağlık Bilimleri Üniversitesi",
+    "type": "university",
+    "location": "Kütahya"
+  },
+  {
+    "name": "Küçükkoy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Küçükköy Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Küçükköy Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Küçükyalı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Küçükyalı Rezan Has Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Küçükçekmece Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Küçükçekmece Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Küçükçekmece Atatürk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Küçükçekmece Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Küçükçekmece Kuyumculuk Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Küçükçekmece Tasev Ayakkabı Ve Saraciye Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Kıraç Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Kırklareli Üniversitesi",
+    "type": "university",
+    "location": "Kırklareli"
+  },
+  {
+    "name": "Kırıkkale Üniversitesi",
+    "type": "university",
+    "location": "Kırıkkale"
+  },
+  {
+    "name": "Kırımlı Fazilet Olcay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Kırımlı İsmail Rüştü Olcay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Kırşehir Ahi Evran Üniversitesi",
+    "type": "university",
+    "location": "Kırşehir"
+  },
+  {
+    "name": "Levent Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Lokman Hekim Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Lütfi Doğan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "M. Ali Büyükhanlı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "M.Emin Saraç Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Madenler Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Mahmutbey Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Malatya Turgut Özal Üniversitesi",
+    "type": "university",
+    "location": "Malatya"
+  },
+  {
+    "name": "Maltepe Adalet Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Maltepe Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Maltepe Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Maltepe Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Maltepe Orhangazi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Maltepe Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Manisa CelÂl Bayar Üniversitesi",
+    "type": "university",
+    "location": "Manisa"
+  },
+  {
+    "name": "Mardin Artuklu Üniversitesi",
+    "type": "university",
+    "location": "Mardin"
+  },
+  {
+    "name": "Mareşal Fevzi Çakmak Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Marmara Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Marmara Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Marmara Üniversitesi Abdülkadir Meragi Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Mecidiyeköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Mediha Engizer Meslekî Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Medine Tayfur Sökmen Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Mef Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Mehmed Zahid Kotku Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Mehmet Akif Ersoy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Mehmet Akif Ersoy Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Mehmet Akif Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Mehmet Bayazıd Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Mehmet Baydar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Mehmet Emin Horoz Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Mehmet Niyazi Altuğ Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Mehmet Pisak Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Mehmet Rauf Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Mehmet Rıfat Evyap Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Mehmet Salih Bal Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Mehmet Tekinalp Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Mehmet Yaşar Kandemir Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Mehmet Öner Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Güngören"
+  },
+  {
+    "name": "Mehmet Şam Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Mehmetçik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Melahat Akkutlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Melek Aknil Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Mersin Üniversitesi",
+    "type": "university",
+    "location": "Mersin"
+  },
+  {
+    "name": "Mevlana Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Mevlana Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Miktat Ağaoğlu Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Mimar Sinan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Mimar Sinan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Mimar Sinan Güzel Sanatlar Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Mimar Sinan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Mimar Sinan Üniversitesi Devlet Konservatuvarı Müzik Ve Sahne Sanatları Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Mithatpaşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Munzur Üniversitesi",
+    "type": "university",
+    "location": "Tunceli"
+  },
+  {
+    "name": "Musa Efendi Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Mustafa Barut Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Mustafa Kemal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Mustafa Kemal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Mustafa Saffet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Muğla Sıtkı Koçman Üniversitesi",
+    "type": "university",
+    "location": "Muğla"
+  },
+  {
+    "name": "Muş Alparslan Üniversitesi",
+    "type": "university",
+    "location": "Muş"
+  },
+  {
+    "name": "Münevver Kemal Özver Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Münir Tınaztepe Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Nahit Menteşe Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Naim Süleymanoğlu Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Namık Kemal Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Necip Fazıl Kısakürek Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Necip Fazıl Kısakürek Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Necip Fazıl Kısakürek Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Necmeddin Okyay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Necmettin Erbakan Üniversitesi",
+    "type": "university",
+    "location": "Konya"
+  },
+  {
+    "name": "Nedim Erkan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Nermin Ahmet Hasoğlu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Neslişah Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Nesrin Uçmaklıoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Nevzat Ayaz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Nevşehir Hacı Bektaş Veli Üniversitesi",
+    "type": "university",
+    "location": "Nevşehir"
+  },
+  {
+    "name": "Nezihe Hasan Kılıç Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Nilüfer Hatun Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Nilüfer Kadayıfcıoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Niğde Ömer Halisdemir Üniversitesi",
+    "type": "university",
+    "location": "Niğde"
+  },
+  {
+    "name": "Nişantaşı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Nişantaşı Nuri Akın Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Nişantaşı Rüştü Uzel Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Nişantaşı Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Nuh Naci Yazgan Üniversitesi",
+    "type": "university",
+    "location": "Kayseri"
+  },
+  {
+    "name": "Nurettin Topçu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bagcılar"
+  },
+  {
+    "name": "Nurettin Topçu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Nuri Cıngıllıoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Nuri Demirağ Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Nuri Pakdil Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Nursen Fuat Özdayı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Nüzhet Bilgincan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Oguz Canpolat Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Ondokuz Mayıs Üniversitesi",
+    "type": "university",
+    "location": "Samsun"
+  },
+  {
+    "name": "Ordu Üniversitesi",
+    "type": "university",
+    "location": "Ordu"
+  },
+  {
+    "name": "Orhan Cemal Fersoy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Orhan Gazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükcekmece"
+  },
+  {
+    "name": "Orhangazi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Orhangazi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Orhangazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Orta Doğu Teknik Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Ortaköy Zübeyde Hanım Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Oruç Reis Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Osmangazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Osmangazi Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Osmaniye Korkut Ata Üniversitesi",
+    "type": "university",
+    "location": "Osmaniye"
+  },
+  {
+    "name": "Ostim Teknik Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Otakçılar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Otocenter Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Pagev Plastik Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Pamukkale Üniversitesi",
+    "type": "university",
+    "location": "Denizli"
+  },
+  {
+    "name": "Paşabahçe Ahmet Ferit İnal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Pendik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Barbaros Hayrettin Paşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Fatih Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Halil Kaya Gedik Metal Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik İto Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik İto Şehit Ahmet Aslanhan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Nuh Kuşçulu Seramik Ve Cam Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Türk Telekom Şehit Murat Mertel Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Pendik Yunus Emre Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Perihan Erk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Pertevniyal Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Piri Reis Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahcelievler"
+  },
+  {
+    "name": "Piri Reis Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Piri Reis Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Plevne Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Prof Dr. Fuat Sezgin Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Prof. Dr. Hulusi Behçet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Prof. Dr. İbrahim Savaş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Prof. Dr. Mümtaz Turhan Sosyal Bilimler Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Prof. Dr. Nabi Avcı Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Prof. Dr. Necmettin Erbakan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Prof. Dr. Necmettin Erbakan Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Prof. Dr. Sabahattin Zaim Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Prof.Dr. Necmettin Erbakan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Prof.Dr.Muhammet Tayyip Okiç Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Profilo Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Rabia Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Rami Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Rasim Özdenören Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Rauf Denktaş Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Recep Tayyip Erdoğan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Recep Tayyip Erdoğan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Recep Tayyip Erdoğan Üniversitesi",
+    "type": "university",
+    "location": "Rize"
+  },
+  {
+    "name": "Refhan Tümer Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Eyüpsultan"
+  },
+  {
+    "name": "Rotary 100.Yıl Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Ruhi Sarıalp Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Rüştü Akın Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Rıfat Canayakın Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Sabancı 50. Yıl Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Sabancı Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Sabit Büyükbayrak Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Sabri Çalışkan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Sabri Ülker Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sabriye Gümüş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Sadabad Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Sakarya Uygulamalı Bilimler Üniversitesi",
+    "type": "university",
+    "location": "Sakarya"
+  },
+  {
+    "name": "Sakarya Üniversitesi",
+    "type": "university",
+    "location": "Sakarya"
+  },
+  {
+    "name": "Samandıra Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Samandıra Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Samiha Ayverdi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Samsun Üniversitesi",
+    "type": "university",
+    "location": "Rize"
+  },
+  {
+    "name": "Sancaktepe Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Arif Nihat Asya Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Aziz Bayraktar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Eyüp Sultan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Fatih Borsa İstanbul Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Hüma Hatun Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Musa Efendi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Nurettin Topçu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Sultan Iı. Abdulhamid Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Teknoloji Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sancaktepe Şehit Ömer Halisdemir Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sanko Üniversitesi",
+    "type": "university",
+    "location": "Gaziantep"
+  },
+  {
+    "name": "Saray Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Sarıgazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Sarıyer Hüseyin Kalkavan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Sarıyer Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Sarıyer Mehmet Şam Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Sarıyer Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Sağlık Bilimleri Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Sağmalcılar Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Sefaköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Selahaddin Eyyubi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Selahattin Eyyubi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Selimiye Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Selimpaşa Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Selimpaşa Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Selman Farisi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Selçuk Eraydın Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Selçuk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Selçuk Üniversitesi",
+    "type": "university",
+    "location": "Konya"
+  },
+  {
+    "name": "Semerkand Bilim Ve Medeniyet Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Semiha Şakir Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Sezai Karakoç Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Siirt Üniversitesi",
+    "type": "university",
+    "location": "Siirt"
+  },
+  {
+    "name": "Silivri Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Silivri Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Silivri Necip Sarıbekir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Silivri Yusuf Sarıbekir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Sinop Üniversitesi",
+    "type": "university",
+    "location": "Sinop"
+  },
+  {
+    "name": "Sivas Bilim Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "Sivas"
+  },
+  {
+    "name": "Sivas Cumhuriyet Üniversitesi",
+    "type": "university",
+    "location": "Sivas"
+  },
+  {
+    "name": "Siyavuşpaşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Suadiye Hacı Mustafa Tarman Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Suat Terimer Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Sudi Özkan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Sultan Alparslan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultan Selim Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Sultanahmet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Sultanahmet Suphi Paşa Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Sultanbeyli Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultanbeyli Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultanbeyli İbrahim Hakkı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultanbeyli Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultanbeyli Sabiha Gökçen Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultanbeyli Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Sultangazi Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sultangazi Atatürk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sultangazi Cezeri Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sultangazi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sultangazi Nene Hatun Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Sultançiftliği Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Süleyman Demirel Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Süleyman Demirel Üniversitesi",
+    "type": "university",
+    "location": "Isparta"
+  },
+  {
+    "name": "Süleyman Nazif Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Süleyman Şah Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Tarabya Cevat Koçak Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Tarsus Üniversitesi",
+    "type": "university",
+    "location": "Mersin"
+  },
+  {
+    "name": "Tarık Buğra Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Taşdelen Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Taşoluk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Teb Ataşehir Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ted Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Tekirdağ Namık Kemal Üniversitesi",
+    "type": "university",
+    "location": "Tekirdağ"
+  },
+  {
+    "name": "Teknopark İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Tenzile Erdoğan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Tepekent Borsa İstanbul Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Tepeören Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Terazidere Prof.İbrahim Ve Feti Pirlepeli Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Tev Ezel Gülen Kıray Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Tev Uğuz Tarık Demirağ Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Timur İmrağ Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Tobb Ekonomi Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Tokat Gaziosmanpaşa Üniversitesi",
+    "type": "university",
+    "location": "Tokat"
+  },
+  {
+    "name": "Toki Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Atakent Spor Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükcekmece"
+  },
+  {
+    "name": "Toki Celalettin Ökten Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Toki Ertuğrulgazi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Güneşparkevleri Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Toki Halkalı Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Toki Hayme Ana Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Kayaşehir Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Kayaşehir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Toki Maltepe Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Toki Yahya Kemal Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Toki Yahya Kemal Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tolga Çınar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Toros Üniversitesi",
+    "type": "university",
+    "location": "Mersin"
+  },
+  {
+    "name": "Trabzon Üniversitesi",
+    "type": "university",
+    "location": "Trabzon"
+  },
+  {
+    "name": "Trakya Üniversitesi",
+    "type": "university",
+    "location": "Edirne"
+  },
+  {
+    "name": "Tuna Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Turgut Reis Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Turgut Özal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Turhan Feyzioğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Tuzla Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Cezeri Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Halil Türkkan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Mahir İz Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Orhanlı Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuzla Süleyman Demirel Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Tuğrul Bey Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Türk Hava Kurumu Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Türk Kızılayı Kartal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Türk Telekom Şehit Murat Naiboğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Türk-alman Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Türk-japon Bilim Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Türkiye Uluslararası İslam, Bilim Ve Teknoloji Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Türkçimento Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Türob 50.Yıl Şişli Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Ufuk Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Uluslararası Fatih Sultan Mehmet Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Uluslararası Kaptan Ahmet Erdoğan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Uluslararası Pendik Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Uluslararası Şehit Halil İbrahim Gürel Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Uluslararası Şehit Mehmet Karaaslan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Uşak Üniversitesi",
+    "type": "university",
+    "location": "Uşak"
+  },
+  {
+    "name": "Vali Muammer Güler Sosyal Bilimler Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Validebağ Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Van Yüzüncü Yıl Üniversitesi",
+    "type": "university",
+    "location": "Van"
+  },
+  {
+    "name": "Vefa Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Vefa Poyraz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Vehbi Koç Vakfı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Velibaba Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Velibaba Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Veliefendi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Yahya Kemal Beyatlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Yahya Kemal Beyatlı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Yakacık Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Yakacık Yüksel İlhan Alanyalı Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Yalova Üniversitesi",
+    "type": "university",
+    "location": "Yalova"
+  },
+  {
+    "name": "Yavuz Bahadıroğlu Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Yavuz Selim Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Yavuz Selim Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Yavuz Sultan Selim Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Yavuz Sultan Selim Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bagcılar"
+  },
+  {
+    "name": "Yaşar Acar Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Yaşar Dedeman Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Yaşar Üniversitesi",
+    "type": "university",
+    "location": "İzmir"
+  },
+  {
+    "name": "Yaşar Şadiye Cimilli Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Yedikule Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Yeditepe Özel Eğitim Meslek Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Yeditepe Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Yenibosna Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Yenibosna Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Yenidoğan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Yenidoğan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Yenilevent Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Yeşilköy 50. Yıl Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Yeşilköy Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bakırköy"
+  },
+  {
+    "name": "Yozgat Bozok Üniversitesi",
+    "type": "university",
+    "location": "Yozgat"
+  },
+  {
+    "name": "Yunus Emre Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Yunus Emre Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Tuzla"
+  },
+  {
+    "name": "Yunus Emre Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Yüksek İhtisas Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Yıldız Teknik Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Yıldız Teknik Üniversitesi Maçka Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Zehra Mustafa Dalgıç Dış Ticaret Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Zeytinburnu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Güzel Sanatlar Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu İdmib Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu M. İhsan Mermerci Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Merkezefendi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zeytinburnu Trisad Tekstil Teknolojisi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Zincirlikuyu İsov Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Ziya Kalkavan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beşiktaş"
+  },
+  {
+    "name": "Zonguldak Bülent Ecevit Üniversitesi",
+    "type": "university",
+    "location": "Zonguldak"
+  },
+  {
+    "name": "Zühtü Kurtulmuş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Çakmaklı Cumhuriyet Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Çamlıca Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Çamlıca Kız Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Çanakkale Onsekiz Mart Üniversitesi",
+    "type": "university",
+    "location": "Çanakkale"
+  },
+  {
+    "name": "Çankaya Üniversitesi",
+    "type": "university",
+    "location": "Ankara"
+  },
+  {
+    "name": "Çankırı Karatekin Üniversitesi",
+    "type": "university",
+    "location": "Çankırı"
+  },
+  {
+    "name": "Çapa Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Çatalca Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çatalca Arif Nihat Asya Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çatalca Atatürk Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çatalca Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çatalca Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çatalca Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Çavuşbaşı Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Çavuşbaşı Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Çağ Üniversitesi",
+    "type": "university",
+    "location": "Mersin"
+  },
+  {
+    "name": "Çağrıbey Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Çekmeköy Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Çekmeköy Toki Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Çemberlitaş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Çengelköy Şehit Okan Altıparmak Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Çobançeşme Şehit Sedat Mekan Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Çukurova Üniversitesi",
+    "type": "university",
+    "location": "Adana"
+  },
+  {
+    "name": "Ömer Nasuhi Bilmen Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Ömer Çam Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Ömer Öztop Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Ömerli Hikmet Tevfik Ataman Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Özdemir Sabancı Emirgan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Özden Cengiz Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Özyeğin Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Öğrenciden Armağan Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Ümit Meriç Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Ümmü Mihcen Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Ümraniye Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ümraniye Atatürk Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ümraniye Cumhuriyet Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ümraniye Merkez Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ümraniye Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Ümraniye Şehit Erol Olçok Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Üsküdar Ahmet Keleşoğlu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Dış Ticaret Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Mihrimah Sultan Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Zeynep Kamil Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Üsküdar Üniversitesi",
+    "type": "university",
+    "location": "İstanbul"
+  },
+  {
+    "name": "Şair Abay Konanbay Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Şehit Abdullah Tayyip Olçok Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Şehit Adil Büyükcengiz Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Şehit Ahmet Kocabay Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenyurt"
+  },
+  {
+    "name": "Şehit Ahmet Yıldız Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beylikdüzü"
+  },
+  {
+    "name": "Şehit Akın Sertçelik Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ataşehir"
+  },
+  {
+    "name": "Şehit Ayşe Aykaç Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Şehit Batuhan Ergin Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Şehit Binbaşı Bedir Karabıyık Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Şehit Büyükelçi Galip Balkar Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Zeytinburnu"
+  },
+  {
+    "name": "Şehit Büyükelçi İsmail Erez Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Şehit Cengiz Sarıbaş Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Şehit Demet Sezen Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Şehit Emre Sarıtaş Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Şehit Er Çağlar Mengü Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Şehit Eren Bülbül Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Şehit Erhan Dündar Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultangazi"
+  },
+  {
+    "name": "Şehit Erol İnce Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Ümraniye"
+  },
+  {
+    "name": "Şehit Erol Olçok Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bahçelievler"
+  },
+  {
+    "name": "Şehit Fatih Satır Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Şehit Gökhan Topçu Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Başakşehir"
+  },
+  {
+    "name": "Şehit Halil İbrahim Yıldırım Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bayrampaşa"
+  },
+  {
+    "name": "Şehit İlhan Sonkaya Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Şehit İlhan Varank Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Şehit Kemal Ekşi Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Şehit Koray Karaca Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Şehit Mehmet Güder Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Küçükçekmece"
+  },
+  {
+    "name": "Şehit Muhammed Aksu Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Şehit Muhammed Fazlı Demir Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sultanbeyli"
+  },
+  {
+    "name": "Şehit Murat Akdemir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Şehit Murat Kocatürk Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Şehit Mustafa Kaymakçı Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Şehit Mustafa Sevim Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kağıthane"
+  },
+  {
+    "name": "Şehit Mümin Demiralp Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Şehit Münir Alkan Fen Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Şehit Onbaşı Murat Şengöz Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Şehit Osman Yılmaz Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Maltepe"
+  },
+  {
+    "name": "Şehit Polis Kemal Tosun Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Şehit Ramazan Sarıkaya Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Şehit Ramazan Sarıkaya Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Avcılar"
+  },
+  {
+    "name": "Şehit Selçuk Gürdal Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Arnavutköy"
+  },
+  {
+    "name": "Şehit Servet Asmaz Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Gaziosmanpaşa"
+  },
+  {
+    "name": "Şehit Tolga Ecebalın Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Şehit Türkmen Tekin Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Esenler"
+  },
+  {
+    "name": "Şehit Yüzbaşı Yusuf Kenan Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sancaktepe"
+  },
+  {
+    "name": "Şehit Ömer Halisdemir Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çekmeköy"
+  },
+  {
+    "name": "Şehit Ömer Halisdemir Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Beykoz"
+  },
+  {
+    "name": "Şehit Özcan Çiftçi Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Çatalca"
+  },
+  {
+    "name": "Şehit Öğretmen Hüseyin Ağırman Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kartal"
+  },
+  {
+    "name": "Şehit Şirin Diril Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Büyükçekmece"
+  },
+  {
+    "name": "Şehremini Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Fatih"
+  },
+  {
+    "name": "Şenesenevler Mualla Selcanoğlu Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Kadıköy"
+  },
+  {
+    "name": "Şerife Baldöktü Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Silivri"
+  },
+  {
+    "name": "Şeyh Edebali Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Bağcılar"
+  },
+  {
+    "name": "Şeyh Şamil Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Üsküdar"
+  },
+  {
+    "name": "Şile Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Şile Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Şile Ayet Azer Aran Savunma Sanayi Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Şile Borsa İstanbul 50. Yıl Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Şile Borsa İstanbul Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şile"
+  },
+  {
+    "name": "Şişli Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Şişli Kervansaray Çok Programlı Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Şişli Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Şişli"
+  },
+  {
+    "name": "Şule Yüksel Şenler Kız Anadolu İmam Hatip Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Pendik"
+  },
+  {
+    "name": "Şükran Ülgezen Mesleki Ve Teknik Anadolu Lisesi",
+    "type": "highschool",
+    "location": "İstanbul / Sarıyer"
+  },
+  {
+    "name": "Şırnak Üniversitesi",
+    "type": "university",
+    "location": "Şırnak"
+  }
+]
