@@ -23,12 +23,33 @@ export default function SettingsScreen() {
     answer_received: true, event_reminder: true, badge_earned: true, buddy_match: true,
   });
 
+  const [dmPrivacy, setDmPrivacy] = useState<'followers_only' | 'everyone'>('followers_only');
+
   useEffect(() => {
     if (user) {
       supabase.from('notification_preferences').select('*').eq('user_id', user.id).single()
         .then(({ data }) => { if (data) setNotifPrefs(data as any); });
     }
   }, [user]);
+
+  // Load dm_privacy
+  useEffect(() => {
+    if (user) {
+      supabase.from('users').select('dm_privacy').eq('id', user.id).single()
+        .then(({ data }) => {
+          if (data?.dm_privacy) setDmPrivacy(data.dm_privacy);
+        });
+    }
+  }, [user]);
+
+  const updateDmPrivacy = async (value: 'followers_only' | 'everyone') => {
+    setDmPrivacy(value);
+    if (user) {
+      await supabase.from('users')
+        .update({ dm_privacy: value })
+        .eq('id', user.id);
+    }
+  };
 
   const updateNotifPref = async (key: string, value: boolean) => {
     setNotifPrefs(prev => ({ ...prev, [key]: value }));
@@ -115,6 +136,31 @@ export default function SettingsScreen() {
           ))}
         </View>
 
+        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Gizlilik</Text>
+          <Text style={[styles.privacyDescription, { color: colors.textTertiary }]}>
+            Kimler sana doğrudan mesaj atabilsin?
+          </Text>
+          {[
+            { key: 'followers_only' as const, label: 'Sadece takipleştiğim kişiler' },
+            { key: 'everyone' as const, label: 'Herkes' },
+          ].map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              style={styles.radioRow}
+              onPress={() => updateDmPrivacy(key)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={dmPrivacy === key ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={dmPrivacy === key ? Colors.primary : colors.textTertiary}
+              />
+              <Text style={[styles.radioLabel, { color: colors.text }]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TouchableOpacity
           style={[styles.row, styles.signOutRow, { backgroundColor: colors.primarySoft }]}
           onPress={handleSignOut}
@@ -145,5 +191,21 @@ const styles = StyleSheet.create({
   themeChipText: { fontSize: FontSize.sm, fontFamily: FontFamily.bodySemiBold },
   notifRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.xs },
   notifLabel: { fontSize: FontSize.md, fontFamily: FontFamily.body },
+  privacyDescription: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    lineHeight: 18,
+    marginBottom: Spacing.sm,
+  },
+  radioRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  radioLabel: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.body,
+  },
   signOutRow: { borderWidth: 0 },
 });
