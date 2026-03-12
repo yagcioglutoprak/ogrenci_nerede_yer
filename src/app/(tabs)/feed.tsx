@@ -347,6 +347,7 @@ export default function FeedScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
+          <GlassView style={styles.chipContainerGlass} fallbackColor={colors.backgroundSecondary}>
           <View style={styles.chipContainer}>
             <Animated.View
               style={[
@@ -385,6 +386,7 @@ export default function FeedScreen() {
               );
             })}
           </View>
+          </GlassView>
         </ScrollView>
       </View>
     </>
@@ -410,7 +412,7 @@ export default function FeedScreen() {
       {/* Search Bar */}
       {showSearch && (
         <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} exiting={FadeOut.duration(200)} style={styles.searchBarContainer}>
-          <View style={[styles.searchBar, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+          <GlassView style={[styles.searchBar, { borderColor: colors.glass.border }]} fallbackColor={colors.backgroundSecondary}>
             <Ionicons name="search" size={18} color={colors.textTertiary} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -426,7 +428,7 @@ export default function FeedScreen() {
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </TouchableOpacity>
             )}
-          </View>
+          </GlassView>
         </Animated.View>
       )}
 
@@ -437,6 +439,10 @@ export default function FeedScreen() {
           onPress={() => router.push('/buddy')}
           activeOpacity={0.85}
         >
+          <GlassView
+            style={{ borderRadius: BorderRadius.md, overflow: 'hidden' }}
+            fallbackColor="rgba(6, 182, 212, 0.85)"
+          >
           <LinearGradient
             colors={['#06B6D4', '#0891B2']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -455,6 +461,7 @@ export default function FeedScreen() {
               <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
           </LinearGradient>
+          </GlassView>
         </TouchableOpacity>
       )}
 
@@ -549,6 +556,10 @@ const styles = StyleSheet.create({
   },
   categoryScroll: {
     paddingHorizontal: Spacing.xl,
+  },
+  chipContainerGlass: {
+    borderRadius: BorderRadius.xxl,
+    overflow: 'hidden',
   },
   chipContainer: {
     flexDirection: 'row',

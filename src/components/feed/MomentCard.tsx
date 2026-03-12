@@ -24,6 +24,7 @@ import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post } from '../../types';
 import Avatar from '../ui/Avatar';
+import GlassView from '../ui/GlassView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_MARGIN = Spacing.lg;
@@ -105,10 +106,13 @@ function MomentCard({
 
   return (
     <View
-      style={[styles.card, { backgroundColor: colors.background }]}
+      style={[styles.card, { backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.background }]}
       accessibilityLabel={`${post.user?.full_name || 'Kullanici'} tarafindan paylasilan anlik`}
       accessibilityRole="button"
     >
+      {Platform.OS === 'ios' && (
+        <GlassView style={[StyleSheet.absoluteFill, { borderRadius: BorderRadius.lg }]} fallbackColor={colors.card} />
+      )}
       {/* Image Section */}
       <TouchableOpacity
         style={styles.imageWrapper}
@@ -144,14 +148,25 @@ function MomentCard({
         {/* Venue overlay — bottom of image */}
         {post.venue && (
           <TouchableOpacity
-            style={styles.venueOverlay}
             activeOpacity={0.8}
             onPress={() => post.venue && onVenuePress?.(post.venue.id)}
+            style={Platform.OS !== 'ios' ? styles.venueOverlay : styles.venueOverlayWrapper}
           >
-            <Ionicons name="location" size={13} color="#FFFFFF" />
-            <Text style={styles.venueOverlayText} numberOfLines={1}>
-              {post.venue.name}
-            </Text>
+            {Platform.OS === 'ios' ? (
+              <GlassView style={styles.venueOverlay} fallbackColor="rgba(0,0,0,0.55)">
+                <Ionicons name="location" size={13} color="#FFFFFF" />
+                <Text style={styles.venueOverlayText} numberOfLines={1}>
+                  {post.venue.name}
+                </Text>
+              </GlassView>
+            ) : (
+              <>
+                <Ionicons name="location" size={13} color="#FFFFFF" />
+                <Text style={styles.venueOverlayText} numberOfLines={1}>
+                  {post.venue.name}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -322,6 +337,14 @@ const styles = StyleSheet.create({
       },
       android: {},
     }),
+  },
+  venueOverlayWrapper: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    left: Spacing.md,
+    maxWidth: IMAGE_WIDTH * 0.7,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
   },
   venueOverlayText: {
     fontSize: FontSize.xs,

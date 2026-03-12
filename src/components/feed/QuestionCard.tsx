@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
@@ -11,6 +12,7 @@ import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, RecommendationAnswer } from '../../types';
 import Avatar from '../ui/Avatar';
+import GlassView from '../ui/GlassView';
 
 interface QuestionCardProps {
   post: Post;
@@ -46,8 +48,8 @@ function QuestionCard({
       style={[
         styles.card,
         {
-          backgroundColor: colors.background,
-          borderColor: colors.borderLight,
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.background,
+          borderColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.5)' : colors.borderLight,
         },
       ]}
       activeOpacity={0.85}
@@ -55,6 +57,10 @@ function QuestionCard({
       accessibilityLabel={`${post.caption || 'Soru'} tavsiye sorusu`}
       accessibilityRole="button"
     >
+      {Platform.OS === 'ios' && (
+        <GlassView style={[StyleSheet.absoluteFill, { borderRadius: BorderRadius.lg }]} fallbackColor={colors.card} />
+      )}
+
       {/* Header: Avatar + Username + Time + Question Badge */}
       <View style={styles.header}>
         <TouchableOpacity

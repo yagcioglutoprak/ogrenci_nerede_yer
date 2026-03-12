@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
@@ -12,6 +13,7 @@ import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, Event, EventAttendee } from '../../types';
 import Avatar from '../ui/Avatar';
+import GlassView from '../ui/GlassView';
 
 interface EventCardProps {
   post: Post;
@@ -79,15 +81,23 @@ function EventCard({
       style={[
         styles.card,
         {
-          backgroundColor: colors.background,
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.background,
           borderColor: colors.borderLight,
         },
+        Platform.OS === 'ios' && styles.cardGlass,
       ]}
       activeOpacity={0.85}
       onPress={onPress}
       accessibilityLabel={`${event.title} bulusma etkinligi`}
       accessibilityRole="button"
     >
+      {Platform.OS === 'ios' && (
+        <GlassView
+          style={[StyleSheet.absoluteFill, { borderRadius: BorderRadius.lg }]}
+          fallbackColor={colors.card}
+        />
+      )}
+
       {/* Header: Avatar + Username + Time */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -247,6 +257,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     overflow: 'hidden',
+  },
+  cardGlass: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
 
   // Header
