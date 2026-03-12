@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RectButton } from 'react-native-gesture-handler';
+import { RectButton, ScrollView as GHScrollView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -362,11 +362,10 @@ export default function FeedScreen() {
     <>
       <StoriesBar />
       <View style={styles.categoryRow}>
-        <ScrollView
+        <GHScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
-          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.chipContainer}>
             {/* Liquid glass sliding indicator — red base + glass sheen */}
@@ -415,7 +414,7 @@ export default function FeedScreen() {
               );
             })}
           </View>
-        </ScrollView>
+        </GHScrollView>
       </View>
     </>
   ), [category, colors, handleCategoryChange, handleChipLayout, indicatorStyle]);
