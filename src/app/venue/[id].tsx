@@ -267,7 +267,7 @@ export default function VenueDetailScreen() {
     ];
 
     return (
-      <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <GlassView key={item.id} style={[styles.reviewCard, Platform.OS === 'ios' && styles.reviewCardGlass, { backgroundColor: colors.card }]} fallbackColor={colors.card}>
         {/* Header: avatar + name + date + score */}
         <View style={styles.reviewHeader}>
           <Avatar
@@ -307,7 +307,7 @@ export default function VenueDetailScreen() {
             </View>
           ))}
         </View>
-      </View>
+      </GlassView>
     );
   };
 
@@ -546,7 +546,7 @@ export default function VenueDetailScreen() {
         {/* ============================
             INFO SECTION
         ============================ */}
-        <View style={styles.infoSection}>
+        <GlassView style={[styles.infoSection, Platform.OS === 'ios' && styles.infoSectionGlass]} fallbackColor={colors.card}>
           {/* Address + Directions */}
           <View style={styles.infoRow}>
             <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
@@ -622,7 +622,7 @@ export default function VenueDetailScreen() {
               />
             </TouchableOpacity>
           )}
-        </View>
+        </GlassView>
 
         {/* ============================
             EDITORIAL REVIEW SECTION
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollContent: {
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 30,
   },
   loadingScreen: {
     flex: 1,
@@ -1148,7 +1148,14 @@ const styles = StyleSheet.create({
   infoSection: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xxl,
+    paddingBottom: Spacing.lg,
+    marginHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
     gap: Spacing.md,
+  },
+  infoSectionGlass: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   infoRow: {
     flexDirection: 'row',
@@ -1682,8 +1689,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  },
+  reviewCardGlass: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   reviewHeader: {
     flexDirection: 'row',

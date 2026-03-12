@@ -45,7 +45,6 @@ const CENTER_SPACER_WIDTH = ADD_BUTTON_SIZE + 4;
 
 // Pill-shaped active indicator dimensions (iOS 26 Liquid Glass)
 const PILL_WIDTH = 56;
-const PILL_HEIGHT = 36;
 const PILL_COLOR = 'rgba(226, 55, 68, 0.12)';
 const PILL_SPRING = { damping: 20, stiffness: 300 };
 
@@ -543,9 +542,9 @@ const iosStyles = StyleSheet.create({
   pillIndicator: {
     position: 'absolute',
     width: PILL_WIDTH,
-    height: PILL_HEIGHT,
-    borderRadius: 9999,
     top: 0,
+    bottom: 0,
+    borderRadius: 9999,
   },
   iconContainer: {
     width: 24,

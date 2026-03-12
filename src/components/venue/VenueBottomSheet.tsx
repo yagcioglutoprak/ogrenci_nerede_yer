@@ -13,6 +13,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Alert,
+  ScrollView,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -48,7 +49,7 @@ import RatingBar from '../ui/RatingBar';
 import StarRating from '../ui/StarRating';
 import Avatar from '../ui/Avatar';
 import { haptic } from '../../lib/haptics';
-import type { Venue, Review, Post } from '../../types';
+import type { Venue, Review, Post, SocialVideo } from '../../types';
 
 const ONY_LOGO = require('../../../assets/logo-icon-hires.png');
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -344,6 +345,17 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   // Rating bar width helper
   const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
 
+  const getPlatformInfo = (platform: SocialVideo['platform']) => {
+    switch (platform) {
+      case 'youtube':
+        return { icon: 'logo-youtube' as const, color: '#FF0000', label: 'YouTube' };
+      case 'instagram':
+        return { icon: 'logo-instagram' as const, color: '#E4405F', label: 'Instagram' };
+      case 'tiktok':
+        return { icon: 'musical-notes' as const, color: '#000000', label: 'TikTok' };
+    }
+  };
+
   // Render a single review card
   const renderReviewItem = (item: Review) => {
     const avg = (
@@ -357,7 +369,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
     ];
 
     return (
-      <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <GlassView key={item.id} style={[styles.reviewCard, styles.reviewCardGlass]} fallbackColor={colors.card}>
         <View style={styles.reviewHeader}>
           <Avatar
             uri={item.user?.avatar_url}
@@ -394,7 +406,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
             </View>
           ))}
         </View>
-      </View>
+      </GlassView>
     );
   };
 
@@ -561,7 +573,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
             <View style={styles.expandedSection}>
               {/* ---- 1. EKIP PUANI (editorial) — shown first ---- */}
               {venue.editorial_rating != null && (
-                <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: Colors.primary + '25' }]}>
+                <GlassView style={[styles.scoreCard, styles.scoreCardGlass]} fallbackColor={colors.card}>
                   {/* Header row: logo + score + label */}
                   <View style={styles.scoreCardHeader}>
                     <Image source={ONY_LOGO} style={styles.scoreCardLogo} resizeMode="contain" />
@@ -596,12 +608,12 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                       </Text>
                     </View>
                   )}
-                </View>
+                </GlassView>
               )}
 
               {/* ---- 2. KULLANICI PUANI (user ratings) ---- */}
               {tier !== 'google_places' && venue.total_reviews > 0 && (
-                <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: Colors.accent + '25' }]}>
+                <GlassView style={[styles.scoreCard, styles.scoreCardGlass]} fallbackColor={colors.card}>
                   {/* Header row: star + score + count */}
                   <View style={styles.scoreCardHeader}>
                     <View style={styles.scoreCardStarCircle}>
@@ -631,11 +643,11 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                       </View>
                     ))}
                   </View>
-                </View>
+                </GlassView>
               )}
 
               {/* ---- INFO SECTION ---- */}
-              <View style={styles.infoSection}>
+              <GlassView style={[styles.infoSection, styles.infoSectionGlass]} fallbackColor={colors.card}>
                 <View style={styles.infoRow}>
                   <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
                     <Ionicons name="location" size={18} color={Colors.primary} />
@@ -678,7 +690,110 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                     ))}
                   </View>
                 )}
-              </View>
+              </GlassView>
+
+              {/* ---- SOCIAL VIDEOS ---- */}
+              {venueVideos.length > 0 && (
+                <View style={styles.videosSection}>
+                  <View style={styles.videosSectionHeader}>
+                    <View style={styles.videosSectionTitleRow}>
+                      <Ionicons name="videocam" size={18} color={Colors.primary} />
+                      <Text style={[styles.videosSectionTitle, { color: colors.text }]}>Sosyal Medya</Text>
+                    </View>
+                    <Text style={[styles.videosSectionCount, { color: colors.textTertiary }]}>{venueVideos.length} video</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videosScroll}>
+                    {venueVideos.map((video) => {
+                      const platform = getPlatformInfo(video.platform);
+                      return (
+                        <TouchableOpacity
+                          key={video.id}
+                          style={[styles.videoCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                          onPress={() => Linking.openURL(video.video_url)}
+                          activeOpacity={0.85}
+                        >
+                          <View style={styles.videoThumbnailContainer}>
+                            <Image source={{ uri: video.thumbnail_url }} style={styles.videoThumbnail} />
+                            <View style={styles.videoPlayOverlay}>
+                              <Ionicons name="play" size={24} color="#FFFFFF" />
+                            </View>
+                            <View style={[styles.videoPlatformBadge, { backgroundColor: platform.color }]}>
+                              <Ionicons name={platform.icon} size={12} color="#FFFFFF" />
+                            </View>
+                          </View>
+                          <View style={styles.videoInfo}>
+                            <Text style={[styles.videoTitle, { color: colors.text }]} numberOfLines={2}>{video.title}</Text>
+                            {video.author && (
+                              <Text style={[styles.videoAuthor, { color: colors.textTertiary }]} numberOfLines={1}>@{video.author}</Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* ---- COMMUNITY POSTS ---- */}
+              {venuePosts.length > 0 && (
+                <View style={styles.communitySection}>
+                  <View style={styles.communitySectionHeader}>
+                    <View style={styles.communitySectionTitleRow}>
+                      <Ionicons name="people" size={18} color={Colors.primary} />
+                      <Text style={[styles.communitySectionTitle, { color: colors.text }]}>Topluluk</Text>
+                    </View>
+                    <Text style={[styles.communitySectionCount, { color: colors.textTertiary }]}>{venuePosts.length} paylasim</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityScroll}>
+                    {venuePosts.map((post) => {
+                      const firstImage = post.images?.[0]?.image_url;
+                      return (
+                        <View key={post.id} style={[styles.communityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                          {firstImage ? (
+                            <View style={styles.communityImageContainer}>
+                              <Image source={{ uri: firstImage }} style={styles.communityImage} />
+                              {(post.images?.length ?? 0) > 1 && (
+                                <View style={styles.communityImageCount}>
+                                  <Ionicons name="images" size={10} color="#FFFFFF" />
+                                  <Text style={styles.communityImageCountText}>{post.images?.length}</Text>
+                                </View>
+                              )}
+                            </View>
+                          ) : (
+                            <View style={[styles.communityImageContainer, styles.communityImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
+                              <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.textTertiary} />
+                            </View>
+                          )}
+                          <View style={styles.communityCardBody}>
+                            <View style={styles.communityUserRow}>
+                              <Avatar uri={post.user?.avatar_url} name={post.user?.full_name ?? post.user?.username ?? '?'} size={20} />
+                              <Text style={[styles.communityUsername, { color: colors.text }]} numberOfLines={1}>
+                                {post.user?.username ?? 'Kullanici'}
+                              </Text>
+                              <Text style={[styles.communityTime, { color: colors.textTertiary }]}>
+                                {getRelativeTime(post.created_at)}
+                              </Text>
+                            </View>
+                            {post.caption ? (
+                              <Text style={[styles.communityCaption, { color: colors.textSecondary }]} numberOfLines={2}>{post.caption}</Text>
+                            ) : null}
+                            <View style={styles.communityEngagement}>
+                              <View style={styles.communityEngagementItem}>
+                                <Ionicons name="heart" size={12} color={Colors.primary} />
+                                <Text style={[styles.communityEngagementText, { color: colors.textTertiary }]}>{post.likes_count ?? 0}</Text>
+                              </View>
+                              <View style={styles.communityEngagementItem}>
+                                <Ionicons name="chatbubble" size={11} color={colors.textTertiary} />
+                                <Text style={[styles.communityEngagementText, { color: colors.textTertiary }]}>{post.comments_count ?? 0}</Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
 
               {/* ---- REVIEWS LIST ---- */}
               <View style={styles.reviewsSection}>
@@ -824,7 +939,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.xl,
+    paddingBottom: 120,
   },
 
   // ---- COMPACT SECTION ----
@@ -1019,7 +1134,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    borderWidth: 1,
+  },
+  scoreCardGlass: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   scoreCardHeader: {
     flexDirection: 'row',
@@ -1094,9 +1212,17 @@ const styles = StyleSheet.create({
 
   // ---- INFO SECTION ----
   infoSection: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxl,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    borderRadius: BorderRadius.lg,
     gap: Spacing.md,
+  },
+  infoSectionGlass: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   infoRow: {
     flexDirection: 'row',
@@ -1164,6 +1290,186 @@ const styles = StyleSheet.create({
 
   // (editorial styles removed — now uses scoreCard)
 
+  // ---- SOCIAL VIDEOS SECTION ----
+  videosSection: {
+    paddingTop: Spacing.xxl,
+  },
+  videosSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  videosSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  videosSectionTitle: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
+  },
+  videosSectionCount: {
+    fontSize: FontSize.sm,
+    fontWeight: '500',
+  },
+  videosScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.md,
+  },
+  videoCard: {
+    width: 140,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 180,
+    position: 'relative',
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  videoPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  videoPlatformBadge: {
+    position: 'absolute',
+    top: Spacing.sm,
+    left: Spacing.sm,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoInfo: {
+    padding: Spacing.sm,
+    gap: 2,
+  },
+  videoTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  videoAuthor: {
+    fontSize: FontSize.xs - 1,
+    fontWeight: '500',
+  },
+
+  // ---- COMMUNITY POSTS SECTION ----
+  communitySection: {
+    paddingTop: Spacing.xxl,
+  },
+  communitySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  communitySectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  communitySectionTitle: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
+  },
+  communitySectionCount: {
+    fontSize: FontSize.sm,
+    fontWeight: '500',
+  },
+  communityScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.md,
+  },
+  communityCard: {
+    width: 200,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  communityImageContainer: {
+    width: '100%',
+    height: 130,
+    position: 'relative',
+  },
+  communityImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  communityImagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityImageCount: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  communityImageCountText: {
+    fontSize: FontSize.xs - 1,
+    fontFamily: FontFamily.bodySemiBold,
+    color: '#FFFFFF',
+  },
+  communityCardBody: {
+    padding: Spacing.sm + 2,
+    gap: Spacing.xs + 1,
+  },
+  communityUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  communityUsername: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.headingBold,
+    flex: 1,
+  },
+  communityTime: {
+    fontSize: FontSize.xs - 1,
+  },
+  communityCaption: {
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+  },
+  communityEngagement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: 2,
+  },
+  communityEngagementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  communityEngagementText: {
+    fontSize: FontSize.xs - 1,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+
   // ---- REVIEWS SECTION ----
   reviewsSection: {
     paddingHorizontal: Spacing.xl,
@@ -1213,7 +1519,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.sm,
-    borderWidth: 1,
+  },
+  reviewCardGlass: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   reviewHeader: {
     flexDirection: 'row',
