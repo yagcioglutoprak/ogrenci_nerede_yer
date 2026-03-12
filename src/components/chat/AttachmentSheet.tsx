@@ -7,7 +7,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, Easing } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
@@ -37,8 +37,8 @@ export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickV
 
       {/* Sheet */}
       <Animated.View
-        entering={SlideInDown.springify().damping(22).stiffness(340)}
-        exiting={SlideOutDown.springify().damping(22).stiffness(340)}
+        entering={SlideInDown.duration(250).easing(Easing.out(Easing.cubic))}
+        exiting={SlideOutDown.duration(200).easing(Easing.in(Easing.cubic))}
         style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
       >
         <View style={styles.handle}>

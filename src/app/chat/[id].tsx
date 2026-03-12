@@ -468,9 +468,8 @@ export default function ChatScreen() {
           <View style={[
             styles.inputBar,
             {
-              backgroundColor: colors.background,
-              borderTopColor: isDark ? colors.border : colors.borderLight,
-              paddingBottom: Math.max(insets.bottom, Spacing.sm),
+              backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+              marginBottom: Math.max(insets.bottom, Spacing.sm),
             },
           ]}>
             <TouchableOpacity
@@ -748,9 +747,11 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
     paddingTop: Spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingBottom: Spacing.xs,
+    borderRadius: BorderRadius.xl,
     gap: Spacing.sm,
   },
   attachButton: {

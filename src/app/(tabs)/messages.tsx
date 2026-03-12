@@ -230,16 +230,6 @@ export default function MessagesScreen() {
           accessibilityRole="button"
           accessibilityLabel={(item.other_user?.full_name || 'Kullanıcı') + ' ile sohbet' + (hasUnread ? ', ' + item.unread_count + ' okunmamış mesaj' : '')}
         >
-          {/* Unread accent bar */}
-          {hasUnread && (
-            <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.unreadAccent}
-            />
-          )}
-
           <View style={styles.avatarContainer}>
             <Avatar
               uri={item.other_user?.avatar_url}
@@ -620,14 +610,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: Spacing.md,
     overflow: 'hidden',
-  },
-  unreadAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 2,
   },
   avatarContainer: {
     position: 'relative',

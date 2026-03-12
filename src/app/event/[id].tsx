@@ -27,7 +27,7 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } fro
 import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
 import MessageBubble from '../../components/chat/MessageBubble';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import type { EventMessage, EventAttendee } from '../../types';
@@ -50,6 +50,7 @@ export default function EventRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
+  const isDark = useIsDarkMode();
   const user = useAuthStore((s) => s.user);
   const {
     selectedEvent: event,
@@ -227,8 +228,7 @@ export default function EventRoomScreen() {
   const renderHeader = () => (
     <View>
       {/* Event Info Card */}
-      <Animated.View
-        entering={FadeInDown.springify().damping(22).stiffness(340)}
+      <View
         style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}
       >
         {/* Title + Date */}
@@ -285,7 +285,7 @@ export default function EventRoomScreen() {
         <View style={styles.attendeesSection}>
           <View style={styles.attendeeAvatars}>
             {confirmedAttendees.slice(0, 5).map((a, i) => (
-              <View key={a.user_id} style={[styles.attendeeAvatar, i > 0 && { marginLeft: -8 }]}>
+              <View key={`${a.user_id}-${i}`} style={[styles.attendeeAvatar, i > 0 && { marginLeft: -8 }]}>
                 <Avatar
                   uri={a.user?.avatar_url}
                   name={a.user?.full_name ?? '?'}
@@ -334,7 +334,7 @@ export default function EventRoomScreen() {
             </Text>
           </AnimatedTouchable>
         )}
-      </Animated.View>
+      </View>
 
       {/* Chat section header */}
       <View style={styles.chatHeader}>
@@ -415,39 +415,21 @@ export default function EventRoomScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        {Platform.OS === 'ios' ? (
-          <GlassView style={styles.headerBar}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
-              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-                {event?.title ?? 'Bulusma Odasi'}
-              </Text>
-            </View>
-            <View style={{ width: 24 }} />
-          </GlassView>
-        ) : (
-          <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
-              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-                {event?.title ?? 'Bulusma Odasi'}
-              </Text>
-            </View>
-            <View style={{ width: 24 }} />
+        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
+            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+              {event?.title ?? 'Bulusma Odasi'}
+            </Text>
           </View>
-        )}
+          <View style={{ width: 24 }} />
+        </View>
 
         {/* Messages list */}
         <FlatList
@@ -477,15 +459,12 @@ export default function EventRoomScreen() {
         />
 
         {/* Message input bar */}
-        {Platform.OS === 'ios' ? (
-          <GlassView style={styles.inputBar}>
-            {inputBarContent}
-          </GlassView>
-        ) : (
-          <View style={[styles.inputBar, { backgroundColor: colors.background }]}>
-            {inputBarContent}
-          </View>
-        )}
+        <View style={[
+          styles.inputBar,
+          { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary },
+        ]}>
+          {inputBarContent}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -696,8 +675,11 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    marginHorizontal: Spacing.sm,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xl,
     gap: Spacing.md,
   },
   messageInput: {
