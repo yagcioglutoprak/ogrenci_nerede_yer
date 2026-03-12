@@ -21,6 +21,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withSequence,
+  withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
@@ -28,6 +31,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useEventStore } from '../../stores/eventStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import PostCard from '../../components/feed/PostCard';
 import EventCard from '../../components/feed/EventCard';
@@ -50,6 +54,59 @@ const CATEGORIES: { key: FeedCategory; label: string; icon: keyof typeof Ionicon
   { key: 'top', label: 'Popüler', icon: 'trending-up-outline' },
   { key: 'new', label: 'Yeni', icon: 'time-outline' },
 ];
+
+/** Animated chip with per-item scale bounce */
+function AnimatedChip({
+  cat,
+  isActive,
+  scale,
+  onLayout,
+  onPress,
+  activeColor,
+  inactiveColor,
+  inactiveTextColor,
+}: {
+  cat: (typeof CATEGORIES)[number];
+  isActive: boolean;
+  scale: SharedValue<number>;
+  onLayout: (e: LayoutChangeEvent) => void;
+  onPress: () => void;
+  activeColor: string;
+  inactiveColor: string;
+  inactiveTextColor: string;
+}) {
+  const chipAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={chipAnimStyle}>
+      <TouchableOpacity
+        onLayout={onLayout}
+        style={styles.categoryChip}
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityRole="tab"
+        accessibilityLabel={cat.label + ' kategorisi'}
+        accessibilityState={{ selected: isActive }}
+      >
+        <Ionicons
+          name={cat.icon}
+          size={14}
+          color={isActive ? activeColor : inactiveColor}
+        />
+        <Text
+          style={[
+            styles.categoryChipText,
+            isActive ? styles.categoryChipTextActive : { color: inactiveTextColor },
+          ]}
+        >
+          {cat.label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 export default function FeedScreen() {
   const colors = useThemeColors();
@@ -78,26 +135,52 @@ export default function FeedScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [showBuddyBanner, setShowBuddyBanner] = useState(true);
 
-  // Animated chip indicator
+  // Liquid glass chip indicator animation
   const chipLayouts = useRef<Record<string, { x: number; width: number }>>({});
   const indicatorX = useSharedValue(0);
   const indicatorW = useSharedValue(60);
+  const indicatorScale = useSharedValue(1);
+  const indicatorOpacity = useSharedValue(1);
+
+  // Fluid glass spring — slightly underdamped for organic overshoot
+  const glassSpring = { damping: 18, stiffness: 220, mass: 0.9 };
 
   const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: indicatorX.value }],
+    transform: [
+      { translateX: indicatorX.value },
+      { scaleY: indicatorScale.value },
+    ],
     width: indicatorW.value,
+    opacity: indicatorOpacity.value,
   }));
+
+  // Per-chip press scale shared values (stable — CATEGORIES is constant)
+  /* eslint-disable react-hooks/rules-of-hooks */
+  const chipScaleValues = CATEGORIES.reduce((acc, cat) => {
+    acc[cat.key] = useSharedValue(1);
+    return acc;
+  }, {} as Record<string, SharedValue<number>>);
+  /* eslint-enable react-hooks/rules-of-hooks */
 
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // Update indicator when category changes
+  // Update indicator when category changes — liquid glass transition
   useEffect(() => {
     const layout = chipLayouts.current[category];
     if (layout) {
-      indicatorX.value = withSpring(layout.x, SpringConfig.snappy);
-      indicatorW.value = withSpring(layout.width, SpringConfig.snappy);
+      // Squish then expand for a "liquid" morph feel
+      indicatorScale.value = withSequence(
+        withTiming(0.85, { duration: 80 }),
+        withSpring(1, { damping: 14, stiffness: 300 }),
+      );
+      indicatorOpacity.value = withSequence(
+        withTiming(0.7, { duration: 60 }),
+        withTiming(1, { duration: 200 }),
+      );
+      indicatorX.value = withSpring(layout.x, glassSpring);
+      indicatorW.value = withSpring(layout.width, glassSpring);
     }
   }, [category]);
 
@@ -204,6 +287,15 @@ export default function FeedScreen() {
   }, [user]);
 
   const handleCategoryChange = useCallback((cat: FeedCategory) => {
+    haptic.selection();
+    // Micro-bounce on the pressed chip
+    const sv = chipScaleValues[cat];
+    if (sv) {
+      sv.value = withSequence(
+        withSpring(0.88, SpringConfig.microBounce),
+        withSpring(1, { damping: 12, stiffness: 280 }),
+      );
+    }
     setCategory(cat);
   }, []);
 
@@ -350,40 +442,41 @@ export default function FeedScreen() {
           <View style={styles.chipContainerOuter}>
             <GlassView style={styles.chipContainerGlass} fallbackColor={colors.backgroundSecondary} />
             <View style={styles.chipContainer}>
+              {/* Liquid glass sliding indicator */}
               <Animated.View
                 style={[
                   styles.chipIndicator,
-                  { backgroundColor: Colors.primary },
                   indicatorStyle,
                 ]}
-              />
+              >
+                <GlassView
+                  style={StyleSheet.absoluteFill}
+                  fallbackColor={Colors.primary}
+                  interactive
+                />
+                {/* Specular highlight shimmer */}
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)', 'rgba(255,255,255,0.1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.chipIndicatorShimmer}
+                />
+              </Animated.View>
               {CATEGORIES.map((cat) => {
                 const isActive = category === cat.key;
+                const chipScale = chipScaleValues[cat.key];
                 return (
-                  <TouchableOpacity
+                  <AnimatedChip
                     key={cat.key}
+                    cat={cat}
+                    isActive={isActive}
+                    scale={chipScale}
                     onLayout={(e) => handleChipLayout(cat.key, e)}
-                    style={styles.categoryChip}
                     onPress={() => handleCategoryChange(cat.key)}
-                    activeOpacity={0.7}
-                    accessibilityRole="tab"
-                    accessibilityLabel={cat.label + ' kategorisi'}
-                    accessibilityState={{ selected: isActive }}
-                  >
-                    <Ionicons
-                      name={cat.icon}
-                      size={14}
-                      color={isActive ? '#FFFFFF' : colors.textTertiary}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryChipText,
-                        isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
-                      ]}
-                    >
-                      {cat.label}
-                    </Text>
-                  </TouchableOpacity>
+                    activeColor="#FFFFFF"
+                    inactiveColor={colors.textTertiary}
+                    inactiveTextColor={colors.textSecondary}
+                  />
                 );
               })}
             </View>
@@ -575,6 +668,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     height: '100%',
+    borderRadius: BorderRadius.xxl,
+    overflow: 'hidden',
+    // Glass shadow glow
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  chipIndicatorShimmer: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: BorderRadius.xxl,
   },
   categoryChip: {
