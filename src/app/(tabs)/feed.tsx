@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
   ScrollView,
   Platform,
@@ -387,13 +388,14 @@ export default function FeedScreen() {
             {CATEGORIES.map((cat) => {
               const isActive = category === cat.key;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={cat.key}
                   onLayout={(e) => handleChipLayout(cat.key, e)}
-                  style={styles.categoryChip}
+                  style={({ pressed }) => [
+                    styles.categoryChip,
+                    pressed && { opacity: 0.7 },
+                  ]}
                   onPress={() => handleCategoryChange(cat.key)}
-                  activeOpacity={0.7}
-                  delayPressIn={60}
                   accessibilityRole="tab"
                   accessibilityLabel={cat.label + ' kategorisi'}
                   accessibilityState={{ selected: isActive }}
@@ -411,7 +413,7 @@ export default function FeedScreen() {
                   >
                     {cat.label}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>
