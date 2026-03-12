@@ -8,6 +8,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +57,7 @@ export default function ChatScreen() {
   const subscribeToMessages = useMessageStore((s) => s.subscribeToMessages);
   const unsubscribeChannel = useMessageStore((s) => s.unsubscribeChannel);
   const conversations = useMessageStore((s) => s.conversations);
+  const messageRequests = useMessageStore((s) => s.messageRequests);
 
   const [draft, setDraft] = useState('');
   const [attachmentSheetVisible, setAttachmentSheetVisible] = useState(false);
@@ -63,7 +65,9 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList<DirectMessage>>(null);
   const isNearBottom = useRef(true);
 
-  const conversation = conversations.find((c) => c.id === conversationId);
+  // Look up in both accepted conversations AND pending requests
+  const conversation = conversations.find((c) => c.id === conversationId)
+    || messageRequests.find((c) => c.id === conversationId);
   const otherUser = conversation?.other_user;
   const otherUserId = conversation
     ? conversation.participant_1 === user?.id
@@ -71,11 +75,19 @@ export default function ChatScreen() {
       : conversation.participant_1
     : '';
 
+  const isPending = conversation?.status === 'pending';
+  const isRecipient = isPending && conversation?.initiated_by !== user?.id;
+  const isSender = isPending && conversation?.initiated_by === user?.id;
+
+  const acceptRequest = useMessageStore((s) => s.acceptRequest);
+  const deleteRequest = useMessageStore((s) => s.deleteRequest);
+  const blockFromRequest = useMessageStore((s) => s.blockFromRequest);
+
   useEffect(() => {
     if (!conversationId) return;
 
     fetchMessages(conversationId);
-    if (user) markAsRead(conversationId, user.id);
+    if (user && !isPending) markAsRead(conversationId, user.id);
 
     const channel = subscribeToMessages(conversationId);
     return () => { if (channel) unsubscribeChannel(channel); };
@@ -338,6 +350,18 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Pending request banner */}
+      {isSender && (
+        <Animated.View entering={FadeIn.duration(300)} style={[styles.pendingBanner, {
+          backgroundColor: isDark ? 'rgba(245,166,35,0.1)' : 'rgba(245,166,35,0.08)',
+        }]}>
+          <Ionicons name="time-outline" size={18} color={Colors.accent} />
+          <Text style={[styles.pendingBannerText, { color: colors.textSecondary }]}>
+            Mesaj istegi gonderildi. Onay bekleniyor.
+          </Text>
+        </Animated.View>
+      )}
+
       {/* Chat body */}
       <KeyboardAvoidingView
         style={styles.chatBody}
@@ -378,61 +402,124 @@ export default function ChatScreen() {
           }
         />
 
-        {/* Input Bar */}
-        <View style={[
-          styles.inputBar,
-          {
-            backgroundColor: colors.background,
-            borderTopColor: isDark ? colors.border : colors.borderLight,
-            paddingBottom: Math.max(insets.bottom, Spacing.sm),
-          },
-        ]}>
-          <TouchableOpacity
-            style={[styles.attachButton, {
-              backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
-            }]}
-            onPress={() => { haptic.light(); setAttachmentSheetVisible(true); }}
-            activeOpacity={0.7}
-            accessibilityLabel="Ek ekle"
-            accessibilityRole="button"
-          >
-            <Ionicons name="add" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-
-          <View style={[styles.inputWrap, {
-            backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
-            borderColor: isDark ? colors.border : 'transparent',
-            borderWidth: isDark ? StyleSheet.hairlineWidth : 0,
-          }]}>
-            <TextInput
-              style={[styles.inputField, { color: colors.text }]}
-              value={draft}
-              onChangeText={setDraft}
-              placeholder="Mesaj yaz..."
-              placeholderTextColor={colors.textTertiary}
-              multiline
-              maxLength={2000}
-              selectionColor={Colors.primary}
-            />
-          </View>
-
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!canSend}
-            activeOpacity={0.7}
-            accessibilityLabel="Mesaj gönder"
-            accessibilityRole="button"
-          >
-            <LinearGradient
-              colors={canSend ? [Colors.primary, Colors.accent] : [colors.textTertiary, colors.textTertiary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.sendButton, !canSend && { opacity: 0.35 }]}
+        {/* Input Bar / Request Action Bar */}
+        {isRecipient ? (
+          <Animated.View entering={SlideInUp.springify().damping(16)} style={[
+            styles.requestActionBar,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: isDark ? colors.border : colors.borderLight,
+              paddingBottom: Math.max(insets.bottom, Spacing.sm),
+            },
+          ]}>
+            <TouchableOpacity
+              style={[styles.requestActionButton, styles.acceptButton]}
+              onPress={async () => {
+                haptic.success();
+                await acceptRequest(conversationId!);
+                if (user) markAsRead(conversationId!, user.id);
+              }}
+              activeOpacity={0.8}
             >
-              <Ionicons name="send" size={18} color="#FFF" style={{ marginLeft: 2 }} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+              <Text style={styles.requestActionTextLight}>Kabul Et</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.requestActionButton, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}
+              onPress={() => {
+                haptic.light();
+                deleteRequest(conversationId!);
+                router.back();
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
+              <Text style={[styles.requestActionText, { color: colors.textSecondary }]}>Sil</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.requestActionButton, styles.blockButton]}
+              onPress={() => {
+                Alert.alert(
+                  'Engelle',
+                  `${otherUser?.full_name || 'Bu kullaniciyi'} engellemek istedigine emin misin? Engellenen kisi sana mesaj atamaz, profilini goremez ve takip edemez.`,
+                  [
+                    { text: 'Iptal', style: 'cancel' },
+                    {
+                      text: 'Engelle',
+                      style: 'destructive',
+                      onPress: async () => {
+                        haptic.error();
+                        await blockFromRequest(conversationId!, otherUserId);
+                        router.back();
+                      },
+                    },
+                  ],
+                );
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="ban" size={20} color="#FFF" />
+              <Text style={styles.requestActionTextLight}>Engelle</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        ) : (
+          <View style={[
+            styles.inputBar,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: isDark ? colors.border : colors.borderLight,
+              paddingBottom: Math.max(insets.bottom, Spacing.sm),
+            },
+          ]}>
+            <TouchableOpacity
+              style={[styles.attachButton, {
+                backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+              }]}
+              onPress={() => { haptic.light(); setAttachmentSheetVisible(true); }}
+              activeOpacity={0.7}
+              accessibilityLabel="Ek ekle"
+              accessibilityRole="button"
+            >
+              <Ionicons name="add" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+
+            <View style={[styles.inputWrap, {
+              backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
+              borderColor: isDark ? colors.border : 'transparent',
+              borderWidth: isDark ? StyleSheet.hairlineWidth : 0,
+            }]}>
+              <TextInput
+                style={[styles.inputField, { color: colors.text }]}
+                value={draft}
+                onChangeText={setDraft}
+                placeholder="Mesaj yaz..."
+                placeholderTextColor={colors.textTertiary}
+                multiline
+                maxLength={2000}
+                selectionColor={Colors.primary}
+              />
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={!canSend}
+              activeOpacity={0.7}
+              accessibilityLabel="Mesaj gonder"
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={canSend ? [Colors.primary, Colors.accent] : [colors.textTertiary, colors.textTertiary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.sendButton, !canSend && { opacity: 0.35 }]}
+              >
+                <Ionicons name="send" size={18} color="#FFF" style={{ marginLeft: 2 }} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* Attachment Sheet */}
@@ -602,6 +689,59 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: FontFamily.body,
     letterSpacing: 0.1,
+  },
+
+  // ─── Pending Banner ────────────────────────────────
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  pendingBannerText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    lineHeight: 18,
+  },
+
+  // ─── Request Action Bar ───────────────────────────
+  requestActionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.sm,
+  },
+  requestActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  acceptButton: {
+    backgroundColor: Colors.success,
+  },
+  blockButton: {
+    backgroundColor: Colors.error,
+  },
+  requestActionText: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+  },
+  requestActionTextLight: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFF',
   },
 
   // ─── Input Bar ──────────────────────────────────────
