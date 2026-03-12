@@ -5,7 +5,6 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
   RefreshControl,
   ScrollView,
   Platform,
@@ -13,6 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RectButton } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -388,14 +388,12 @@ export default function FeedScreen() {
             {CATEGORIES.map((cat) => {
               const isActive = category === cat.key;
               return (
-                <Pressable
+                <RectButton
                   key={cat.key}
                   onLayout={(e) => handleChipLayout(cat.key, e)}
-                  style={({ pressed }) => [
-                    styles.categoryChip,
-                    pressed && { opacity: 0.7 },
-                  ]}
+                  style={styles.categoryChip}
                   onPress={() => handleCategoryChange(cat.key)}
+                  activeOpacity={0.7}
                   accessibilityRole="tab"
                   accessibilityLabel={cat.label + ' kategorisi'}
                   accessibilityState={{ selected: isActive }}
@@ -413,7 +411,7 @@ export default function FeedScreen() {
                   >
                     {cat.label}
                   </Text>
-                </Pressable>
+                </RectButton>
               );
             })}
           </View>
