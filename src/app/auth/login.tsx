@@ -13,12 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { supabase } from '../../lib/supabase';
+import { haptic } from '../../lib/haptics';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -34,17 +36,21 @@ export default function LoginScreen() {
 
     if (!email.trim()) {
       setError('E-posta adresi gereklidir.');
+      haptic.error();
       return;
     }
     if (!password) {
       setError('Şifre gereklidir.');
+      haptic.error();
       return;
     }
 
     const result = await signInWithEmail(email.trim(), password);
     if (result.error) {
       setError(result.error);
+      haptic.error();
     } else {
+      haptic.success();
       router.replace('/(tabs)/map');
     }
   };
@@ -70,7 +76,10 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           {/* Brand Section */}
-          <View style={styles.brandSection}>
+          <Animated.View
+            entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}
+            style={styles.brandSection}
+          >
             {/* Red circle with restaurant icon */}
             <View style={styles.logoCircle}>
               <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
@@ -78,87 +87,98 @@ export default function LoginScreen() {
 
             <Text style={styles.brandName}>Öğrenci Nerede Yer?</Text>
             <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Lezzetli keşiflere başla!</Text>
-          </View>
+          </Animated.View>
 
           {/* Form Section */}
           <View style={styles.formSection}>
-            <Input
-              label="E-posta"
-              placeholder="ornek@universite.edu.tr"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (error) setError('');
-              }}
-              icon="mail-outline"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
+            <Animated.View entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)}>
+              <Input
+                label="E-posta"
+                placeholder="ornek@universite.edu.tr"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (error) setError('');
+                }}
+                icon="mail-outline"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </Animated.View>
 
-            <Input
-              label="Şifre"
-              placeholder="Şifrenizi girin"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (error) setError('');
-              }}
-              icon="lock-closed-outline"
-              secureTextEntry
-              autoComplete="password"
-            />
+            <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)}>
+              <Input
+                label="Şifre"
+                placeholder="Şifrenizi girin"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (error) setError('');
+                }}
+                icon="lock-closed-outline"
+                secureTextEntry
+                autoComplete="password"
+              />
+            </Animated.View>
 
             {/* Forgot Password Link */}
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => {
-                if (!email.trim()) {
-                  Alert.alert('Uyarı', 'Lütfen e-posta adresini gir');
-                  return;
-                }
-                supabase.auth.resetPasswordForEmail(email.trim()).then(() => {
-                  Alert.alert('Başarılı', 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi');
-                }).catch(() => {
-                  Alert.alert('Hata', 'Şifre sıfırlama bağlantısı gönderilemedi');
-                });
-              }}
-            >
-              <Text style={styles.forgotPasswordText}>Şifremi Unuttum?</Text>
-            </TouchableOpacity>
+            <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)}>
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => {
+                  if (!email.trim()) {
+                    Alert.alert('Uyarı', 'Lütfen e-posta adresini gir');
+                    return;
+                  }
+                  supabase.auth.resetPasswordForEmail(email.trim()).then(() => {
+                    Alert.alert('Başarılı', 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi');
+                  }).catch(() => {
+                    Alert.alert('Hata', 'Şifre sıfırlama bağlantısı gönderilemedi');
+                  });
+                }}
+              >
+                <Text style={styles.forgotPasswordText}>Şifremi Unuttum?</Text>
+              </TouchableOpacity>
+            </Animated.View>
 
             {/* Error Message */}
             {error ? (
-              <View style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}>
+              <Animated.View
+                entering={FadeInDown.springify().damping(20).stiffness(300)}
+                style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}
+              >
                 <Ionicons name="alert-circle" size={18} color={Colors.error} />
                 <Text style={styles.errorText}>{error}</Text>
-              </View>
+              </Animated.View>
             ) : null}
 
             {/* Login Button */}
-            <Button
-              title="Giriş Yap"
-              onPress={handleLogin}
-              loading={loading}
-              disabled={loading}
-              style={styles.loginButton}
-            />
+            <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)}>
+              <Button
+                title="Giriş Yap"
+                onPress={handleLogin}
+                loading={loading}
+                disabled={loading}
+                style={styles.loginButton}
+              />
+            </Animated.View>
           </View>
 
           {/* Divider */}
-          <View style={styles.divider}>
+          <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)} style={styles.divider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
+          </Animated.View>
 
           {/* Register Link */}
-          <View style={styles.footer}>
+          <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)} style={styles.footer}>
             <Text style={[styles.footerText, { color: colors.textSecondary }]}>Hesabın yok mu? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/register')}>
               <Text style={styles.footerLink}>Kayıt Ol</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

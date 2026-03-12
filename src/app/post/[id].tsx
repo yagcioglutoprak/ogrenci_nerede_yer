@@ -15,6 +15,7 @@ import {
   NativeScrollEvent,
   Share,
 } from 'react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,7 +23,9 @@ import { useFeedStore } from '../../stores/feedStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
+import GlassView from '../../components/ui/GlassView';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import type { Comment, PostImage, RecommendationAnswer } from '../../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -89,6 +92,7 @@ export default function PostDetailScreen() {
       router.push('/auth/login');
       return;
     }
+    haptic.light();
     if (post) toggleLike(post.id, user.id);
   };
 
@@ -136,8 +140,11 @@ export default function PostDetailScreen() {
 
   // ── Question-type post: dedicated answer layout ──
   if (post.post_type === 'question') {
-    const renderAnswer = ({ item }: { item: RecommendationAnswer }) => (
-      <View style={[qStyles.answerItem, { borderBottomColor: colors.borderLight }]}>
+    const renderAnswer = ({ item, index }: { item: RecommendationAnswer; index: number }) => (
+      <Animated.View
+        entering={FadeInDown.delay(index * 60).springify().damping(20).stiffness(300)}
+        style={[qStyles.answerItem, { borderBottomColor: colors.borderLight }]}
+      >
         <View style={qStyles.answerLeft}>
           <Avatar
             uri={item.user?.avatar_url}
@@ -179,6 +186,7 @@ export default function PostDetailScreen() {
             activeOpacity={0.6}
             onPress={async () => {
               if (!user) { router.push('/auth/login'); return; }
+              haptic.light();
               const result = await useFeedStore.getState().upvoteAnswer(item.id, user.id);
               if (result !== null) {
                 setAnswers((prev) =>
@@ -204,11 +212,11 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
           <Text style={[qStyles.upvoteCount, { color: QUESTION_COLOR }]}>{item.upvotes ?? 0}</Text>
         </View>
-      </View>
+      </Animated.View>
     );
 
     const renderQuestionHeader = () => (
-      <View>
+      <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
         {/* Question card */}
         <View style={[qStyles.questionCard, { backgroundColor: colors.background }]}>
           <View style={qStyles.questionHeader}>
@@ -236,13 +244,52 @@ export default function PostDetailScreen() {
         </View>
 
         {/* Answers header */}
-        <View style={[qStyles.answersHeader, { borderBottomColor: colors.borderLight }]}>
+        <View style={qStyles.answersHeader}>
           <Ionicons name="chatbubbles" size={18} color={QUESTION_COLOR} />
           <Text style={[qStyles.answersTitle, { color: colors.text }]}>
             {answers.length} Yanit
           </Text>
         </View>
-      </View>
+      </Animated.View>
+    );
+
+    const inputContent = (
+      <>
+        <Avatar
+          uri={user?.avatar_url}
+          name={user?.full_name ?? user?.username ?? '?'}
+          size={32}
+        />
+        <TextInput
+          ref={commentInputRef}
+          style={[styles.commentInput, { color: colors.text }]}
+          placeholder="Yanitini yaz..."
+          placeholderTextColor={colors.textTertiary}
+          value={commentText}
+          onChangeText={setCommentText}
+          onFocus={() => haptic.selection()}
+          selectionColor={QUESTION_COLOR}
+        />
+        <TouchableOpacity
+          onPress={handleSubmitComment}
+          disabled={!commentText.trim() || submitting}
+          activeOpacity={0.7}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color={QUESTION_COLOR} />
+          ) : (
+            <Text
+              style={[
+                styles.commentSendText,
+                { color: QUESTION_COLOR },
+                !commentText.trim() && styles.commentSendTextDisabled,
+              ]}
+            >
+              Gonder
+            </Text>
+          )}
+        </TouchableOpacity>
+      </>
     );
 
     return (
@@ -253,16 +300,29 @@ export default function PostDetailScreen() {
           keyboardVerticalOffset={0}
         >
           {/* Header bar */}
-          <View style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
-            <View style={{ width: 24 }} />
-          </View>
+          {Platform.OS === 'ios' ? (
+            <GlassView style={styles.headerBar}>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
+              <View style={{ width: 24 }} />
+            </GlassView>
+          ) : (
+            <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
+              <View style={{ width: 24 }} />
+            </View>
+          )}
 
           {/* Answers list */}
           <FlatList
@@ -282,41 +342,15 @@ export default function PostDetailScreen() {
           />
 
           {/* Answer input bar */}
-          <View style={[styles.commentBar, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
-            <Avatar
-              uri={user?.avatar_url}
-              name={user?.full_name ?? user?.username ?? '?'}
-              size={32}
-            />
-            <TextInput
-              ref={commentInputRef}
-              style={[styles.commentInput, { color: colors.text }]}
-              placeholder="Yanitini yaz..."
-              placeholderTextColor={colors.textTertiary}
-              value={commentText}
-              onChangeText={setCommentText}
-              selectionColor={QUESTION_COLOR}
-            />
-            <TouchableOpacity
-              onPress={handleSubmitComment}
-              disabled={!commentText.trim() || submitting}
-              activeOpacity={0.7}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color={QUESTION_COLOR} />
-              ) : (
-                <Text
-                  style={[
-                    styles.commentSendText,
-                    { color: QUESTION_COLOR },
-                    !commentText.trim() && styles.commentSendTextDisabled,
-                  ]}
-                >
-                  Gonder
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          {Platform.OS === 'ios' ? (
+            <GlassView style={styles.commentBar}>
+              {inputContent}
+            </GlassView>
+          ) : (
+            <View style={[styles.commentBar, { backgroundColor: colors.background }]}>
+              {inputContent}
+            </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -325,8 +359,11 @@ export default function PostDetailScreen() {
   // ── Regular post detail (existing code below) ──
   const images = post.images ?? [];
 
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View style={styles.commentItem}>
+  const renderComment = ({ item, index }: { item: Comment; index: number }) => (
+    <Animated.View
+      entering={FadeInDown.delay(index * 60).springify().damping(20).stiffness(300)}
+      style={styles.commentItem}
+    >
       <Avatar
         uri={item.user?.avatar_url}
         name={item.user?.full_name ?? item.user?.username ?? '?'}
@@ -341,11 +378,11 @@ export default function PostDetailScreen() {
         </Text>
         <Text style={[styles.commentTime, { color: colors.textTertiary }]}>{getRelativeTime(item.created_at)}</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 
   const renderHeader = () => (
-    <View>
+    <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
       {/* Image Carousel */}
       {images.length > 0 && (
         <View style={[styles.imageSection, { backgroundColor: colors.backgroundSecondary }]}>
@@ -390,7 +427,10 @@ export default function PostDetailScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => commentInputRef.current?.focus()}
+            onPress={() => {
+              haptic.selection();
+              commentInputRef.current?.focus();
+            }}
             activeOpacity={0.5}
           >
             <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
@@ -404,6 +444,7 @@ export default function PostDetailScreen() {
           activeOpacity={0.5}
           onPress={async () => {
             if (!user) { router.push('/auth/login'); return; }
+            haptic.light();
             const result = await useFeedStore.getState().toggleBookmark(post.id, user.id);
             if (result !== null) setIsBookmarked(result);
           }}
@@ -430,12 +471,50 @@ export default function PostDetailScreen() {
       ) : null}
 
       {/* Comments header */}
-      <View style={[styles.commentsHeader, { borderBottomColor: colors.borderLight }]}>
+      <View style={styles.commentsHeader}>
         <Text style={[styles.commentsTitle, { color: colors.text }]}>
           Yorumlar ({comments.length})
         </Text>
       </View>
-    </View>
+    </Animated.View>
+  );
+
+  const regularInputContent = (
+    <>
+      <Avatar
+        uri={user?.avatar_url}
+        name={user?.full_name ?? user?.username ?? '?'}
+        size={32}
+      />
+      <TextInput
+        ref={commentInputRef}
+        style={[styles.commentInput, { color: colors.text }]}
+        placeholder="Yorum yaz..."
+        placeholderTextColor={colors.textTertiary}
+        value={commentText}
+        onChangeText={setCommentText}
+        onFocus={() => haptic.selection()}
+        selectionColor={Colors.primary}
+      />
+      <TouchableOpacity
+        onPress={handleSubmitComment}
+        disabled={!commentText.trim() || submitting}
+        activeOpacity={0.7}
+      >
+        {submitting ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <Text
+            style={[
+              styles.commentSendText,
+              !commentText.trim() && styles.commentSendTextDisabled,
+            ]}
+          >
+            Gonder
+          </Text>
+        )}
+      </TouchableOpacity>
+    </>
   );
 
   return (
@@ -446,23 +525,43 @@ export default function PostDetailScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        <View style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View style={styles.headerUser}>
-            <Avatar
-              uri={post.user?.avatar_url}
-              name={post.user?.full_name ?? post.user?.username ?? '?'}
-              size={28}
-            />
-            <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
+        {Platform.OS === 'ios' ? (
+          <GlassView style={styles.headerBar}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerUser}>
+              <Avatar
+                uri={post.user?.avatar_url}
+                name={post.user?.full_name ?? post.user?.username ?? '?'}
+                size={28}
+              />
+              <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
+            </View>
+            <View style={{ width: 24 }} />
+          </GlassView>
+        ) : (
+          <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerUser}>
+              <Avatar
+                uri={post.user?.avatar_url}
+                name={post.user?.full_name ?? post.user?.username ?? '?'}
+                size={28}
+              />
+              <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
+            </View>
+            <View style={{ width: 24 }} />
           </View>
-          <View style={{ width: 24 }} />
-        </View>
+        )}
 
         {/* Comments list */}
         <FlatList
@@ -482,40 +581,15 @@ export default function PostDetailScreen() {
         />
 
         {/* Comment input bar */}
-        <View style={[styles.commentBar, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
-          <Avatar
-            uri={user?.avatar_url}
-            name={user?.full_name ?? user?.username ?? '?'}
-            size={32}
-          />
-          <TextInput
-            ref={commentInputRef}
-            style={[styles.commentInput, { color: colors.text }]}
-            placeholder="Yorum yaz..."
-            placeholderTextColor={colors.textTertiary}
-            value={commentText}
-            onChangeText={setCommentText}
-            selectionColor={Colors.primary}
-          />
-          <TouchableOpacity
-            onPress={handleSubmitComment}
-            disabled={!commentText.trim() || submitting}
-            activeOpacity={0.7}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.commentSendText,
-                  !commentText.trim() && styles.commentSendTextDisabled,
-                ]}
-              >
-                Gonder
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        {Platform.OS === 'ios' ? (
+          <GlassView style={styles.commentBar}>
+            {regularInputContent}
+          </GlassView>
+        ) : (
+          <View style={[styles.commentBar, { backgroundColor: colors.background }]}>
+            {regularInputContent}
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -543,8 +617,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   headerUser: {
     flexDirection: 'row',
@@ -635,8 +707,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   commentsTitle: {
     fontSize: FontSize.md,
@@ -695,9 +765,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    backgroundColor: Colors.background,
     gap: Spacing.md,
   },
   commentInput: {
@@ -770,7 +837,6 @@ const qStyles = StyleSheet.create({
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
   },
   answersTitle: {
     fontSize: FontSize.md,
@@ -781,7 +847,6 @@ const qStyles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
     gap: Spacing.md,
-    borderBottomWidth: 1,
   },
   answerLeft: {
     paddingTop: 2,

@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -14,6 +20,76 @@ interface CirclePickerProps {
   size?: number;
 }
 
+function AnimatedCircle({
+  step,
+  icon,
+  filled,
+  color,
+  size,
+  backgroundColor,
+  borderColor,
+  textColor,
+  onPress,
+}: {
+  step: number;
+  icon: IoniconName;
+  filled: boolean;
+  color: string;
+  size: number;
+  backgroundColor: string;
+  borderColor: string;
+  textColor: string;
+  onPress: (step: number) => void;
+}) {
+  const scale = useSharedValue(1);
+  const selectionScale = useSharedValue(filled ? 1 : 0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  // Animate selection indicator on fill change
+  React.useEffect(() => {
+    selectionScale.value = withSpring(filled ? 1 : 0, {
+      damping: 12,
+      stiffness: 300,
+    });
+  }, [filled, selectionScale]);
+
+  const handlePress = useCallback(() => {
+    haptic.selection();
+    scale.value = withSpring(1.2, { damping: 6, stiffness: 400 }, () => {
+      scale.value = withSpring(1, { damping: 6, stiffness: 400 });
+    });
+    onPress(step);
+  }, [step, onPress, scale]);
+
+  return (
+    <Pressable onPress={handlePress}>
+      <Animated.View
+        style={[
+          styles.circle,
+          animatedStyle,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: filled ? color : backgroundColor,
+            borderWidth: filled ? 0 : 1.5,
+            borderColor: filled ? 'transparent' : borderColor,
+          },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={size * 0.42}
+          color={filled ? '#FFFFFF' : textColor}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function CirclePicker({
   value,
   icons,
@@ -23,6 +99,13 @@ export default function CirclePicker({
 }: CirclePickerProps) {
   const colors = useThemeColors();
 
+  const handlePress = useCallback(
+    (step: number) => {
+      onValueChange?.(step);
+    },
+    [onValueChange],
+  );
+
   return (
     <View style={styles.container}>
       {icons.map((icon, i) => {
@@ -30,28 +113,18 @@ export default function CirclePicker({
         const filled = step <= value;
 
         return (
-          <TouchableOpacity
+          <AnimatedCircle
             key={step}
-            onPress={() => onValueChange?.(step)}
-            activeOpacity={0.6}
-            style={[
-              styles.circle,
-              {
-                width: size,
-                height: size,
-                borderRadius: size / 2,
-                backgroundColor: filled ? color : colors.backgroundSecondary,
-                borderWidth: filled ? 0 : 1.5,
-                borderColor: filled ? 'transparent' : colors.border,
-              },
-            ]}
-          >
-            <Ionicons
-              name={icon}
-              size={size * 0.42}
-              color={filled ? '#FFFFFF' : colors.textTertiary}
-            />
-          </TouchableOpacity>
+            step={step}
+            icon={icon}
+            filled={filled}
+            color={color}
+            size={size}
+            backgroundColor={colors.backgroundSecondary}
+            borderColor={colors.border}
+            textColor={colors.textTertiary}
+            onPress={handlePress}
+          />
         );
       })}
     </View>

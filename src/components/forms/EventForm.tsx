@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
+import Animated, { Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,6 +16,9 @@ import { useEventStore } from '../../stores/eventStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
+import GlassView from '../ui/GlassView';
+import Button from '../ui/Button';
 import type { User } from '../../types';
 
 interface EventFormProps {
@@ -63,6 +67,11 @@ export default function EventForm({ user }: EventFormProps) {
     }
   };
 
+  const handleTogglePublic = (value: boolean) => {
+    haptic.light();
+    setIsPublic(value);
+  };
+
   const handleSubmit = async () => {
     if (!title.trim()) {
       Alert.alert('Hata', 'Bulusma basligi zorunludur.');
@@ -87,237 +96,261 @@ export default function EventForm({ user }: EventFormProps) {
     if (error) {
       Alert.alert('Hata', error);
     } else {
+      haptic.success();
       Alert.alert('Basarili', 'Bulusma basariyla olusturuldu!');
       resetForm();
       router.back();
     }
   };
 
+  const renderSectionCard = (children: React.ReactNode) => {
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.sectionCardGlass}>
+          {children}
+        </GlassView>
+      );
+    }
+    return (
+      <View style={[styles.sectionCard, { backgroundColor: colors.background }]}>
+        {children}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.formContainer}>
       {/* Title */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Baslik</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <TextInput
-            style={[styles.textInput, { color: colors.text }]}
-            placeholder="Bulusma basligi..."
-            placeholderTextColor={colors.textTertiary}
-            value={title}
-            onChangeText={setTitle}
-            selectionColor={colors.primary}
-          />
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Baslik</Text>
+          <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TextInput
+              style={[styles.textInput, { color: colors.text }]}
+              placeholder="Bulusma basligi..."
+              placeholderTextColor={colors.textTertiary}
+              value={title}
+              onChangeText={setTitle}
+              selectionColor={colors.primary}
+            />
+          </View>
+        </>
+      )}
 
       {/* Description */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Aciklama</Text>
-        <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <TextInput
-            style={[styles.textInput, styles.textInputMultiline, { color: colors.text }]}
-            placeholder="Bulusma hakkinda bir seyler yaz..."
-            placeholderTextColor={colors.textTertiary}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            textAlignVertical="top"
-            selectionColor={colors.primary}
-          />
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Aciklama</Text>
+          <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TextInput
+              style={[styles.textInput, styles.textInputMultiline, { color: colors.text }]}
+              placeholder="Bulusma hakkinda bir seyler yaz..."
+              placeholderTextColor={colors.textTertiary}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              textAlignVertical="top"
+              selectionColor={colors.primary}
+            />
+          </View>
+        </>
+      )}
 
       {/* Venue Picker */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Mekan</Text>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Mekan</Text>
 
-        {selectedVenue ? (
-          <View style={[styles.selectedVenueCard, { backgroundColor: colors.primarySoft }]}>
-            <View style={[styles.selectedVenueIcon, { backgroundColor: colors.background }]}>
-              <Ionicons name="restaurant" size={16} color={Colors.primary} />
-            </View>
-            <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>
-              {selectedVenue.name}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setVenueId(null)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close-circle" size={22} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: colors.text }]}
-                placeholder="Mekan ara..."
-                placeholderTextColor={colors.textTertiary}
-                value={venueSearchQuery}
-                onChangeText={handleVenueSearch}
-                selectionColor={colors.primary}
-              />
-            </View>
-            {venueSearchQuery.length > 0 && (
-              <View style={[styles.venueSearchResults, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                {filteredVenues.slice(0, 5).map((v) => (
-                  <TouchableOpacity
-                    key={v.id}
-                    style={[styles.venueSearchItem, { borderBottomColor: colors.borderLight }]}
-                    onPress={() => {
-                      setVenueId(v.id);
-                      setVenueSearchQuery('');
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.venueSearchItemIcon, { backgroundColor: colors.primarySoft }]}>
-                      <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
-                    </View>
-                    <View style={styles.venueSearchItemInfo}>
-                      <Text style={[styles.venueSearchItemName, { color: colors.text }]}>{v.name}</Text>
-                      <Text style={[styles.venueSearchItemAddr, { color: colors.textSecondary }]} numberOfLines={1}>{v.address}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-                {filteredVenues.length === 0 && (
-                  <View style={styles.venueSearchEmpty}>
-                    <Ionicons name="search-outline" size={20} color={Colors.textTertiary} />
-                    <Text style={styles.venueSearchEmptyText}>Mekan bulunamadi</Text>
-                  </View>
-                )}
+          {selectedVenue ? (
+            <View style={[styles.selectedVenueCard, { backgroundColor: colors.primarySoft }]}>
+              <View style={[styles.selectedVenueIcon, { backgroundColor: colors.background }]}>
+                <Ionicons name="restaurant" size={16} color={Colors.primary} />
               </View>
-            )}
-          </>
-        )}
-      </View>
+              <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>
+                {selectedVenue.name}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setVenueId(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={22} color={Colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+                <Ionicons name="search-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.textInput, { color: colors.text }]}
+                  placeholder="Mekan ara..."
+                  placeholderTextColor={colors.textTertiary}
+                  value={venueSearchQuery}
+                  onChangeText={handleVenueSearch}
+                  selectionColor={colors.primary}
+                />
+              </View>
+              {venueSearchQuery.length > 0 && (
+                <View style={[styles.venueSearchResults, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  {filteredVenues.slice(0, 5).map((v) => (
+                    <TouchableOpacity
+                      key={v.id}
+                      style={[styles.venueSearchItem, { borderBottomColor: colors.borderLight }]}
+                      onPress={() => {
+                        setVenueId(v.id);
+                        setVenueSearchQuery('');
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.venueSearchItemIcon, { backgroundColor: colors.primarySoft }]}>
+                        <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
+                      </View>
+                      <View style={styles.venueSearchItemInfo}>
+                        <Text style={[styles.venueSearchItemName, { color: colors.text }]}>{v.name}</Text>
+                        <Text style={[styles.venueSearchItemAddr, { color: colors.textSecondary }]} numberOfLines={1}>{v.address}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  {filteredVenues.length === 0 && (
+                    <View style={styles.venueSearchEmpty}>
+                      <Ionicons name="search-outline" size={20} color={Colors.textTertiary} />
+                      <Text style={styles.venueSearchEmptyText}>Mekan bulunamadi</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+        </>
+      )}
 
       {/* Date & Time */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarih ve Saat</Text>
-        <TouchableOpacity
-          style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-          onPress={() => setShowDatePicker(true)}
-        >
-          <Ionicons name="calendar-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-          <Text style={[styles.textInput, { color: colors.text }]}>
-            {eventDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            {' '}
-            {eventDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={eventDate}
-            mode="date"
-            minimumDate={new Date()}
-            onChange={(_, date) => {
-              setShowDatePicker(false);
-              if (date) {
-                setEventDate(date);
-                setShowTimePicker(true);
-              }
-            }}
-          />
-        )}
-        {showTimePicker && (
-          <DateTimePicker
-            value={eventDate}
-            mode="time"
-            onChange={(_, date) => {
-              setShowTimePicker(false);
-              if (date) setEventDate(date);
-            }}
-          />
-        )}
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Tarih ve Saat</Text>
+          <TouchableOpacity
+            style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+            <Text style={[styles.textInput, { color: colors.text }]}>
+              {eventDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {' '}
+              {eventDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={eventDate}
+              mode="date"
+              minimumDate={new Date()}
+              onChange={(_, date) => {
+                setShowDatePicker(false);
+                if (date) {
+                  setEventDate(date);
+                  setShowTimePicker(true);
+                }
+              }}
+            />
+          )}
+          {showTimePicker && (
+            <DateTimePicker
+              value={eventDate}
+              mode="time"
+              onChange={(_, date) => {
+                setShowTimePicker(false);
+                if (date) setEventDate(date);
+              }}
+            />
+          )}
+        </>
+      )}
 
       {/* Max Attendees */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Maksimum Katilimci</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <Ionicons name="people-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-          <TextInput
-            style={[styles.textInput, { color: colors.text }]}
-            placeholder="10"
-            placeholderTextColor={colors.textTertiary}
-            value={maxAttendees}
-            onChangeText={setMaxAttendees}
-            keyboardType="number-pad"
-            selectionColor={colors.primary}
-          />
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Maksimum Katilimci</Text>
+          <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <Ionicons name="people-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.textInput, { color: colors.text }]}
+              placeholder="10"
+              placeholderTextColor={colors.textTertiary}
+              value={maxAttendees}
+              onChangeText={setMaxAttendees}
+              keyboardType="number-pad"
+              selectionColor={colors.primary}
+            />
+          </View>
+        </>
+      )}
 
       {/* Public Toggle */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Gorunurluk</Text>
-        <View style={styles.toggleRow}>
-          <TouchableOpacity
-            style={[
-              styles.toggleOption,
-              isPublic && styles.toggleOptionActive,
-              { borderColor: isPublic ? Colors.primary : colors.border },
-            ]}
-            onPress={() => setIsPublic(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="globe-outline"
-              size={18}
-              color={isPublic ? Colors.primary : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.toggleOptionText,
-                { color: isPublic ? Colors.primary : colors.textSecondary },
-              ]}
-            >
-              Herkese Acik
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.toggleOption,
-              !isPublic && styles.toggleOptionActive,
-              { borderColor: !isPublic ? Colors.primary : colors.border },
-            ]}
-            onPress={() => setIsPublic(false)}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="lock-closed-outline"
-              size={18}
-              color={!isPublic ? Colors.primary : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.toggleOptionText,
-                { color: !isPublic ? Colors.primary : colors.textSecondary },
-              ]}
-            >
-              Sadece Takipciler
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gorunurluk</Text>
+          <Animated.View style={styles.toggleRow} layout={Layout.springify()}>
+            <Animated.View style={{ flex: 1 }} layout={Layout.springify()}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  isPublic && styles.toggleOptionActive,
+                  { borderColor: isPublic ? Colors.primary : colors.border },
+                ]}
+                onPress={() => handleTogglePublic(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="globe-outline"
+                  size={18}
+                  color={isPublic ? Colors.primary : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.toggleOptionText,
+                    { color: isPublic ? Colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  Herkese Acik
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <Animated.View style={{ flex: 1 }} layout={Layout.springify()}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleOption,
+                  !isPublic && styles.toggleOptionActive,
+                  { borderColor: !isPublic ? Colors.primary : colors.border },
+                ]}
+                onPress={() => handleTogglePublic(false)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={18}
+                  color={!isPublic ? Colors.primary : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.toggleOptionText,
+                    { color: !isPublic ? Colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  Sadece Takipciler
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </>
+      )}
 
       {/* Submit */}
-      <TouchableOpacity
-        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+      <Button
+        title="Bulusma Olustur"
+        variant="primary"
         onPress={handleSubmit}
-        disabled={submitting}
-        activeOpacity={0.8}
-      >
-        {submitting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <>
-            <Ionicons name="people" size={18} color="#FFFFFF" />
-            <Text style={styles.submitBtnText}>Bulusma Olustur</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        loading={submitting}
+        icon="people"
+      />
     </View>
   );
 }
@@ -327,16 +360,17 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   sectionCard: {
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.lg,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  sectionCardGlass: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
   sectionTitle: {
     fontSize: FontSize.md,
@@ -466,28 +500,5 @@ const styles = StyleSheet.create({
   toggleOptionText: {
     fontSize: FontSize.sm,
     fontWeight: '600',
-  },
-  submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
   },
 });

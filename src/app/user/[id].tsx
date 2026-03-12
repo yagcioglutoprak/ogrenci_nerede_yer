@@ -13,6 +13,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
 import { useAuthStore } from '../../stores/authStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { supabase } from '../../lib/supabase';
@@ -21,6 +22,7 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/c
 import { useBlockStore } from '../../stores/blockStore';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import type { User, Post } from '../../types';
 
 export default function UserProfileScreen() {
@@ -41,6 +43,12 @@ export default function UserProfileScreen() {
   const blockUser = useBlockStore((s) => s.blockUser);
   const unblockUser = useBlockStore((s) => s.unblockUser);
   const [isBlockedBetween, setIsBlockedBetween] = useState(false);
+
+  // Spring scale animation for Follow button
+  const followScale = useSharedValue(1);
+  const followAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: followScale.value }],
+  }));
 
   useEffect(() => {
     if (id) loadUserProfile(id);
@@ -136,6 +144,13 @@ export default function UserProfileScreen() {
     }
     if (isBlockedBetween) return;
 
+    haptic.light();
+    // Spring scale animation on follow button
+    followScale.value = withSequence(
+      withSpring(0.9, { damping: 12, stiffness: 400 }),
+      withSpring(1, { damping: 12, stiffness: 400 }),
+    );
+
     const prevFollowing = isFollowing;
     const prevStats = { ...stats };
 
@@ -186,6 +201,7 @@ export default function UserProfileScreen() {
       Alert.alert('Engellendi', 'Bu kullanıcıyla iletişim kuramazsın.');
       return;
     }
+    haptic.light();
     const convId = await useMessageStore.getState().fetchOrCreateConversation(currentUser.id, id);
     if (convId) {
       router.push(`/chat/${convId}`);
@@ -292,7 +308,10 @@ export default function UserProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: Spacing.xxl + insets.bottom }]}>
         {/* Profile card */}
-        <View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}>
+        <Animated.View
+          entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}
+          style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}
+        >
           <Avatar
             uri={profileUser.avatar_url}
             name={profileUser.full_name || profileUser.username}
@@ -315,24 +334,26 @@ export default function UserProfileScreen() {
           {/* Action buttons */}
           {!isOwnProfile && (
             <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.followButton,
-                  { backgroundColor: colors.primary, shadowColor: colors.primary },
-                  isFollowing && { backgroundColor: colors.backgroundSecondary, borderWidth: 1.5, borderColor: colors.primary, shadowOpacity: 0, elevation: 0 },
-                ]}
-                onPress={handleFollowToggle}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={isFollowing ? 'checkmark' : 'person-add-outline'}
-                  size={16}
-                  color={isFollowing ? colors.primary : '#FFFFFF'}
-                />
-                <Text style={[styles.followButtonText, isFollowing && { color: colors.primary }]}>
-                  {isFollowing ? 'Takip Ediliyor' : 'Takip Et'}
-                </Text>
-              </TouchableOpacity>
+              <Animated.View style={followAnimatedStyle}>
+                <TouchableOpacity
+                  style={[
+                    styles.followButton,
+                    { backgroundColor: colors.primary, shadowColor: colors.primary },
+                    isFollowing && { backgroundColor: colors.backgroundSecondary, borderWidth: 1.5, borderColor: colors.primary, shadowOpacity: 0, elevation: 0 },
+                  ]}
+                  onPress={handleFollowToggle}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={isFollowing ? 'checkmark' : 'person-add-outline'}
+                    size={16}
+                    color={isFollowing ? colors.primary : '#FFFFFF'}
+                  />
+                  <Text style={[styles.followButtonText, isFollowing && { color: colors.primary }]}>
+                    {isFollowing ? 'Takip Ediliyor' : 'Takip Et'}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
               <TouchableOpacity
                 style={[styles.messageButton, { borderColor: colors.primary }]}
                 onPress={handleMessage}
@@ -367,10 +388,13 @@ export default function UserProfileScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Stats */}
-        <View style={[styles.statsCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)}
+          style={[styles.statsCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}
+        >
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.posts}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Gönderi</Text>
@@ -385,7 +409,7 @@ export default function UserProfileScreen() {
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.following}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Takip</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Posts grid */}
         <View style={styles.sectionHeader}>
@@ -480,7 +504,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
   },
   headerTitle: {
     fontSize: FontSize.lg,

@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Share, ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useListStore } from '../../stores/listStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import GlassView from '../../components/ui/GlassView';
+import { haptic } from '../../lib/haptics';
 import type { ListVenue } from '../../types';
 
 export default function ListDetailScreen() {
@@ -47,6 +51,23 @@ export default function ListDetailScreen() {
     );
   }
 
+  const renderGlassBtn = (onPress: () => void, iconName: string, iconSize: number) => {
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.glassBtn} interactive>
+          <TouchableOpacity onPress={onPress}>
+            <Ionicons name={iconName as any} size={iconSize} color="#FFF" />
+          </TouchableOpacity>
+        </GlassView>
+      );
+    }
+    return (
+      <TouchableOpacity onPress={onPress} style={[styles.glassBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+        <Ionicons name={iconName as any} size={iconSize} color="#FFF" />
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Hero */}
@@ -58,12 +79,8 @@ export default function ListDetailScreen() {
         )}
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.heroGradient}>
           <SafeAreaView edges={['top']} style={styles.heroHeader}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.glassBtn}>
-              <Ionicons name="chevron-back" size={22} color="#FFF" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleShare} style={styles.glassBtn}>
-              <Ionicons name="share-outline" size={20} color="#FFF" />
-            </TouchableOpacity>
+            {renderGlassBtn(() => router.back(), 'chevron-back', 22)}
+            {renderGlassBtn(handleShare, 'share-outline', 20)}
           </SafeAreaView>
           <View style={styles.heroInfo}>
             <Text style={styles.heroTitle}>{selectedList.title}</Text>
@@ -96,6 +113,7 @@ export default function ListDetailScreen() {
             style={[styles.actionBtn, isLiked && { backgroundColor: Colors.primarySoft }]}
             onPress={async () => {
               if (!user) { router.push('/auth/login'); return; }
+              haptic.light();
               const result = await toggleListLike(selectedList.id, user.id);
               if (result !== null) {
                 setIsLiked(result);
@@ -110,6 +128,7 @@ export default function ListDetailScreen() {
             style={[styles.actionBtn, isFollowing && { backgroundColor: Colors.primarySoft }]}
             onPress={async () => {
               if (!user) { router.push('/auth/login'); return; }
+              haptic.light();
               const result = await toggleListFollow(selectedList.id, user.id);
               if (result !== null) setIsFollowing(result);
             }}
@@ -126,40 +145,44 @@ export default function ListDetailScreen() {
           {selectedList.venues?.length || 0} mekan
         </Text>
         {selectedList.venues?.map((lv: ListVenue, index: number) => (
-          <TouchableOpacity
+          <Animated.View
             key={lv.id}
-            style={[styles.venueCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => lv.venue && router.push(`/venue/${lv.venue.id}`)}
-            activeOpacity={0.8}
+            entering={FadeInDown.delay(index * 60).springify().damping(22).stiffness(340)}
           >
-            <View style={styles.venuePosition}>
-              <Text style={styles.venuePositionText}>{index + 1}</Text>
-            </View>
-            {lv.venue?.cover_image_url ? (
-              <Image source={{ uri: lv.venue.cover_image_url }} style={styles.venueImage} />
-            ) : (
-              <View style={[styles.venueImage, { backgroundColor: '#F0F0F0' }]}>
-                <Ionicons name="restaurant" size={20} color="#CCC" />
+            <TouchableOpacity
+              style={[styles.venueCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+              onPress={() => lv.venue && router.push(`/venue/${lv.venue.id}`)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.venuePosition}>
+                <Text style={styles.venuePositionText}>{index + 1}</Text>
               </View>
-            )}
-            <View style={styles.venueInfo}>
-              <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
-                {lv.venue?.name || 'Mekan'}
-              </Text>
-              {lv.note && (
-                <Text style={[styles.venueNote, { color: colors.textSecondary }]} numberOfLines={2}>
-                  {lv.note}
-                </Text>
-              )}
-              {lv.venue?.overall_rating ? (
-                <View style={styles.venueRatingRow}>
-                  <Ionicons name="star" size={12} color={Colors.accent} />
-                  <Text style={styles.venueRatingText}>{lv.venue.overall_rating.toFixed(1)}</Text>
+              {lv.venue?.cover_image_url ? (
+                <Image source={{ uri: lv.venue.cover_image_url }} style={styles.venueImage} />
+              ) : (
+                <View style={[styles.venueImage, { backgroundColor: '#F0F0F0' }]}>
+                  <Ionicons name="restaurant" size={20} color="#CCC" />
                 </View>
-              ) : null}
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-          </TouchableOpacity>
+              )}
+              <View style={styles.venueInfo}>
+                <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
+                  {lv.venue?.name || 'Mekan'}
+                </Text>
+                {lv.note && (
+                  <Text style={[styles.venueNote, { color: colors.textSecondary }]} numberOfLines={2}>
+                    {lv.note}
+                  </Text>
+                )}
+                {lv.venue?.overall_rating ? (
+                  <View style={styles.venueRatingRow}>
+                    <Ionicons name="star" size={12} color={Colors.accent} />
+                    <Text style={styles.venueRatingText}>{lv.venue.overall_rating.toFixed(1)}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+            </TouchableOpacity>
+          </Animated.View>
         ))}
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -176,7 +199,8 @@ const styles = StyleSheet.create({
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
   glassBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
+    overflow: 'hidden',
   },
   heroInfo: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.lg },
   heroTitle: { fontSize: FontSize.xxl, fontFamily: FontFamily.heading, color: '#FFF' },
@@ -184,7 +208,6 @@ const styles = StyleSheet.create({
   authorRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
   },
   authorInfo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   authorAvatar: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },

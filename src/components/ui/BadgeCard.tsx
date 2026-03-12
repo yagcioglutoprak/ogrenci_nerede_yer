@@ -1,5 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -9,13 +15,34 @@ interface BadgeCardProps {
   badge: Badge;
   earned?: boolean;
   earnedAt?: string;
+  onPress?: () => void;
+  index?: number;
 }
 
-export default function BadgeCard({ badge, earned = false, earnedAt }: BadgeCardProps) {
-  const colors = useThemeColors();
+const SPRING_CONFIG = { damping: 6, stiffness: 400 };
 
-  return (
-    <View style={[styles.container, { backgroundColor: earned ? badge.color + '15' : colors.backgroundSecondary, borderColor: earned ? badge.color + '40' : colors.border }]}>
+export default function BadgeCard({ badge, earned = false, earnedAt, onPress, index = 0 }: BadgeCardProps) {
+  const colors = useThemeColors();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    if (onPress) {
+      scale.value = withSpring(0.97, SPRING_CONFIG);
+    }
+  }, [onPress, scale]);
+
+  const handlePressOut = useCallback(() => {
+    if (onPress) {
+      scale.value = withSpring(1, SPRING_CONFIG);
+    }
+  }, [onPress, scale]);
+
+  const content = (
+    <>
       <View style={[styles.iconCircle, { backgroundColor: earned ? badge.color : colors.border }]}>
         <Ionicons
           name={(badge.icon_name as any) || 'trophy'}
@@ -37,7 +64,40 @@ export default function BadgeCard({ badge, earned = false, earnedAt }: BadgeCard
       {!earned && (
         <Ionicons name="lock-closed" size={16} color={colors.textTertiary} />
       )}
-    </View>
+    </>
+  );
+
+  const containerBgColor = earned ? badge.color + '15' : colors.backgroundSecondary;
+  const containerBorderColor = earned ? badge.color + '40' : colors.border;
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 60).springify().damping(20).stiffness(300)}
+      style={animatedStyle}
+    >
+      {onPress ? (
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[
+            styles.container,
+            { backgroundColor: containerBgColor, borderColor: containerBorderColor },
+          ]}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        <View
+          style={[
+            styles.container,
+            { backgroundColor: containerBgColor, borderColor: containerBorderColor },
+          ]}
+        >
+          {content}
+        </View>
+      )}
+    </Animated.View>
   );
 }
 

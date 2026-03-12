@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   ActivityIndicator,
@@ -9,13 +9,21 @@ import {
   StyleProp,
   Platform,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import type { ThemeColors } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import GlassView from './GlassView';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'glass';
+
+const MICRO_BOUNCE = { damping: 6, stiffness: 400 };
 
 interface ButtonProps {
   title: string;
@@ -44,35 +52,62 @@ export default function Button({
   const isDisabled = disabled || loading;
   const textColor = getTextColor(variant, isDisabled, colors);
 
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96, MICRO_BOUNCE);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, MICRO_BOUNCE);
+  };
+
+  const handlePress = () => {
+    haptic.light();
+    onPress();
+  };
+
+  const buttonContent = loading ? (
+    <ActivityIndicator size="small" color={textColor} />
+  ) : (
+    <View style={styles.content}>
+      {icon && iconPosition === 'left' && (
+        <Ionicons name={icon} size={20} color={textColor} style={styles.iconLeft} />
+      )}
+      <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+      {icon && iconPosition === 'right' && (
+        <Ionicons name={icon} size={20} color={textColor} style={styles.iconRight} />
+      )}
+    </View>
+  );
+
   if (variant === 'glass' && Platform.OS === 'ios') {
     return (
-      <GlassView style={[styles.glassWrapper, fullWidth && styles.fullWidth, style]} interactive>
-        <TouchableOpacity
-          style={[styles.base, styles.glassInner]}
-          onPress={onPress}
-          disabled={isDisabled}
-          activeOpacity={0.75}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={textColor} />
-          ) : (
-            <View style={styles.content}>
-              {icon && iconPosition === 'left' && (
-                <Ionicons name={icon} size={20} color={textColor} style={styles.iconLeft} />
-              )}
-              <Text style={[styles.text, { color: textColor }]}>{title}</Text>
-              {icon && iconPosition === 'right' && (
-                <Ionicons name={icon} size={20} color={textColor} style={styles.iconRight} />
-              )}
-            </View>
-          )}
-        </TouchableOpacity>
-      </GlassView>
+      <Animated.View style={animatedStyle}>
+        <GlassView style={[styles.glassWrapper, fullWidth && styles.fullWidth, style]} interactive>
+          <Pressable
+            style={[styles.base, styles.glassInner]}
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={isDisabled}
+          >
+            {buttonContent}
+          </Pressable>
+        </GlassView>
+      </Animated.View>
     );
   }
 
+  const isPill = variant === 'primary' || variant === 'secondary';
+
   const containerStyles: StyleProp<ViewStyle>[] = [
     styles.base,
+    isPill && styles.pillShape,
     variantStyles[variant],
     variant === 'outline' && { backgroundColor: colors.background },
     isDisabled && styles.disabled,
@@ -83,36 +118,17 @@ export default function Button({
   ];
 
   return (
-    <TouchableOpacity
-      style={containerStyles}
-      onPress={onPress}
-      disabled={isDisabled}
-      activeOpacity={0.75}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color={textColor} />
-      ) : (
-        <View style={styles.content}>
-          {icon && iconPosition === 'left' && (
-            <Ionicons
-              name={icon}
-              size={20}
-              color={textColor}
-              style={styles.iconLeft}
-            />
-          )}
-          <Text style={[styles.text, { color: textColor }]}>{title}</Text>
-          {icon && iconPosition === 'right' && (
-            <Ionicons
-              name={icon}
-              size={20}
-              color={textColor}
-              style={styles.iconRight}
-            />
-          )}
-        </View>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={[animatedStyle, fullWidth && styles.fullWidth]}>
+      <Pressable
+        style={containerStyles}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={isDisabled}
+      >
+        {buttonContent}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -134,7 +150,7 @@ function getTextColor(variant: ButtonVariant, isDisabled: boolean, colors: Theme
     case 'ghost':
       return colors.primary;
     case 'glass':
-      return Colors.textOnPrimary;
+      return Platform.OS === 'ios' ? Colors.textOnPrimary : colors.primary;
   }
 }
 
@@ -154,7 +170,7 @@ const variantStyles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   glass: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.06)',
   },
 });
 
@@ -166,6 +182,9 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: Spacing.xxl,
     borderRadius: 14,
+  },
+  pillShape: {
+    borderRadius: BorderRadius.full,
   },
   fullWidth: {
     width: '100%',
@@ -204,7 +223,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   glassWrapper: {
-    borderRadius: 14,
+    borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
   glassInner: {

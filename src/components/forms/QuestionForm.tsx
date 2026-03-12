@@ -7,16 +7,18 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
+import Animated, { Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFeedStore } from '../../stores/feedStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, ISTANBUL_SEMTLER } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, ISTANBUL_SEMTLER, FeatureColors } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
+import GlassView from '../ui/GlassView';
+import Button from '../ui/Button';
 import type { User } from '../../types';
-
-const QUESTION_COLOR = '#8B5CF6';
 
 interface QuestionFormProps {
   user: User;
@@ -34,6 +36,11 @@ export default function QuestionForm({ user }: QuestionFormProps) {
   const resetForm = () => {
     setQuestion('');
     setSelectedSemt(null);
+  };
+
+  const handleSemtSelect = (semt: string) => {
+    haptic.light();
+    setSelectedSemt(selectedSemt === semt ? null : semt);
   };
 
   const handleSubmit = async () => {
@@ -58,83 +65,97 @@ export default function QuestionForm({ user }: QuestionFormProps) {
     if (error) {
       Alert.alert('Hata', error);
     } else {
-      Alert.alert('Basarili', 'Sorunuz basariyla paylasild!');
+      haptic.success();
+      Alert.alert('Basarili', 'Sorunuz basariyla paylasildi!');
       resetForm();
       router.back();
     }
   };
 
+  const renderSectionCard = (children: React.ReactNode) => {
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.sectionCardGlass}>
+          {children}
+        </GlassView>
+      );
+    }
+    return (
+      <View style={[styles.sectionCard, { backgroundColor: colors.background }]}>
+        {children}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.formContainer}>
       {/* Question Text */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Sorunuz</Text>
-        <View style={[styles.questionInputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <TextInput
-            style={[styles.questionInput, { color: colors.text }]}
-            placeholder="Topluluga bir soru sor..."
-            placeholderTextColor={colors.textTertiary}
-            value={question}
-            onChangeText={setQuestion}
-            multiline
-            textAlignVertical="top"
-            selectionColor={QUESTION_COLOR}
-          />
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Sorunuz</Text>
+          <View style={[styles.questionInputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TextInput
+              style={[styles.questionInput, { color: colors.text }]}
+              placeholder="Topluluga bir soru sor..."
+              placeholderTextColor={colors.textTertiary}
+              value={question}
+              onChangeText={setQuestion}
+              multiline
+              textAlignVertical="top"
+              selectionColor={FeatureColors.question}
+            />
+          </View>
+        </>
+      )}
 
       {/* Semt Selector */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Semt</Text>
-        <Text style={[styles.sectionHint, { color: colors.textTertiary }]}>Opsiyonel - sorunuzu bir semtle iliskilendirin</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.semtChipContainer}
-        >
-          {ISTANBUL_SEMTLER.map((semt) => {
-            const isSelected = selectedSemt === semt;
-            return (
-              <TouchableOpacity
-                key={semt}
-                style={[
-                  styles.semtChip,
-                  { borderColor: isSelected ? QUESTION_COLOR : colors.border },
-                  isSelected && { backgroundColor: QUESTION_COLOR + '15' },
-                ]}
-                onPress={() => setSelectedSemt(isSelected ? null : semt)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.semtChipText,
-                    { color: isSelected ? QUESTION_COLOR : colors.textSecondary },
-                  ]}
-                >
-                  {semt}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Semt</Text>
+          <Text style={[styles.sectionHint, { color: colors.textTertiary }]}>Opsiyonel - sorunuzu bir semtle iliskilendirin</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.semtChipContainer}
+          >
+            {ISTANBUL_SEMTLER.map((semt) => {
+              const isSelected = selectedSemt === semt;
+              return (
+                <Animated.View key={semt} layout={Layout.springify()}>
+                  <TouchableOpacity
+                    style={[
+                      styles.semtChip,
+                      { borderColor: isSelected ? FeatureColors.question : colors.border },
+                      isSelected && { backgroundColor: FeatureColors.question + '15' },
+                    ]}
+                    onPress={() => handleSemtSelect(semt)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.semtChipText,
+                        { color: isSelected ? FeatureColors.question : colors.textSecondary },
+                      ]}
+                    >
+                      {semt}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </ScrollView>
+        </>
+      )}
 
       {/* Submit */}
-      <TouchableOpacity
-        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+      <Button
+        title="Soru Sor"
+        variant="primary"
         onPress={handleSubmit}
-        disabled={submitting}
-        activeOpacity={0.8}
-      >
-        {submitting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <>
-            <Ionicons name="help-circle" size={18} color="#FFFFFF" />
-            <Text style={styles.submitBtnText}>Soru Sor</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        loading={submitting}
+        icon="help-circle"
+        style={{ backgroundColor: FeatureColors.question }}
+      />
     </View>
   );
 }
@@ -144,16 +165,17 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   sectionCard: {
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.lg,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  sectionCardGlass: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
   sectionTitle: {
     fontSize: FontSize.md,
@@ -199,28 +221,5 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.textSecondary,
-  },
-  submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: QUESTION_COLOR,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    shadowColor: QUESTION_COLOR,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
   },
 });

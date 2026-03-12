@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 
 interface ErrorStateProps {
   message?: string;
@@ -15,23 +17,43 @@ export default function ErrorState({
 }: ErrorStateProps) {
   const colors = useThemeColors();
 
+  const handleRetry = () => {
+    haptic.light();
+    onRetry?.();
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={[styles.iconCircle, { backgroundColor: colors.primarySoft }]}>
+    <Animated.View
+      entering={FadeInDown.springify().damping(20).stiffness(300)}
+      style={styles.container}
+    >
+      <Animated.View
+        entering={FadeInDown.delay(80).springify().damping(20).stiffness(300)}
+        style={[styles.iconCircle, { backgroundColor: colors.primarySoft }]}
+      >
         <Ionicons name="alert-circle-outline" size={40} color={Colors.error} />
-      </View>
-      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
+      </Animated.View>
+      <Animated.Text
+        entering={FadeInDown.delay(160).springify().damping(20).stiffness(300)}
+        style={[styles.message, { color: colors.textSecondary }]}
+      >
+        {message}
+      </Animated.Text>
       {onRetry && (
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={onRetry}
-          activeOpacity={0.8}
+        <Animated.View
+          entering={FadeInDown.delay(240).springify().damping(20).stiffness(300)}
         >
-          <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.retryText}>Tekrar Dene</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleRetry}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="refresh" size={18} color="#FFFFFF" />
+            <Text style={styles.retryText}>Tekrar Dene</Text>
+          </TouchableOpacity>
+        </Animated.View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -46,14 +68,12 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,
   },
   message: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.xl,

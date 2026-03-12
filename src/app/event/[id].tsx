@@ -10,19 +10,31 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEventStore } from '../../stores/eventStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
+import GlassView from '../../components/ui/GlassView';
 import MessageBubble from '../../components/chat/MessageBubble';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import type { EventMessage, EventAttendee } from '../../types';
 
 const MEETUP_CYAN = '#06B6D4';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function formatEventDate(dateString: string): string {
   const date = new Date(dateString);
@@ -56,6 +68,12 @@ export default function EventRoomScreen() {
   const [showDescription, setShowDescription] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  // Join button spring scale animation
+  const joinScale = useSharedValue(1);
+  const joinAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: joinScale.value }],
+  }));
 
   // Load event data directly by ID
   useEffect(() => {
@@ -100,11 +118,21 @@ export default function EventRoomScreen() {
       router.push('/auth/login');
       return;
     }
+    haptic.success();
+    joinScale.value = withSequence(
+      withSpring(1.15, SpringConfig.snappy),
+      withSpring(1, SpringConfig.snappy),
+    );
     if (id) await joinEvent(id, user.id);
   };
 
   const handleLeave = async () => {
     if (!user || !id) return;
+    haptic.selection();
+    joinScale.value = withSequence(
+      withSpring(0.9, SpringConfig.snappy),
+      withSpring(1, SpringConfig.snappy),
+    );
     await leaveEvent(id, user.id);
   };
 
@@ -115,6 +143,7 @@ export default function EventRoomScreen() {
     }
     if (!messageText.trim() || !id) return;
 
+    haptic.light();
     setSubmitting(true);
     await sendMessage(id, user.id, messageText.trim());
     setMessageText('');
@@ -138,9 +167,15 @@ export default function EventRoomScreen() {
 
   const renderDateSeparator = (date: string) => (
     <View style={styles.dateSeparator}>
-      <View style={[styles.dateLine, { backgroundColor: colors.borderLight }]} />
-      <Text style={[styles.dateText, { color: colors.textTertiary }]}>{date}</Text>
-      <View style={[styles.dateLine, { backgroundColor: colors.borderLight }]} />
+      {Platform.OS === 'ios' ? (
+        <GlassView style={styles.datePill}>
+          <Text style={[styles.dateText, { color: colors.textTertiary }]}>{date}</Text>
+        </GlassView>
+      ) : (
+        <View style={[styles.datePill, { backgroundColor: colors.backgroundSecondary }]}>
+          <Text style={[styles.dateText, { color: colors.textTertiary }]}>{date}</Text>
+        </View>
+      )}
     </View>
   );
 
@@ -170,13 +205,15 @@ export default function EventRoomScreen() {
         return renderDateSeparator(item.date);
       }
       return (
-        <MessageBubble
-          message={item as EventMessage}
-          isCurrentUser={(item as EventMessage).user_id === user?.id}
-        />
+        <Animated.View entering={FadeIn.duration(150)}>
+          <MessageBubble
+            message={item as EventMessage}
+            isCurrentUser={(item as EventMessage).user_id === user?.id}
+          />
+        </Animated.View>
       );
     },
-    [user?.id, colors],
+    [user?.id, colors, renderDateSeparator],
   );
 
   if (loading && !event) {
@@ -190,7 +227,10 @@ export default function EventRoomScreen() {
   const renderHeader = () => (
     <View>
       {/* Event Info Card */}
-      <View style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}>
+      <Animated.View
+        entering={FadeInDown.springify().damping(22).stiffness(340)}
+        style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}
+      >
         {/* Title + Date */}
         <View style={styles.eventTitleRow}>
           <View style={styles.meetupBadge}>
@@ -268,12 +308,13 @@ export default function EventRoomScreen() {
 
         {/* Join/Leave button */}
         {user && (
-          <TouchableOpacity
+          <AnimatedTouchable
             style={[
               styles.joinButton,
               isAttendee
                 ? { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border }
                 : { backgroundColor: Colors.primary },
+              joinAnimatedStyle,
             ]}
             onPress={isAttendee ? handleLeave : handleJoin}
             activeOpacity={0.7}
@@ -291,12 +332,12 @@ export default function EventRoomScreen() {
             >
               {isAttendee ? 'Katildin' : 'Katil'}
             </Text>
-          </TouchableOpacity>
+          </AnimatedTouchable>
         )}
-      </View>
+      </Animated.View>
 
       {/* Chat section header */}
-      <View style={[styles.chatHeader, { borderBottomColor: colors.borderLight }]}>
+      <View style={styles.chatHeader}>
         <Ionicons name="chatbubbles-outline" size={18} color={colors.textSecondary} />
         <Text style={[styles.chatHeaderText, { color: colors.text }]}>
           Sohbet ({messages.length})
@@ -307,6 +348,65 @@ export default function EventRoomScreen() {
 
   const data = messagesWithSeparators();
 
+  const inputBarContent = (
+    <>
+      {!user ? (
+        <TouchableOpacity
+          style={styles.loginPrompt}
+          onPress={() => router.push('/auth/login')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.loginPromptText, { color: Colors.primary }]}>
+            Mesaj gondermek icin giris yap
+          </Text>
+        </TouchableOpacity>
+      ) : !isAttendee ? (
+        <View style={styles.joinPrompt}>
+          <Ionicons name="lock-closed-outline" size={16} color={colors.textTertiary} />
+          <Text style={[styles.joinPromptText, { color: colors.textTertiary }]}>
+            Mesaj gondermek icin etkinlige katil
+          </Text>
+        </View>
+      ) : (
+        <>
+          <Avatar
+            uri={user.avatar_url}
+            name={user.full_name ?? user.username ?? '?'}
+            size={32}
+          />
+          <TextInput
+            ref={inputRef}
+            style={[styles.messageInput, { color: colors.text }]}
+            placeholder="Mesaj yaz..."
+            placeholderTextColor={colors.textTertiary}
+            value={messageText}
+            onChangeText={setMessageText}
+            selectionColor={Colors.primary}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={!messageText.trim() || submitting}
+            activeOpacity={0.7}
+            style={[
+              styles.sendButton,
+              messageText.trim()
+                ? { backgroundColor: Colors.primary }
+                : { backgroundColor: colors.border },
+            ]}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="send" size={16} color="#FFFFFF" />
+            )}
+          </TouchableOpacity>
+        </>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -315,21 +415,39 @@ export default function EventRoomScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        <View style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
-            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-              {event?.title ?? 'Bulusma Odasi'}
-            </Text>
+        {Platform.OS === 'ios' ? (
+          <GlassView style={styles.headerBar}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
+              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+                {event?.title ?? 'Bulusma Odasi'}
+              </Text>
+            </View>
+            <View style={{ width: 24 }} />
+          </GlassView>
+        ) : (
+          <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
+              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+                {event?.title ?? 'Bulusma Odasi'}
+              </Text>
+            </View>
+            <View style={{ width: 24 }} />
           </View>
-          <View style={{ width: 24 }} />
-        </View>
+        )}
 
         {/* Messages list */}
         <FlatList
@@ -359,62 +477,15 @@ export default function EventRoomScreen() {
         />
 
         {/* Message input bar */}
-        <View style={[styles.inputBar, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
-          {!user ? (
-            <TouchableOpacity
-              style={styles.loginPrompt}
-              onPress={() => router.push('/auth/login')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.loginPromptText, { color: Colors.primary }]}>
-                Mesaj gondermek icin giris yap
-              </Text>
-            </TouchableOpacity>
-          ) : !isAttendee ? (
-            <View style={styles.joinPrompt}>
-              <Ionicons name="lock-closed-outline" size={16} color={colors.textTertiary} />
-              <Text style={[styles.joinPromptText, { color: colors.textTertiary }]}>
-                Mesaj gondermek icin etkinlige katil
-              </Text>
-            </View>
-          ) : (
-            <>
-              <Avatar
-                uri={user.avatar_url}
-                name={user.full_name ?? user.username ?? '?'}
-                size={32}
-              />
-              <TextInput
-                ref={inputRef}
-                style={[styles.messageInput, { color: colors.text }]}
-                placeholder="Mesaj yaz..."
-                placeholderTextColor={colors.textTertiary}
-                value={messageText}
-                onChangeText={setMessageText}
-                selectionColor={Colors.primary}
-                multiline
-                maxLength={500}
-              />
-              <TouchableOpacity
-                onPress={handleSend}
-                disabled={!messageText.trim() || submitting}
-                activeOpacity={0.7}
-                style={[
-                  styles.sendButton,
-                  messageText.trim()
-                    ? { backgroundColor: Colors.primary }
-                    : { backgroundColor: colors.border },
-                ]}
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="send" size={16} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        {Platform.OS === 'ios' ? (
+          <GlassView style={styles.inputBar}>
+            {inputBarContent}
+          </GlassView>
+        ) : (
+          <View style={[styles.inputBar, { backgroundColor: colors.background }]}>
+            {inputBarContent}
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -440,7 +511,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
   },
   headerCenter: {
     flexDirection: 'row',
@@ -581,7 +651,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
   },
   chatHeaderText: {
     fontSize: FontSize.md,
@@ -595,15 +664,13 @@ const styles = StyleSheet.create({
 
   // Date separator
   dateSeparator: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
-    gap: Spacing.md,
   },
-  dateLine: {
-    flex: 1,
-    height: 1,
+  datePill: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
   },
   dateText: {
     fontSize: FontSize.xs,
@@ -631,7 +698,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderTopWidth: 1,
     gap: Spacing.md,
   },
   messageInput: {

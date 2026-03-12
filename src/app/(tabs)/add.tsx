@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  LayoutChangeEvent,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  FadeIn,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,7 +26,9 @@ import EventForm from '../../components/forms/EventForm';
 import QuestionForm from '../../components/forms/QuestionForm';
 import MomentCapture from '../../components/forms/MomentCapture';
 import ScreenHeader from '../../components/ui/ScreenHeader';
+import GlassView from '../../components/ui/GlassView';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 
 type TabMode = 'venue' | 'post' | 'meetup' | 'question' | 'moment';
 
@@ -31,12 +40,55 @@ const TAB_OPTIONS = [
   { key: 'moment' as TabMode, label: 'Anlık', icon: 'flash' as const },
 ];
 
+const INDICATOR_SPRING = { damping: 20, stiffness: 300 };
+
 export default function AddScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<TabMode>('venue');
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+
+  // Sliding indicator state
+  const indicatorLeft = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
+  const tabLayouts = React.useRef<Record<string, { x: number; width: number }>>({});
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    position: 'absolute' as const,
+    left: indicatorLeft.value,
+    width: indicatorWidth.value,
+    top: 0,
+    bottom: 0,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+  }));
+
+  const handleTabLayout = useCallback(
+    (key: string) => (event: LayoutChangeEvent) => {
+      const { x, width } = event.nativeEvent.layout;
+      tabLayouts.current[key] = { x, width };
+      // Initialize indicator position for the default active tab
+      if (key === 'venue' && indicatorWidth.value === 0) {
+        indicatorLeft.value = x;
+        indicatorWidth.value = width;
+      }
+    },
+    [indicatorLeft, indicatorWidth],
+  );
+
+  const handleTabPress = useCallback(
+    (key: TabMode) => {
+      haptic.selection();
+      setActiveTab(key);
+      const layout = tabLayouts.current[key];
+      if (layout) {
+        indicatorLeft.value = withSpring(layout.x, INDICATOR_SPRING);
+        indicatorWidth.value = withSpring(layout.width, INDICATOR_SPRING);
+      }
+    },
+    [indicatorLeft, indicatorWidth],
+  );
 
   // Auth Guard
   if (!user) {
@@ -63,6 +115,91 @@ export default function AddScreen() {
     );
   }
 
+  const renderSegmentControl = () => {
+    const inner = (
+      <View style={styles.segmentInner}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.segmentScroll}
+        >
+          <View style={styles.segmentTrack}>
+            {/* Sliding indicator behind active tab */}
+            <Animated.View style={indicatorStyle} />
+
+            {TAB_OPTIONS.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.segmentChip}
+                onPress={() => handleTabPress(tab.key)}
+                onLayout={handleTabLayout(tab.key)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={tab.icon}
+                  size={16}
+                  color={activeTab === tab.key ? '#FFFFFF' : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.segmentChipText,
+                    activeTab === tab.key
+                      ? styles.segmentChipTextActive
+                      : { color: colors.textSecondary },
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    );
+
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView
+          style={[styles.segmentWrapper, { backgroundColor: 'transparent' }]}
+          blurIntensity={60}
+        >
+          {inner}
+        </GlassView>
+      );
+    }
+
+    return (
+      <View style={[styles.segmentWrapper, { backgroundColor: colors.backgroundSecondary }]}>
+        {inner}
+      </View>
+    );
+  };
+
+  const renderActiveForm = () => {
+    const formContent =
+      activeTab === 'venue' ? (
+        <VenueForm user={user} />
+      ) : activeTab === 'meetup' ? (
+        <EventForm user={user} />
+      ) : activeTab === 'question' ? (
+        <QuestionForm user={user} />
+      ) : activeTab === 'moment' ? (
+        <MomentCapture user={user} />
+      ) : (
+        <PostForm user={user} />
+      );
+
+    return (
+      <Animated.View
+        key={activeTab}
+        entering={FadeIn.duration(200)}
+        style={styles.flex}
+      >
+        {formContent}
+      </Animated.View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
       <KeyboardAvoidingView
@@ -71,32 +208,8 @@ export default function AddScreen() {
       >
         <ScreenHeader title="Yeni Ekle" />
 
-        {/* Segment Control — horizontal scrollable chips */}
-        <View style={[styles.segmentWrapper, { backgroundColor: colors.backgroundSecondary }]}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.segmentScroll}
-          >
-            {TAB_OPTIONS.map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                style={[styles.segmentChip, activeTab === tab.key && styles.segmentChipActive]}
-                onPress={() => setActiveTab(tab.key)}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={tab.icon}
-                  size={16}
-                  color={activeTab === tab.key ? '#FFFFFF' : colors.textSecondary}
-                />
-                <Text style={[styles.segmentChipText, activeTab === tab.key && styles.segmentChipTextActive, activeTab !== tab.key && { color: colors.textSecondary }]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {/* Segment Control — glass on iOS, with animated sliding indicator */}
+        {renderSegmentControl()}
 
         <ScrollView
           style={styles.flex}
@@ -104,17 +217,7 @@ export default function AddScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {activeTab === 'venue' ? (
-            <VenueForm user={user} />
-          ) : activeTab === 'meetup' ? (
-            <EventForm user={user} />
-          ) : activeTab === 'question' ? (
-            <QuestionForm user={user} />
-          ) : activeTab === 'moment' ? (
-            <MomentCapture user={user} />
-          ) : (
-            <PostForm user={user} />
-          )}
+          {renderActiveForm()}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -134,9 +237,16 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.sm,
     backgroundColor: Colors.backgroundSecondary,
   },
+  segmentInner: {
+    flex: 1,
+  },
   segmentScroll: {
     paddingHorizontal: Spacing.lg,
+  },
+  segmentTrack: {
+    flexDirection: 'row',
     gap: Spacing.sm,
+    position: 'relative',
   },
   segmentChip: {
     flexDirection: 'row',
@@ -145,12 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  segmentChipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    zIndex: 1,
   },
   segmentChipText: {
     fontSize: FontSize.sm,

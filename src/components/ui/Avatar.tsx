@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Image, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, Image, Text, Platform, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import GlassView from './GlassView';
 
 interface AvatarProps {
   uri?: string | null;
@@ -33,8 +34,32 @@ export default function Avatar({
     borderColor: colors.background,
   };
 
-  if (uri && !hasError) {
+  const isIOS = Platform.OS === 'ios';
+
+  // On iOS, wrap the outer ring in a GlassView for a glass ring effect
+  const wrapWithGlassRing = (content: React.ReactElement) => {
+    if (!isIOS) return content;
+    const ringPadding = Math.max(2, size * 0.06);
+    const outerSize = size + ringPadding * 2;
     return (
+      <GlassView
+        style={[
+          styles.glassRing,
+          {
+            width: outerSize,
+            height: outerSize,
+            borderRadius: outerSize / 2,
+            padding: ringPadding,
+          },
+        ]}
+      >
+        {content}
+      </GlassView>
+    );
+  };
+
+  if (uri && !hasError) {
+    const imageAvatar = (
       <View style={[styles.container, styles.shadow, containerStyle, style]}>
         <Image
           source={{ uri }}
@@ -50,9 +75,10 @@ export default function Avatar({
         />
       </View>
     );
+    return wrapWithGlassRing(imageAvatar);
   }
 
-  return (
+  const fallbackAvatar = (
     <View
       style={[
         styles.container,
@@ -66,6 +92,7 @@ export default function Avatar({
       <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
     </View>
   );
+  return wrapWithGlassRing(fallbackAvatar);
 }
 
 function getInitials(name: string): string {
@@ -120,5 +147,9 @@ const styles = StyleSheet.create({
     color: Colors.textOnPrimary,
     fontFamily: FontFamily.headingBold,
     letterSpacing: 0.5,
+  },
+  glassRing: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

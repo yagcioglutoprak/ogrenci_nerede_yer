@@ -17,6 +17,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
+import { haptic } from '../../lib/haptics';
 import type { User } from '../../types';
 
 type UserResult = User & { mutual_followers: number };
@@ -60,6 +61,7 @@ export default function NewDMScreen() {
 
   const handleSelectUser = useCallback(async (selectedUser: UserResult) => {
     if (!user || navigating) return;
+    haptic.selection();
     setNavigating(true);
 
     const convId = await fetchOrCreateConversation(user.id, selectedUser.id);
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.lg,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    borderRadius: 9999,
     gap: Spacing.sm,
   },
   searchInput: {

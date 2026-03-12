@@ -1,5 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, getRatingColor, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -55,6 +60,27 @@ export default function RatingBar({
   const labelSize = LABEL_SIZES[size];
   const percentage = Math.min((rating / maxRating) * 100, 100);
 
+  const fillProgress = useSharedValue(0);
+
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      fillProgress.value = 0;
+    }
+    fillProgress.value = withSpring(percentage, {
+      damping: 22,
+      stiffness: 120,
+    });
+  }, [percentage, fillProgress]);
+
+  const animatedFillStyle = useAnimatedStyle(() => ({
+    width: `${fillProgress.value}%` as any,
+    backgroundColor: resolvedColor,
+    height: barHeight,
+  }));
+
   return (
     <View style={styles.container}>
       {icon && (
@@ -75,14 +101,10 @@ export default function RatingBar({
           },
         ]}
       >
-        <View
+        <Animated.View
           style={[
             styles.fill,
-            {
-              width: `${percentage}%` as any,
-              backgroundColor: resolvedColor,
-              height: barHeight,
-            },
+            animatedFillStyle,
           ]}
         />
       </View>

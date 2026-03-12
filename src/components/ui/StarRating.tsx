@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 
 type StarSize = 'sm' | 'md' | 'lg';
 
@@ -23,6 +29,68 @@ interface StarRatingProps {
   gap?: number;
 }
 
+function AnimatedStar({
+  index,
+  rating,
+  starSize,
+  resolvedColor,
+  resolvedEmptyColor,
+  gap,
+  touchPadding,
+  onPress,
+}: {
+  index: number;
+  rating: number;
+  starSize: number;
+  resolvedColor: string;
+  resolvedEmptyColor: string;
+  gap: number;
+  touchPadding: number;
+  onPress: (index: number) => void;
+}) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = useCallback(() => {
+    haptic.selection();
+    scale.value = withSpring(1.3, { damping: 6, stiffness: 400 }, () => {
+      scale.value = withSpring(1, { damping: 6, stiffness: 400 });
+    });
+    onPress(index);
+  }, [index, onPress, scale]);
+
+  const filled = rating >= index + 1;
+  const halfFilled = !filled && rating >= index + 0.5;
+
+  const iconName: keyof typeof Ionicons.glyphMap = filled
+    ? 'star'
+    : halfFilled
+      ? 'star-half'
+      : 'star-outline';
+
+  const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      hitSlop={{
+        top: touchPadding,
+        bottom: touchPadding,
+        left: touchPadding / 2,
+        right: touchPadding / 2,
+      }}
+      style={{ paddingHorizontal: gap }}
+    >
+      <Animated.View style={animatedStyle}>
+        <Ionicons name={iconName} size={starSize} color={starColor} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function StarRating({
   rating,
   maxStars = 5,
@@ -39,13 +107,32 @@ export default function StarRating({
   const starSize = typeof size === 'number' ? size : STAR_SIZES[size];
   const touchPadding = Math.max(4, Math.round(starSize * 0.3));
 
-  const handlePress = (starIndex: number) => {
-    if (interactive && onRatingChange) {
-      onRatingChange(starIndex + 1);
-    }
-  };
+  const handlePress = useCallback(
+    (starIndex: number) => {
+      if (interactive && onRatingChange) {
+        onRatingChange(starIndex + 1);
+      }
+    },
+    [interactive, onRatingChange],
+  );
 
   const renderStar = (index: number) => {
+    if (interactive) {
+      return (
+        <AnimatedStar
+          key={index}
+          index={index}
+          rating={rating}
+          starSize={starSize}
+          resolvedColor={resolvedColor}
+          resolvedEmptyColor={resolvedEmptyColor}
+          gap={gap}
+          touchPadding={touchPadding}
+          onPress={handlePress}
+        />
+      );
+    }
+
     const filled = rating >= index + 1;
     const halfFilled = !filled && rating >= index + 0.5;
 
@@ -57,32 +144,9 @@ export default function StarRating({
 
     const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
 
-    const starIcon = (
-      <Ionicons name={iconName} size={starSize} color={starColor} />
-    );
-
-    if (interactive) {
-      return (
-        <TouchableOpacity
-          key={index}
-          onPress={() => handlePress(index)}
-          activeOpacity={0.5}
-          hitSlop={{
-            top: touchPadding,
-            bottom: touchPadding,
-            left: touchPadding / 2,
-            right: touchPadding / 2,
-          }}
-          style={{ paddingHorizontal: gap }}
-        >
-          {starIcon}
-        </TouchableOpacity>
-      );
-    }
-
     return (
       <View key={index} style={{ paddingHorizontal: gap / 2 }}>
-        {starIcon}
+        <Ionicons name={iconName} size={starSize} color={starColor} />
       </View>
     );
   };

@@ -2,14 +2,20 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ViewStyle,
   StyleProp,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 
 type ChipVariant = 'filled' | 'outlined' | 'soft';
 type ChipSize = 'sm' | 'md';
@@ -114,15 +120,46 @@ function ChipInner({
   );
 }
 
+const SPRING_CONFIG = { damping: 6, stiffness: 400 };
+
+function AnimatedChip({ onPress, ...rest }: ChipProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.92, SPRING_CONFIG);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, SPRING_CONFIG);
+  };
+
+  const handlePress = () => {
+    haptic.selection();
+    onPress?.();
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={animatedStyle}>
+        <ChipInner {...rest} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 const Chip = React.memo(function Chip(props: ChipProps) {
   const { onPress, ...rest } = props;
 
   if (onPress) {
-    return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <ChipInner {...rest} />
-      </TouchableOpacity>
-    );
+    return <AnimatedChip onPress={onPress} {...rest} />;
   }
 
   return <ChipInner {...rest} />;

@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
+import Animated, { Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useVenueStore } from '../../stores/venueStore';
 import { uploadImages } from '../../lib/imageUpload';
@@ -20,6 +21,9 @@ import {
   FontFamily,
 } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
+import GlassView from '../ui/GlassView';
+import Button from '../ui/Button';
 import ImageGrid from './ImageGrid';
 import TagSelector from './TagSelector';
 import LocationPicker from './LocationPicker';
@@ -102,128 +106,149 @@ export default function VenueForm({ user }: VenueFormProps) {
     if (error) {
       Alert.alert('Hata', error);
     } else {
+      haptic.success();
       Alert.alert('Basarili', 'Mekan basariyla eklendi!');
       resetForm();
     }
   };
 
+  const handlePriceSelect = (value: 1 | 2 | 3 | 4) => {
+    haptic.light();
+    setPriceRange(value);
+  };
+
+  const renderSectionCard = (children: React.ReactNode) => {
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.sectionCardGlass}>
+          {children}
+        </GlassView>
+      );
+    }
+    return (
+      <View style={[styles.sectionCard, { backgroundColor: colors.background }]}>
+        {children}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.formContainer}>
       {/* Temel Bilgiler */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Temel Bilgiler</Text>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Temel Bilgiler</Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: colors.text }]}>Mekan Adi</Text>
-          <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <Ionicons name="restaurant-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.textInput, { color: colors.text }]}
-              placeholder="Ornek: Ali Usta Doner"
-              placeholderTextColor={colors.textTertiary}
-              value={name}
-              onChangeText={setName}
-              selectionColor={colors.primary}
-            />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Mekan Adi</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <Ionicons name="restaurant-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: colors.text }]}
+                placeholder="Ornek: Ali Usta Doner"
+                placeholderTextColor={colors.textTertiary}
+                value={name}
+                onChangeText={setName}
+                selectionColor={colors.primary}
+              />
+            </View>
           </View>
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: colors.text }]}>Aciklama</Text>
-          <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <Ionicons name="document-text-outline" size={18} color={Colors.textTertiary} style={[styles.inputIcon, { marginTop: 2 }]} />
-            <TextInput
-              style={[styles.textInput, styles.textInputMultiline, { color: colors.text }]}
-              placeholder="Mekan hakkinda kisa bilgi..."
-              placeholderTextColor={colors.textTertiary}
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              textAlignVertical="top"
-              selectionColor={colors.primary}
-            />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Aciklama</Text>
+            <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <Ionicons name="document-text-outline" size={18} color={Colors.textTertiary} style={[styles.inputIcon, { marginTop: 2 }]} />
+              <TextInput
+                style={[styles.textInput, styles.textInputMultiline, { color: colors.text }]}
+                placeholder="Mekan hakkinda kisa bilgi..."
+                placeholderTextColor={colors.textTertiary}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                textAlignVertical="top"
+                selectionColor={colors.primary}
+              />
+            </View>
           </View>
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: colors.text }]}>Adres</Text>
-          <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <Ionicons name="location-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.textInput, { color: colors.text }]}
-              placeholder="Cadde, sokak, numara..."
-              placeholderTextColor={colors.textTertiary}
-              value={address}
-              onChangeText={setAddress}
-              selectionColor={colors.primary}
-            />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: colors.text }]}>Adres</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <Ionicons name="location-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: colors.text }]}
+                placeholder="Cadde, sokak, numara..."
+                placeholderTextColor={colors.textTertiary}
+                value={address}
+                onChangeText={setAddress}
+                selectionColor={colors.primary}
+              />
+            </View>
           </View>
-        </View>
-      </View>
+        </>
+      )}
 
       {/* Konum Sec */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Konum Sec</Text>
-        <Text style={styles.sectionHint}>Haritaya dokunarak konum isaretleyin</Text>
-        <LocationPicker location={location} onLocationChange={setLocation} />
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Konum Sec</Text>
+          <Text style={styles.sectionHint}>Haritaya dokunarak konum isaretleyin</Text>
+          <LocationPicker location={location} onLocationChange={setLocation} />
+        </>
+      )}
 
       {/* Fiyat Araligi */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Fiyat Araligi</Text>
-        <View style={styles.priceRow}>
-          {PriceRanges.map((price) => {
-            const isActive = priceRange === price.value;
-            return (
-              <TouchableOpacity
-                key={price.value}
-                style={[styles.pricePill, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, isActive && styles.pricePillActive]}
-                onPress={() => setPriceRange(price.value as 1 | 2 | 3 | 4)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pricePillLabel, !isActive && { color: colors.text }, isActive && styles.pricePillLabelActive]}>
-                  {price.label}
-                </Text>
-                <Text style={[styles.pricePillDesc, !isActive && { color: colors.textSecondary }, isActive && styles.pricePillDescActive]}>
-                  {price.description}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fiyat Araligi</Text>
+          <Animated.View style={styles.priceRow} layout={Layout.springify()}>
+            {PriceRanges.map((price) => {
+              const isActive = priceRange === price.value;
+              return (
+                <Animated.View key={price.value} layout={Layout.springify()} style={{ flex: 1 }}>
+                  <TouchableOpacity
+                    style={[styles.pricePill, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, isActive && styles.pricePillActive]}
+                    onPress={() => handlePriceSelect(price.value as 1 | 2 | 3 | 4)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.pricePillLabel, !isActive && { color: colors.text }, isActive && styles.pricePillLabelActive]}>
+                      {price.label}
+                    </Text>
+                    <Text style={[styles.pricePillDesc, !isActive && { color: colors.textSecondary }, isActive && styles.pricePillDescActive]}>
+                      {price.description}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </Animated.View>
+        </>
+      )}
 
       {/* Etiketler */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Etiketler</Text>
-        <TagSelector selectedTags={tags} onTagsChange={setTags} />
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Etiketler</Text>
+          <TagSelector selectedTags={tags} onTagsChange={setTags} />
+        </>
+      )}
 
       {/* Fotograflar */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Fotograflar</Text>
-        <ImageGrid images={images} onImagesChange={setImages} layout="horizontal" />
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fotograflar</Text>
+          <ImageGrid images={images} onImagesChange={setImages} layout="horizontal" />
+        </>
+      )}
 
       {/* Submit */}
-      <TouchableOpacity
-        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+      <Button
+        title={uploading ? 'Yukluyor...' : 'Mekani Kaydet'}
+        variant="primary"
         onPress={handleSubmit}
-        disabled={submitting}
-        activeOpacity={0.8}
-      >
-        {submitting ? (
-          <>
-            <ActivityIndicator size="small" color="#FFFFFF" />
-            {uploading && <Text style={styles.submitBtnText}>Yukluyor...</Text>}
-          </>
-        ) : (
-          <>
-            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.submitBtnText}>Mekani Kaydet</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        loading={submitting}
+        icon="checkmark-circle"
+      />
     </View>
   );
 }
@@ -233,16 +258,17 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   sectionCard: {
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.lg,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  sectionCardGlass: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
   sectionTitle: {
     fontSize: FontSize.md,
@@ -331,28 +357,5 @@ const styles = StyleSheet.create({
   },
   pricePillDescActive: {
     color: 'rgba(255,255,255,0.8)',
-  },
-  submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
   },
 });

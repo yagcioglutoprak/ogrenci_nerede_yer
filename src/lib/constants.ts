@@ -72,6 +72,12 @@ export const Colors = {
     backgroundDark: 'rgba(0,0,0,0.3)',
     border: 'rgba(255,255,255,0.5)',
     borderDark: 'rgba(255,255,255,0.15)',
+    specular: 'rgba(255,255,255,0.35)',
+    specularDark: 'rgba(255,255,255,0.15)',
+    vibrant: 'rgba(255,255,255,0.12)',
+    vibrantDark: 'rgba(255,255,255,0.08)',
+    tint: 'rgba(226, 55, 68, 0.15)',
+    tintDark: 'rgba(226, 55, 68, 0.25)',
   },
 } as const;
 
@@ -148,6 +154,12 @@ export const DarkColors: ThemeColors = {
     backgroundDark: 'rgba(0,0,0,0.5)',
     border: 'rgba(255,255,255,0.12)',
     borderDark: 'rgba(255,255,255,0.08)',
+    specular: 'rgba(255,255,255,0.15)',
+    specularDark: 'rgba(255,255,255,0.08)',
+    vibrant: 'rgba(255,255,255,0.08)',
+    vibrantDark: 'rgba(255,255,255,0.05)',
+    tint: 'rgba(226, 55, 68, 0.25)',
+    tintDark: 'rgba(226, 55, 68, 0.35)',
   },
 } as const;
 
@@ -271,6 +283,13 @@ export const Shadows = {
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
+    elevation: 2,
+  },
+  glass: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
     elevation: 2,
   },
 } as const;

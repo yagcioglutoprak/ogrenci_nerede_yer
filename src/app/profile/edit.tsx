@@ -7,11 +7,13 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { uploadImage } from '../../lib/imageUpload';
 import { useDebounce } from '../../hooks/useDebounce';
+import { haptic } from '../../lib/haptics';
 import SCHOOLS from '../../data/schools.json';
 
 function normalizeTurkish(text: string): string {
@@ -52,6 +54,7 @@ export default function ProfileEditScreen() {
   }, [debouncedSearch]);
 
   const handlePickAvatar = async () => {
+    haptic.light();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -92,11 +95,13 @@ export default function ProfileEditScreen() {
     if (error) {
       Alert.alert('Hata', error);
     } else {
+      haptic.success();
       router.back();
     }
   };
 
   const handleSelectSchool = (name: string) => {
+    haptic.selection();
     setUniversity(name);
     setSchoolSearch('');
     setShowSchoolPicker(false);
@@ -120,25 +125,27 @@ export default function ProfileEditScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.avatarContainer} onPress={handlePickAvatar} disabled={avatarUploading}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person" size={40} color={Colors.textTertiary} />
+        <Animated.View entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={handlePickAvatar} disabled={avatarUploading}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Ionicons name="person" size={40} color={Colors.textTertiary} />
+              </View>
+            )}
+            {avatarUploading && (
+              <View style={styles.avatarUploadingOverlay}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
+            <View style={styles.avatarBadge}>
+              <Ionicons name="camera" size={14} color="#FFF" />
             </View>
-          )}
-          {avatarUploading && (
-            <View style={styles.avatarUploadingOverlay}>
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            </View>
-          )}
-          <View style={styles.avatarBadge}>
-            <Ionicons name="camera" size={14} color="#FFF" />
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Ad Soyad</Text>
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: nameError ? Colors.error : colors.border, backgroundColor: colors.backgroundSecondary }]}
@@ -155,18 +162,18 @@ export default function ProfileEditScreen() {
               <Text style={styles.inlineErrorText}>{nameError}</Text>
             </View>
           ) : null}
-        </View>
+        </Animated.View>
 
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Kullanıcı Adı</Text>
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
             value={username} onChangeText={setUsername}
             placeholder="kullanıcı_adı" placeholderTextColor={colors.textTertiary} autoCapitalize="none"
           />
-        </View>
+        </Animated.View>
 
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Biyografi</Text>
           <TextInput
             style={[styles.input, styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
@@ -174,9 +181,9 @@ export default function ProfileEditScreen() {
             placeholder="Kendinizden bahsedin..." placeholderTextColor={colors.textTertiary}
             multiline numberOfLines={3}
           />
-        </View>
+        </Animated.View>
 
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(400).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Okul</Text>
           {university && !showSchoolPicker ? (
             <TouchableOpacity
@@ -227,27 +234,29 @@ export default function ProfileEditScreen() {
                       keyExtractor={(item) => item.name}
                       keyboardShouldPersistTaps="handled"
                       style={{ maxHeight: 200 }}
-                      renderItem={({ item }) => (
-                        <TouchableOpacity
-                          style={[styles.schoolItem, university === item.name && { backgroundColor: colors.primarySoft }]}
-                          onPress={() => handleSelectSchool(item.name)}
-                        >
-                          <View style={styles.schoolItemContent}>
-                            <Ionicons
-                              name={item.type === 'university' ? 'school-outline' : 'book-outline'}
-                              size={16}
-                              color={university === item.name ? Colors.primary : colors.textTertiary}
-                            />
-                            <View style={styles.schoolItemText}>
-                              <Text style={[styles.schoolName, { color: colors.text }]} numberOfLines={1}>
-                                {item.name}
-                              </Text>
-                              <Text style={[styles.schoolLocation, { color: colors.textTertiary }]} numberOfLines={1}>
-                                {item.location}
-                              </Text>
+                      renderItem={({ item, index }) => (
+                        <Animated.View entering={FadeInDown.delay(index * 40).springify().damping(18)}>
+                          <TouchableOpacity
+                            style={[styles.schoolItem, university === item.name && { backgroundColor: colors.primarySoft }]}
+                            onPress={() => handleSelectSchool(item.name)}
+                          >
+                            <View style={styles.schoolItemContent}>
+                              <Ionicons
+                                name={item.type === 'university' ? 'school-outline' : 'book-outline'}
+                                size={16}
+                                color={university === item.name ? Colors.primary : colors.textTertiary}
+                              />
+                              <View style={styles.schoolItemText}>
+                                <Text style={[styles.schoolName, { color: colors.text }]} numberOfLines={1}>
+                                  {item.name}
+                                </Text>
+                                <Text style={[styles.schoolLocation, { color: colors.textTertiary }]} numberOfLines={1}>
+                                  {item.location}
+                                </Text>
+                              </View>
                             </View>
-                          </View>
-                        </TouchableOpacity>
+                          </TouchableOpacity>
+                        </Animated.View>
                       )}
                     />
                   ) : (
@@ -261,7 +270,7 @@ export default function ProfileEditScreen() {
               )}
             </View>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

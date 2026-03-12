@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import GlassView from './GlassView';
 
 interface ActionButton {
   icon: keyof typeof Ionicons.glyphMap;
@@ -20,22 +21,46 @@ interface ScreenHeaderProps {
   compact?: boolean;
 }
 
+function ActionButtonView({ action, colors }: { action: ActionButton; colors: ReturnType<typeof useThemeColors> }) {
+  const content = (
+    <Ionicons name={action.icon} size={20} color={action.color ?? colors.textTertiary} />
+  );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <TouchableOpacity
+        onPress={action.onPress}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <GlassView style={styles.actionButton} interactive>
+          {content}
+        </GlassView>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
+      onPress={action.onPress}
+      activeOpacity={0.7}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      {content}
+    </TouchableOpacity>
+  );
+}
+
 export default function ScreenHeader({ title, subtitle, leftAction, rightAction, compact = false }: ScreenHeaderProps) {
   const colors = useThemeColors();
 
   if (compact) {
-    return (
-      <View style={styles.compactContainer}>
+    const compactContent = (
+      <>
         <View style={styles.compactSide}>
           {leftAction && (
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-              onPress={leftAction.onPress}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name={leftAction.icon} size={20} color={leftAction.color ?? colors.textTertiary} />
-            </TouchableOpacity>
+            <ActionButtonView action={leftAction} colors={colors} />
           )}
         </View>
         <Text style={[styles.compactTitle, { color: colors.text }]} numberOfLines={1}>
@@ -43,52 +68,59 @@ export default function ScreenHeader({ title, subtitle, leftAction, rightAction,
         </Text>
         <View style={styles.compactSide}>
           {rightAction && (
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-              onPress={rightAction.onPress}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name={rightAction.icon} size={20} color={rightAction.color ?? colors.textTertiary} />
-            </TouchableOpacity>
+            <ActionButtonView action={rightAction} colors={colors} />
           )}
         </View>
+      </>
+    );
+
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.compactContainer} interactive>
+          {compactContent}
+        </GlassView>
+      );
+    }
+
+    return (
+      <View style={[styles.compactContainer, { backgroundColor: colors.background }]}>
+        {compactContent}
       </View>
     );
   }
 
-  return (
-    <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} style={styles.container}>
-      <View style={styles.titleRow}>
-        <View style={styles.titleBlock}>
-          <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>
-          {subtitle && (
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
-          )}
-        </View>
-        <View style={styles.actions}>
-          {leftAction && (
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-              onPress={leftAction.onPress}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name={leftAction.icon} size={20} color={leftAction.color ?? colors.textTertiary} />
-            </TouchableOpacity>
-          )}
-          {rightAction && (
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
-              onPress={rightAction.onPress}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name={rightAction.icon} size={20} color={rightAction.color ?? colors.textTertiary} />
-            </TouchableOpacity>
-          )}
-        </View>
+  const headerContent = (
+    <View style={styles.titleRow}>
+      <View style={styles.titleBlock}>
+        <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>
+        {subtitle && (
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+        )}
       </View>
+      <View style={styles.actions}>
+        {leftAction && (
+          <ActionButtonView action={leftAction} colors={colors} />
+        )}
+        {rightAction && (
+          <ActionButtonView action={rightAction} colors={colors} />
+        )}
+      </View>
+    </View>
+  );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
+        <GlassView style={styles.container} interactive>
+          {headerContent}
+        </GlassView>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} style={[styles.container, { backgroundColor: colors.background }]}>
+      {headerContent}
     </Animated.View>
   );
 }

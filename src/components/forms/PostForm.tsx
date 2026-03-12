@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
+import GlassView from '../ui/GlassView';
+import Button from '../ui/Button';
 import ImageGrid from './ImageGrid';
 import type { User } from '../../types';
 
@@ -62,119 +65,133 @@ export default function PostForm({ user }: PostFormProps) {
     if (error) {
       Alert.alert('Hata', error);
     } else {
+      haptic.success();
       Alert.alert('Basarili', 'Gonderi basariyla paylasildi!');
       resetForm();
     }
   };
 
+  const renderSectionCard = (children: React.ReactNode) => {
+    if (Platform.OS === 'ios') {
+      return (
+        <GlassView style={styles.sectionCardGlass}>
+          {children}
+        </GlassView>
+      );
+    }
+    return (
+      <View style={[styles.sectionCard, { backgroundColor: colors.background }]}>
+        {children}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.formContainer}>
       {/* Photo Grid Picker */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Fotograflar</Text>
-        <Text style={styles.sectionHint}>En fazla 5 fotograf ekleyebilirsiniz</Text>
-        <ImageGrid images={images} onImagesChange={setImages} layout="grid" />
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fotograflar</Text>
+          <Text style={styles.sectionHint}>En fazla 5 fotograf ekleyebilirsiniz</Text>
+          <ImageGrid images={images} onImagesChange={setImages} layout="grid" />
+        </>
+      )}
 
       {/* Caption */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Aciklama</Text>
-        <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <TextInput
-            style={[styles.textInput, styles.textInputMultiline, { paddingLeft: 0, color: colors.text }]}
-            placeholder="Deneyimini paylas..."
-            placeholderTextColor={colors.textTertiary}
-            value={caption}
-            onChangeText={setCaption}
-            multiline
-            textAlignVertical="top"
-            selectionColor={colors.primary}
-          />
-        </View>
-      </View>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Aciklama</Text>
+          <View style={[styles.inputWrapper, styles.inputWrapperMultiline, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TextInput
+              style={[styles.textInput, styles.textInputMultiline, { paddingLeft: 0, color: colors.text }]}
+              placeholder="Deneyimini paylas..."
+              placeholderTextColor={colors.textTertiary}
+              value={caption}
+              onChangeText={setCaption}
+              multiline
+              textAlignVertical="top"
+              selectionColor={colors.primary}
+            />
+          </View>
+        </>
+      )}
 
       {/* Venue Tag Selector */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Mekan Etiketi</Text>
-        <Text style={styles.sectionHint}>Opsiyonel - gonderinizi bir mekanla iliskilendirin</Text>
+      {renderSectionCard(
+        <>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Mekan Etiketi</Text>
+          <Text style={styles.sectionHint}>Opsiyonel - gonderinizi bir mekanla iliskilendirin</Text>
 
-        {selectedVenue ? (
-          <View style={[styles.selectedVenueCard, { backgroundColor: colors.primarySoft }]}>
-            <View style={[styles.selectedVenueIcon, { backgroundColor: colors.background }]}>
-              <Ionicons name="restaurant" size={16} color={Colors.primary} />
-            </View>
-            <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>
-              {selectedVenue.name}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setVenueId(null)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close-circle" size={22} color={Colors.textTertiary} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-              <Ionicons name="search-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: colors.text }]}
-                placeholder="Mekan ara..."
-                placeholderTextColor={colors.textTertiary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                selectionColor={colors.primary}
-              />
-            </View>
-            {searchQuery.length > 0 && (
-              <View style={[styles.venueSearchResults, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                {filteredVenues.slice(0, 5).map((v) => (
-                  <TouchableOpacity
-                    key={v.id}
-                    style={[styles.venueSearchItem, { borderBottomColor: colors.borderLight }]}
-                    onPress={() => {
-                      setVenueId(v.id);
-                      setSearchQuery('');
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.venueSearchItemIcon, { backgroundColor: colors.primarySoft }]}>
-                      <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
-                    </View>
-                    <View style={styles.venueSearchItemInfo}>
-                      <Text style={[styles.venueSearchItemName, { color: colors.text }]}>{v.name}</Text>
-                      <Text style={[styles.venueSearchItemAddr, { color: colors.textSecondary }]} numberOfLines={1}>{v.address}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-                {filteredVenues.length === 0 && (
-                  <View style={styles.venueSearchEmpty}>
-                    <Ionicons name="search-outline" size={20} color={Colors.textTertiary} />
-                    <Text style={styles.venueSearchEmptyText}>Mekan bulunamadi</Text>
-                  </View>
-                )}
+          {selectedVenue ? (
+            <View style={[styles.selectedVenueCard, { backgroundColor: colors.primarySoft }]}>
+              <View style={[styles.selectedVenueIcon, { backgroundColor: colors.background }]}>
+                <Ionicons name="restaurant" size={16} color={Colors.primary} />
               </View>
-            )}
-          </>
-        )}
-      </View>
+              <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>
+                {selectedVenue.name}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setVenueId(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={22} color={Colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+                <Ionicons name="search-outline" size={18} color={Colors.textTertiary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.textInput, { color: colors.text }]}
+                  placeholder="Mekan ara..."
+                  placeholderTextColor={colors.textTertiary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  selectionColor={colors.primary}
+                />
+              </View>
+              {searchQuery.length > 0 && (
+                <View style={[styles.venueSearchResults, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  {filteredVenues.slice(0, 5).map((v) => (
+                    <TouchableOpacity
+                      key={v.id}
+                      style={[styles.venueSearchItem, { borderBottomColor: colors.borderLight }]}
+                      onPress={() => {
+                        setVenueId(v.id);
+                        setSearchQuery('');
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.venueSearchItemIcon, { backgroundColor: colors.primarySoft }]}>
+                        <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
+                      </View>
+                      <View style={styles.venueSearchItemInfo}>
+                        <Text style={[styles.venueSearchItemName, { color: colors.text }]}>{v.name}</Text>
+                        <Text style={[styles.venueSearchItemAddr, { color: colors.textSecondary }]} numberOfLines={1}>{v.address}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  {filteredVenues.length === 0 && (
+                    <View style={styles.venueSearchEmpty}>
+                      <Ionicons name="search-outline" size={20} color={Colors.textTertiary} />
+                      <Text style={styles.venueSearchEmptyText}>Mekan bulunamadi</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+        </>
+      )}
 
       {/* Submit */}
-      <TouchableOpacity
-        style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+      <Button
+        title="Paylas"
+        variant="primary"
         onPress={handleSubmit}
-        disabled={submitting}
-        activeOpacity={0.8}
-      >
-        {submitting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <>
-            <Ionicons name="paper-plane" size={18} color="#FFFFFF" />
-            <Text style={styles.submitBtnText}>Paylas</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        loading={submitting}
+        icon="paper-plane"
+      />
     </View>
   );
 }
@@ -184,16 +201,17 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   sectionCard: {
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.lg,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+  },
+  sectionCardGlass: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
   sectionTitle: {
     fontSize: FontSize.md,
@@ -307,28 +325,5 @@ const styles = StyleSheet.create({
   venueSearchEmptyText: {
     fontSize: FontSize.sm,
     color: Colors.textTertiary,
-  },
-  submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
   },
 });

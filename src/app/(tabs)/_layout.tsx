@@ -3,7 +3,7 @@ import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  interpolate,
 } from 'react-native-reanimated';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
@@ -41,6 +42,12 @@ const TABS: TabDef[] = [
 const ADD_BUTTON_SIZE = 56;
 const ADD_BUTTON_LIFT = 18;
 const CENTER_SPACER_WIDTH = ADD_BUTTON_SIZE + 4;
+
+// Pill-shaped active indicator dimensions (iOS 26 Liquid Glass)
+const PILL_WIDTH = 56;
+const PILL_HEIGHT = 36;
+const PILL_COLOR = 'rgba(226, 55, 68, 0.12)';
+const PILL_SPRING = { damping: 20, stiffness: 300 };
 
 // ---------------------------------------------------------------------------
 // Elevated center "+" button with gradient & glow
@@ -101,21 +108,44 @@ interface GlassTabItemProps {
 }
 
 function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, badge }: GlassTabItemProps) {
-  const scale = useSharedValue(isFocused ? 1 : 0);
-  const iconY = useSharedValue(isFocused ? -2 : 0);
+  // Shared value: 0 = inactive, 1 = active
+  const progress = useSharedValue(isFocused ? 1 : 0);
 
   React.useEffect(() => {
-    scale.value = withSpring(isFocused ? 1 : 0, SpringConfig.default);
-    iconY.value = withSpring(isFocused ? -2 : 0, SpringConfig.default);
-  }, [isFocused, scale, iconY]);
+    progress.value = withSpring(isFocused ? 1 : 0, PILL_SPRING);
+  }, [isFocused, progress]);
 
-  const dotStyle = useAnimatedStyle(() => ({
-    opacity: scale.value,
-    transform: [{ scale: scale.value }],
+  // Pill-shaped background indicator
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0.6, 1]),
+    transform: [
+      { scaleX: interpolate(progress.value, [0, 1], [0.4, 1]) },
+      { scaleY: interpolate(progress.value, [0, 1], [0.4, 1]) },
+    ],
   }));
 
-  const iconAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: iconY.value }],
+  // Active (filled) icon: fades in + scales up
+  const activeIconStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      { scale: interpolate(progress.value, [0, 1], [0.8, 1.1]) },
+    ],
+  }));
+
+  // Outline icon: fades out
+  const outlineIconStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [1, 0]),
+    transform: [
+      { scale: interpolate(progress.value, [0, 1], [1, 0.8]) },
+    ],
+  }));
+
+  // Label: only visible on active tab (iOS 26 style)
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      { translateY: interpolate(progress.value, [0, 1], [4, 0]) },
+    ],
   }));
 
   if (tab.isAdd) return null; // handled separately
@@ -130,39 +160,46 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, bad
       style={iosStyles.tabItem}
     >
       <View style={iosStyles.tabItemInner}>
-        <Animated.View style={iconAnimStyle}>
-          <View>
-            <Ionicons
-              name={isFocused ? tab.iconFocused : tab.iconOutline}
-              size={23}
-              color={color}
-            />
-            {badge != null && badge > 0 && (
-              <View style={[iosStyles.badge, { borderColor: isDark ? '#121212' : '#FFFFFF' }]}>
-                <Text style={iosStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        {/* Pill-shaped active background */}
+        <Animated.View
+          style={[
+            iosStyles.pillIndicator,
+            { backgroundColor: isDark ? 'rgba(226, 55, 68, 0.18)' : PILL_COLOR },
+            pillStyle,
+          ]}
+        />
+
+        {/* Icon container with crossfade */}
+        <View style={iosStyles.iconContainer}>
+          {/* Outline icon (inactive) */}
+          <Animated.View style={[iosStyles.iconLayer, outlineIconStyle]}>
+            <Ionicons name={tab.iconOutline} size={23} color={color} />
+          </Animated.View>
+          {/* Filled icon (active) */}
+          <Animated.View style={[iosStyles.iconLayer, activeIconStyle]}>
+            <Ionicons name={tab.iconFocused} size={23} color={color} />
+          </Animated.View>
+          {/* Badge overlay */}
+          {badge != null && badge > 0 && (
+            <View style={[iosStyles.badge, { borderColor: isDark ? '#121212' : '#FFFFFF' }]}>
+              <Text style={iosStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Label: hidden on inactive tabs (iOS 26 style) */}
         {tab.title ? (
-          <Text
+          <Animated.Text
             style={[
               iosStyles.label,
               { color, fontFamily: isFocused ? FontFamily.headingBold : FontFamily.bodyMedium },
+              labelStyle,
             ]}
             numberOfLines={1}
           >
             {tab.title}
-          </Text>
+          </Animated.Text>
         ) : null}
-        {/* Active dot indicator */}
-        <Animated.View
-          style={[
-            iosStyles.activeDot,
-            { backgroundColor: Colors.primary },
-            dotStyle,
-          ]}
-        />
       </View>
     </Pressable>
   );
@@ -274,6 +311,7 @@ function AndroidUnreadBadge() {
   const count = useMessageStore((s) => s.totalUnreadCount);
   const authUser = useAuthStore((s) => s.user);
   const fetchUnreadCount = useMessageStore((s) => s.fetchUnreadCount);
+  const colors = useThemeColors();
 
   React.useEffect(() => {
     if (authUser) fetchUnreadCount(authUser.id);
@@ -281,7 +319,7 @@ function AndroidUnreadBadge() {
 
   if (!count || count <= 0) return null;
   return (
-    <View style={iosStyles.badge}>
+    <View style={[iosStyles.badge, { borderColor: colors.background }]}>
       <Text style={iosStyles.badgeText}>{count > 9 ? '9+' : count}</Text>
     </View>
   );
@@ -469,7 +507,7 @@ const iosStyles = StyleSheet.create({
     elevation: 12,
   },
   glassBar: {
-    borderRadius: BorderRadius.xxl,
+    borderRadius: 30,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.glass.border,
     paddingVertical: Spacing.sm + 2,
@@ -499,13 +537,26 @@ const iosStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    minHeight: 40,
-    gap: 3,
+    minHeight: 44,
+    gap: 2,
   },
-  activeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+  pillIndicator: {
+    position: 'absolute',
+    width: PILL_WIDTH,
+    height: PILL_HEIGHT,
+    borderRadius: 9999,
+    top: 0,
+  },
+  iconContainer: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLayer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize: FontSize.xs,

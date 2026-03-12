@@ -6,11 +6,13 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useListStore } from '../../stores/listStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { haptic } from '../../lib/haptics';
 import type { Venue } from '../../types';
 
 export default function ListCreateScreen() {
@@ -46,12 +48,14 @@ export default function ListCreateScreen() {
 
   const addVenue = (venue: Venue) => {
     if (!selectedVenues.find(v => v.id === venue.id)) {
+      haptic.selection();
       setSelectedVenues(prev => [...prev, venue]);
     }
     setVenueQuery('');
   };
 
   const removeVenue = (venueId: string) => {
+    haptic.selection();
     setSelectedVenues(prev => prev.filter(v => v.id !== venueId));
   };
 
@@ -72,6 +76,7 @@ export default function ListCreateScreen() {
         await addVenueToList(list.id, selectedVenues[i].id);
       }
       setSaving(false);
+      haptic.success();
       router.back();
     } else {
       setSaving(false);
@@ -101,29 +106,31 @@ export default function ListCreateScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* Cover Image */}
-        <TouchableOpacity style={styles.coverContainer} onPress={handlePickCover}>
-          {coverImage ? (
-            <Image source={{ uri: coverImage }} style={styles.coverImage} />
-          ) : (
-            <View style={[styles.coverPlaceholder, { borderColor: colors.border }]}>
-              <Ionicons name="image-outline" size={32} color={colors.textTertiary} />
-              <Text style={[styles.coverText, { color: colors.textTertiary }]}>Kapak Fotografi</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}>
+          <TouchableOpacity style={styles.coverContainer} onPress={handlePickCover}>
+            {coverImage ? (
+              <Image source={{ uri: coverImage }} style={styles.coverImage} />
+            ) : (
+              <View style={[styles.coverPlaceholder, { borderColor: colors.border }]}>
+                <Ionicons name="image-outline" size={32} color={colors.textTertiary} />
+                <Text style={[styles.coverText, { color: colors.textTertiary }]}>Kapak Fotografi</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* Title */}
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Baslik</Text>
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
             value={title} onChangeText={setTitle}
             placeholder="ornek: En iyi 5 tost mekani" placeholderTextColor={colors.textTertiary}
           />
-        </View>
+        </Animated.View>
 
         {/* Description */}
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Aciklama</Text>
           <TextInput
             style={[styles.input, styles.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
@@ -131,10 +138,10 @@ export default function ListCreateScreen() {
             placeholder="Listenizi tanitin..." placeholderTextColor={colors.textTertiary}
             multiline numberOfLines={3}
           />
-        </View>
+        </Animated.View>
 
         {/* Venue Search */}
-        <View style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Mekan Ekle</Text>
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
@@ -151,21 +158,23 @@ export default function ListCreateScreen() {
               ))}
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* Selected Venues */}
         {selectedVenues.length > 0 && (
           <View style={styles.selectedVenues}>
             {selectedVenues.map((venue, index) => (
-              <View key={venue.id} style={[styles.selectedVenueCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-                <View style={styles.venuePosition}>
-                  <Text style={styles.venuePositionText}>{index + 1}</Text>
+              <Animated.View key={venue.id} entering={FadeIn.springify().damping(18)}>
+                <View style={[styles.selectedVenueCard, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+                  <View style={styles.venuePosition}>
+                    <Text style={styles.venuePositionText}>{index + 1}</Text>
+                  </View>
+                  <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
+                  <TouchableOpacity onPress={() => removeVenue(venue.id)}>
+                    <Ionicons name="close-circle" size={20} color={Colors.primary} />
+                  </TouchableOpacity>
                 </View>
-                <Text style={[styles.selectedVenueName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
-                <TouchableOpacity onPress={() => removeVenue(venue.id)}>
-                  <Ionicons name="close-circle" size={20} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}

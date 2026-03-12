@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from 'react-native';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
@@ -80,7 +81,12 @@ export default function ImageGrid({
         contentContainerStyle={styles.horizontalScroll}
       >
         {images.map((uri) => (
-          <View key={uri} style={styles.horizontalThumb}>
+          <Animated.View
+            key={uri}
+            style={styles.horizontalThumb}
+            entering={FadeIn.springify()}
+            layout={Layout.springify()}
+          >
             <Image source={{ uri }} style={styles.horizontalImage} />
             <TouchableOpacity
               style={styles.removeBtn}
@@ -88,7 +94,7 @@ export default function ImageGrid({
             >
               <Ionicons name="close" size={14} color="#FFFFFF" />
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         ))}
         {images.length < maxImages && (
           <TouchableOpacity
@@ -108,9 +114,14 @@ export default function ImageGrid({
   const ITEM_SIZE = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.md * 2) / 3;
 
   return (
-    <View style={styles.grid}>
+    <Animated.View style={styles.grid} layout={Layout.springify()}>
       {images.map((uri) => (
-        <View key={uri} style={[styles.gridItem, { width: ITEM_SIZE }]}>
+        <Animated.View
+          key={uri}
+          style={[styles.gridItem, { width: ITEM_SIZE }]}
+          entering={FadeIn.springify()}
+          layout={Layout.springify()}
+        >
           <Image source={{ uri }} style={styles.gridImage} />
           <TouchableOpacity
             style={styles.removeBtn}
@@ -118,7 +129,7 @@ export default function ImageGrid({
           >
             <Ionicons name="close" size={14} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       ))}
       {images.length < maxImages && (
         <>
@@ -140,7 +151,7 @@ export default function ImageGrid({
           </TouchableOpacity>
         </>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
