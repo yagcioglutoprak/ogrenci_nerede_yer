@@ -10,6 +10,8 @@ function isMockId(id: string): boolean {
 interface MessageState {
   conversations: Conversation[];
   messages: DirectMessage[];
+  messageRequests: Conversation[];
+  requestCount: number;
   totalUnreadCount: number;
   loading: boolean;
 
@@ -22,12 +24,18 @@ interface MessageState {
   subscribeToMessages: (convId: string) => any;
   subscribeToConversations: (userId: string) => any;
   fetchUnreadCount: (userId: string) => Promise<void>;
+  fetchMessageRequests: (userId: string) => Promise<void>;
+  acceptRequest: (convId: string) => Promise<void>;
+  deleteRequest: (convId: string) => Promise<void>;
+  blockFromRequest: (convId: string, blockedUserId: string) => Promise<void>;
   unsubscribeChannel: (channel: any) => void;
 }
 
 export const useMessageStore = create<MessageState>((set, get) => ({
   conversations: [],
   messages: [],
+  messageRequests: [],
+  requestCount: 0,
   totalUnreadCount: 0,
   loading: false,
 
@@ -39,6 +47,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const { data, error } = await supabase
         .from('conversations')
         .select('*, user1:users!conversations_participant_1_fkey(*), user2:users!conversations_participant_2_fkey(*)')
+        .eq('status', 'accepted')
         .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
         .order('last_message_at', { ascending: false });
 
@@ -51,6 +60,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         last_message_text: c.last_message_text,
         last_message_at: c.last_message_at,
         last_message_sender_id: c.last_message_sender_id,
+        status: c.status,
+        initiated_by: c.initiated_by,
         created_at: c.created_at,
         other_user: c.participant_1 === userId ? c.user2 : c.user1,
         unread_count: 0,
@@ -82,7 +93,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       const { MOCK_CONVERSATIONS } = await import('../lib/mockData');
       const filtered = MOCK_CONVERSATIONS.filter(
-        (c) => c.participant_1 === userId || c.participant_2 === userId,
+        (c) => (c.participant_1 === userId || c.participant_2 === userId)
+          && (c.status === 'accepted' || !c.status),
       );
       const totalUnread = filtered.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
       set({ conversations: filtered, totalUnreadCount: totalUnread, loading: false });
@@ -140,7 +152,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         user_a: myId,
         user_b: otherId,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('BLOCKED') || error.message?.includes('REJECTED')) {
+          return null;
+        }
+        throw error;
+      }
       return data as string;
     } catch {
       return null;
@@ -229,12 +246,17 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         })
         .eq('id', convId);
 
-      sendPushNotification(
-        otherUserId,
-        'Yeni Mesaj',
-        previewText.length > 80 ? previewText.substring(0, 80) + '...' : previewText,
-        { route: `/chat/${convId}` },
-      ).catch(() => {});
+      // Skip push notification for pending conversations (silent request)
+      const conv = get().conversations.find((c) => c.id === convId)
+        || get().messageRequests.find((c) => c.id === convId);
+      if (conv?.status !== 'pending') {
+        sendPushNotification(
+          otherUserId,
+          'Yeni Mesaj',
+          previewText.length > 80 ? previewText.substring(0, 80) + '...' : previewText,
+          { route: `/chat/${convId}` },
+        ).catch(() => {});
+      }
     } catch {
       // Optimistic message stays in place
     }
@@ -324,6 +346,16 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `participant_2=eq.${userId}` },
           () => { get().fetchConversations(userId); },
         )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'conversations', filter: `participant_1=eq.${userId}` },
+          () => { get().fetchMessageRequests(userId); get().fetchConversations(userId); },
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'conversations', filter: `participant_2=eq.${userId}` },
+          () => { get().fetchMessageRequests(userId); get().fetchConversations(userId); },
+        )
         .subscribe();
       return channel;
     } catch {
@@ -349,6 +381,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const { data: userConversations } = await supabase
         .from('conversations')
         .select('id')
+        .eq('status', 'accepted')
         .or(`participant_1.eq.${userId},participant_2.eq.${userId}`);
 
       if (!userConversations?.length) {
@@ -376,9 +409,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     if (isMockId(currentUserId)) {
       try {
         const { MOCK_USERS } = await import('../lib/mockData');
+        const { useBlockStore } = await import('./blockStore');
+        const blockedUsers = useBlockStore.getState().blockedUsers;
         return MOCK_USERS
           .filter((u) =>
-            u.id !== currentUserId && (
+            u.id !== currentUserId &&
+            !blockedUsers.includes(u.id) && (
               u.full_name.toLowerCase().includes(trimmed) ||
               u.username.toLowerCase().includes(trimmed)
             ),
@@ -399,9 +435,132 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       if (error || !data) return [];
 
-      return (data as User[]).map((u) => ({ ...u, mutual_followers: 0 }));
+      const { useBlockStore } = await import('./blockStore');
+      const blockedUsers = useBlockStore.getState().blockedUsers;
+      return (data as User[])
+        .filter((u) => !blockedUsers.includes(u.id))
+        .map((u) => ({ ...u, mutual_followers: 0 }));
     } catch {
       return [];
+    }
+  },
+
+  fetchMessageRequests: async (userId) => {
+    if (isMockId(userId)) {
+      try {
+        const { MOCK_MESSAGE_REQUESTS } = await import('../lib/mockData');
+        const requests = MOCK_MESSAGE_REQUESTS.filter(
+          (c) => c.initiated_by !== userId &&
+            (c.participant_1 === userId || c.participant_2 === userId)
+        );
+        set({ messageRequests: requests, requestCount: requests.length });
+      } catch {
+        set({ messageRequests: [], requestCount: 0 });
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*, user1:users!conversations_participant_1_fkey(*), user2:users!conversations_participant_2_fkey(*)')
+        .eq('status', 'pending')
+        .neq('initiated_by', userId)
+        .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
+        .order('last_message_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mapped: Conversation[] = (data || []).map((c: any) => ({
+        id: c.id,
+        participant_1: c.participant_1,
+        participant_2: c.participant_2,
+        last_message_text: c.last_message_text,
+        last_message_at: c.last_message_at,
+        last_message_sender_id: c.last_message_sender_id,
+        status: c.status,
+        initiated_by: c.initiated_by,
+        created_at: c.created_at,
+        other_user: c.participant_1 === userId ? c.user2 : c.user1,
+        unread_count: 0,
+      }));
+
+      set({ messageRequests: mapped, requestCount: mapped.length });
+    } catch {
+      // Keep current state on error
+    }
+  },
+
+  acceptRequest: async (convId) => {
+    // Optimistic: move from requests to conversations
+    const { messageRequests, conversations } = get();
+    const request = messageRequests.find((r) => r.id === convId);
+    if (request) {
+      const accepted = { ...request, status: 'accepted' as const };
+      set({
+        messageRequests: messageRequests.filter((r) => r.id !== convId),
+        requestCount: Math.max(0, get().requestCount - 1),
+        conversations: [accepted, ...conversations],
+      });
+    }
+
+    if (isMockId(convId)) return;
+
+    try {
+      await supabase
+        .from('conversations')
+        .update({ status: 'accepted' })
+        .eq('id', convId);
+    } catch {
+      // Rollback on error — refetch both lists
+      const userId = request
+        ? (request.initiated_by === request.participant_1 ? request.participant_2 : request.participant_1)
+        : '';
+      if (userId) {
+        get().fetchConversations(userId);
+        get().fetchMessageRequests(userId);
+      }
+    }
+  },
+
+  deleteRequest: async (convId) => {
+    // Optimistic: remove from requests
+    const { messageRequests } = get();
+    set({
+      messageRequests: messageRequests.filter((r) => r.id !== convId),
+      requestCount: Math.max(0, get().requestCount - 1),
+    });
+
+    if (isMockId(convId)) return;
+
+    try {
+      await supabase
+        .from('conversations')
+        .update({ status: 'rejected' })
+        .eq('id', convId);
+    } catch {
+      // Non-critical — will be hidden on next fetch anyway
+    }
+  },
+
+  blockFromRequest: async (convId, blockedUserId) => {
+    // Remove from requests first
+    const { messageRequests } = get();
+    set({
+      messageRequests: messageRequests.filter((r) => r.id !== convId),
+      requestCount: Math.max(0, get().requestCount - 1),
+    });
+
+    // Delegate block to blockStore (handles follows + conversation status)
+    const { useBlockStore } = await import('./blockStore');
+    const blockStore = useBlockStore.getState();
+    // Determine blocker (current user) from the request
+    const request = messageRequests.find((r) => r.id === convId);
+    const blockerId = request
+      ? (request.initiated_by === request.participant_1 ? request.participant_2 : request.participant_1)
+      : '';
+    if (blockerId) {
+      await blockStore.blockUser(blockerId, blockedUserId);
     }
   },
 
