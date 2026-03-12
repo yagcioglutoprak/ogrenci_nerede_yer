@@ -95,6 +95,7 @@ export default function RootLayout() {
       <Stack.Screen name="list/[id]" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="list/create" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="buddy" options={{ animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="messages/requests" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="chat/new" options={{ presentation: 'modal', animation: 'slide_from_bottom', headerShown: false }} />
       <Stack.Screen name="reels" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', headerShown: false }} />
