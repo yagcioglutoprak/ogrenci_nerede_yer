@@ -7,11 +7,13 @@ Instagram-style message request system for the Mesajlar page. Non-mutual-followe
 ## Requirements
 
 1. **DM Requests:** When a non-mutual-follower sends a DM, the conversation is created with `status = 'pending'` and lands in the recipient's request inbox — not their main messages.
-2. **Request Actions:** Accept (moves to normal DMs), Delete (removes conversation), Block (platform-wide block + removes conversation).
+2. **Request Actions:** Accept (moves to normal DMs), Delete (sets `status = 'rejected'`, hides from both sides, prevents re-creation), Block (platform-wide block + sets `status = 'rejected'`).
 3. **Content Visibility:** Recipient can see message content in the request view, but no read receipts are sent until accepted.
 4. **Privacy Setting:** Default `followers_only` — only mutual followers get direct DMs. Users can change to `everyone` in settings to skip the request flow.
 5. **Request UI:** "İstekler (N)" button in the Messages header, navigates to a dedicated requests list page.
 6. **Block Scope:** Full platform block — DM, follow, profile viewing, feed visibility, search results all affected.
+7. **Privacy Change:** Changing `dm_privacy` from `everyone` to `followers_only` does NOT retroactively affect existing accepted conversations. Only new conversations are affected.
+8. **Block Detection:** Server-side RPC `is_blocked_between(user_a, user_b)` checks both directions so blocked users see appropriate UI ("Bu kullanıcıyla iletişim kuramazsın").
 
 ## Database Schema
 
@@ -20,7 +22,7 @@ Instagram-style message request system for the Mesajlar page. Non-mutual-followe
 ```sql
 ALTER TABLE conversations
   ADD COLUMN status TEXT DEFAULT 'accepted'
-    CHECK (status IN ('accepted', 'pending', 'blocked')),
+    CHECK (status IN ('accepted', 'pending', 'rejected')),
   ADD COLUMN initiated_by UUID REFERENCES users(id);
 
 -- Backfill existing conversations
@@ -29,7 +31,17 @@ UPDATE conversations SET status = 'accepted' WHERE status IS NULL;
 
 - `status = 'accepted'`: Normal conversation (mutual followers or accepted request)
 - `status = 'pending'`: Awaiting recipient approval
+- `status = 'rejected'`: Deleted/declined by recipient — hidden from both, prevents re-creation
 - `initiated_by`: The user who started the conversation (needed to determine recipient)
+
+**New DELETE policy** (scoped to pending requests, recipient only):
+```sql
+CREATE POLICY "conversations_delete" ON conversations
+  FOR DELETE USING (
+    auth.uid() IN (participant_1, participant_2)
+    AND status IN ('pending', 'rejected')
+  );
+```
 
 ### 2. `user_blocks` table — new
 
@@ -78,6 +90,7 @@ DECLARE
   p1 UUID;
   p2 UUID;
   conv_id UUID;
+  conv_status TEXT;
   is_blocked BOOLEAN;
   is_mutual_follow BOOLEAN;
   target_privacy TEXT;
@@ -99,14 +112,18 @@ BEGIN
   ) INTO is_blocked;
 
   IF is_blocked THEN
-    RETURN NULL;
+    RAISE EXCEPTION 'BLOCKED';
   END IF;
 
-  -- Try to find existing
-  SELECT id INTO conv_id FROM conversations
+  -- Try to find existing (including rejected — prevents re-creation)
+  SELECT id, status INTO conv_id, conv_status FROM conversations
     WHERE participant_1 = p1 AND participant_2 = p2;
 
   IF conv_id IS NOT NULL THEN
+    -- If previously rejected, do not allow re-creation
+    IF conv_status = 'rejected' THEN
+      RAISE EXCEPTION 'REJECTED';
+    END IF;
     RETURN conv_id;
   END IF;
 
@@ -148,6 +165,25 @@ END;
 $$;
 ```
 
+### 5. `is_blocked_between` RPC — new
+
+```sql
+CREATE OR REPLACE FUNCTION is_blocked_between(user_a UUID, user_b UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS(
+    SELECT 1 FROM user_blocks
+    WHERE (blocker_id = user_a AND blocked_id = user_b)
+       OR (blocker_id = user_b AND blocked_id = user_a)
+  );
+$$;
+```
+
+Used by frontend to check bidirectional block status (e.g., profile page, follow button). Since `user_blocks` SELECT policy only shows blocks you created, this `SECURITY DEFINER` function checks both directions.
+
 ## Store Changes
 
 ### messageStore — modifications
@@ -161,33 +197,38 @@ requestCount: number             // total pending request count
 **New actions:**
 ```ts
 fetchMessageRequests(userId: string): Promise<void>
-  // SELECT from conversations WHERE status='pending' AND recipient is me
+  // SELECT from conversations
+  // WHERE status='pending'
+  //   AND initiated_by != userId
+  //   AND (participant_1 = userId OR participant_2 = userId)
 
 acceptRequest(convId: string): Promise<void>
   // UPDATE conversations SET status='accepted' WHERE id=convId
 
 deleteRequest(convId: string): Promise<void>
-  // DELETE from conversations WHERE id=convId
+  // UPDATE conversations SET status='rejected' WHERE id=convId
+  // (soft-delete — prevents re-creation by sender)
 
 blockFromRequest(convId: string, blockedUserId: string): Promise<void>
-  // INSERT into user_blocks + DELETE conversation
+  // INSERT into user_blocks + UPDATE conversation status='rejected'
 ```
 
 **Modified actions:**
 - `fetchConversations`: adds `status = 'accepted'` filter + excludes blocked users
-- `fetchOrCreateConversation`: block check before creation, returns null if blocked
-- `sendMessage`: skips push notification if conversation is pending
-- `subscribeToConversations`: also listens for INSERT events (new requests)
+- `fetchOrCreateConversation`: wraps RPC call, catches `BLOCKED` exception → returns `{ error: 'blocked' }`, catches `REJECTED` → returns `{ error: 'rejected' }`. Frontend shows "Bu kullanıcıyla iletişim kuramazsın" for both.
+- `sendMessage`: skips push notification if conversation is pending. Sender sees local confirmation "Mesaj isteği olarak gönderildi".
+- `subscribeToConversations`: also listens for INSERT events (new pending requests). Uses same dual `.on()` pattern (participant_1 and participant_2 filters) for INSERT, resulting in 4 `.on()` handlers total on the channel.
 
 ### New blockStore
 
 ```ts
 interface BlockState {
-  blockedUsers: string[]
+  blockedUsers: string[]          // users I have blocked (client-side cache)
   fetchBlockedUsers(userId: string): Promise<void>
   blockUser(blockerId: string, blockedId: string): Promise<void>
   unblockUser(blockerId: string, blockedId: string): Promise<void>
-  isBlocked(userId: string): boolean
+  isBlocked(userId: string): boolean                        // have I blocked this user? (local check)
+  checkBlockedBetween(userA: string, userB: string): Promise<boolean>  // bidirectional via RPC
 }
 ```
 
@@ -270,8 +311,10 @@ Single migration: `010_message_requests.sql`
 2. Backfill existing rows with `status = 'accepted'`
 3. Create `user_blocks` table with RLS
 4. Add `dm_privacy` column to `users`
-5. Update `get_or_create_conversation` RPC
-6. Update RLS policies on `conversations` to account for status
+5. Replace `get_or_create_conversation` RPC (with block/reject/mutual-follow checks)
+6. Create `is_blocked_between` RPC
+7. Add DELETE policy on `conversations` (scoped to pending/rejected only)
+8. Update existing conversation RLS policies to exclude `rejected` from SELECT
 
 ## New Files
 
@@ -281,7 +324,7 @@ Single migration: `010_message_requests.sql`
 
 ## Modified Files
 
-- `src/types/index.ts` — `Conversation` type + new `UserBlock` type
+- `src/types/index.ts` — `Conversation` type (add `status?: 'accepted' | 'pending' | 'rejected'`, `initiated_by?: string`) + `User` type (add `dm_privacy?: 'followers_only' | 'everyone'`) + new `UserBlock` interface
 - `src/stores/messageStore.ts` — request state + actions + filters
 - `src/app/(tabs)/messages.tsx` — header request button
 - `src/app/chat/[id].tsx` — pending action bar + info banner
