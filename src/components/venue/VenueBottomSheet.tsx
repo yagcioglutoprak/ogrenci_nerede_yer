@@ -541,10 +541,12 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                   {tier === 'reviewed' ? 'Puan Ver' : 'Degerlendir'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDirections]} onPress={handleDirections} activeOpacity={0.8}>
-                <Ionicons name="navigate-outline" size={16} color="#FFF" />
-                <Text style={styles.actionBtnWhiteText}>Yol Tarifi</Text>
-              </TouchableOpacity>
+              {!isExpanded && (
+                <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDirections]} onPress={handleDirections} activeOpacity={0.8}>
+                  <Ionicons name="navigate-outline" size={16} color="#FFF" />
+                  <Text style={styles.actionBtnWhiteText}>Yol Tarifi</Text>
+                </TouchableOpacity>
+              )}
               {tier !== 'google_places' && (
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.actionBtnSave, { borderColor: colors.border }]}

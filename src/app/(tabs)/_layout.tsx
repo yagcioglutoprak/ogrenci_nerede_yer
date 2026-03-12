@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
+import { View, StyleSheet, Platform, Pressable, Text, type LayoutChangeEvent } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +14,12 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withSequence,
+  withDelay,
   interpolate,
+  runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -41,13 +45,9 @@ const TABS: TabDef[] = [
 
 const ADD_BUTTON_SIZE = 56;
 const ADD_BUTTON_LIFT = 18;
-const CENTER_SPACER_WIDTH = ADD_BUTTON_SIZE + 4;
-
 // Pill-shaped active indicator dimensions (iOS 26 Liquid Glass)
 const PILL_WIDTH = 56;
 const PILL_COLOR = 'rgba(226, 55, 68, 0.12)';
-const PILL_SPRING = { damping: 20, stiffness: 300 };
-
 // ---------------------------------------------------------------------------
 // Elevated center "+" button with gradient & glow
 // ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
   const rotation = useSharedValue(0);
 
   React.useEffect(() => {
-    rotation.value = withSpring(isFocused ? 45 : 0, SpringConfig.snappy);
+    rotation.value = withSpring(isFocused ? 45 : 0, { damping: 14, stiffness: 120, mass: 0.8 });
   }, [isFocused]);
 
   const rotateStyle = useAnimatedStyle(() => ({
@@ -93,7 +93,28 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
 }
 
 // ---------------------------------------------------------------------------
-// Regular tab item with animated indicator
+// Liquid Glass sliding indicator — single pill that slides between tabs
+// ---------------------------------------------------------------------------
+
+// Spring for the horizontal slide
+const SLIDE_SPRING = { damping: 20, stiffness: 350, mass: 0.4 };
+// Spring for the blob stretch effect
+const STRETCH_SPRING = { damping: 22, stiffness: 400, mass: 0.4 };
+// Spring for the pill contracting back
+const CONTRACT_SPRING = { damping: 18, stiffness: 300, mass: 0.5 };
+// Spring for icon/label transitions
+const ICON_SPRING = { damping: 18, stiffness: 250, mass: 0.4 };
+
+// Non-add tabs in render order (left 2, right 2)
+const VISIBLE_TABS = TABS.filter((t) => !t.isAdd);
+
+interface TabLayout {
+  x: number;
+  width: number;
+}
+
+// ---------------------------------------------------------------------------
+// Tab item (no per-tab pill — just icon + label with crossfade)
 // ---------------------------------------------------------------------------
 
 interface GlassTabItemProps {
@@ -102,91 +123,59 @@ interface GlassTabItemProps {
   onPress: () => void;
   onLongPress: () => void;
   color: string;
-  isDark: boolean;
   badge?: number;
+  onTabLayout: (e: LayoutChangeEvent) => void;
 }
 
-function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, badge }: GlassTabItemProps) {
-  // Shared value: 0 = inactive, 1 = active
+function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, badge, onTabLayout }: GlassTabItemProps) {
   const progress = useSharedValue(isFocused ? 1 : 0);
 
   React.useEffect(() => {
-    progress.value = withSpring(isFocused ? 1 : 0, PILL_SPRING);
-  }, [isFocused, progress]);
+    progress.value = withSpring(isFocused ? 1 : 0, ICON_SPRING);
+  }, [isFocused]);
 
-  // Pill-shaped background indicator
-  const pillStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0.6, 1]),
-    transform: [
-      { scaleX: interpolate(progress.value, [0, 1], [0.4, 1]) },
-      { scaleY: interpolate(progress.value, [0, 1], [0.4, 1]) },
-    ],
-  }));
-
-  // Active (filled) icon: fades in + scales up
   const activeIconStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [
-      { scale: interpolate(progress.value, [0, 1], [0.8, 1.1]) },
-    ],
+    opacity: interpolate(progress.value, [0, 0.3, 1], [0, 0.5, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 0.5, 1], [0.5, 1.12, 1.05]) }],
   }));
 
-  // Outline icon: fades out
   const outlineIconStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [1, 0]),
-    transform: [
-      { scale: interpolate(progress.value, [0, 1], [1, 0.8]) },
-    ],
+    opacity: interpolate(progress.value, [0, 0.5, 1], [1, 0.3, 0]),
+    transform: [{ scale: interpolate(progress.value, [0, 0.5, 1], [1, 0.9, 0.5]) }],
   }));
 
-  // Label: only visible on active tab (iOS 26 style)
   const labelStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: interpolate(progress.value, [0, 0.4, 1], [0, 0.4, 1]),
     transform: [
-      { translateY: interpolate(progress.value, [0, 1], [4, 0]) },
+      { translateY: interpolate(progress.value, [0, 0.5, 1], [6, -1, 0]) },
+      { scale: interpolate(progress.value, [0, 0.5, 1], [0.8, 1.02, 1]) },
     ],
   }));
-
-  if (tab.isAdd) return null; // handled separately
 
   return (
     <Pressable
-      key={tab.name}
       onPress={onPress}
       onLongPress={onLongPress}
+      onLayout={onTabLayout}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
       style={iosStyles.tabItem}
     >
       <View style={iosStyles.tabItemInner}>
-        {/* Pill-shaped active background */}
-        <Animated.View
-          style={[
-            iosStyles.pillIndicator,
-            { backgroundColor: isDark ? 'rgba(226, 55, 68, 0.18)' : PILL_COLOR },
-            pillStyle,
-          ]}
-        />
-
-        {/* Icon container with crossfade */}
         <View style={iosStyles.iconContainer}>
-          {/* Outline icon (inactive) */}
           <Animated.View style={[iosStyles.iconLayer, outlineIconStyle]}>
             <Ionicons name={tab.iconOutline} size={23} color={color} />
           </Animated.View>
-          {/* Filled icon (active) */}
           <Animated.View style={[iosStyles.iconLayer, activeIconStyle]}>
             <Ionicons name={tab.iconFocused} size={23} color={color} />
           </Animated.View>
-          {/* Badge overlay */}
           {badge != null && badge > 0 && (
-            <View style={[iosStyles.badge, { borderColor: isDark ? '#121212' : '#FFFFFF' }]}>
+            <View style={iosStyles.badge}>
               <Text style={iosStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
             </View>
           )}
         </View>
 
-        {/* Label: hidden on inactive tabs (iOS 26 style) */}
         {tab.title ? (
           <Animated.Text
             style={[
@@ -205,7 +194,7 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, isDark, bad
 }
 
 // ---------------------------------------------------------------------------
-// Custom floating glass tab bar (iOS)
+// Custom floating glass tab bar (iOS) — sliding liquid pill
 // ---------------------------------------------------------------------------
 
 function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
@@ -220,13 +209,180 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     if (authUser) fetchUnreadCount(authUser.id);
   }, [authUser?.id]);
 
-  // Split tabs: left side, center (add), right side
-  const leftTabs = TABS.filter((t) => !t.isAdd).slice(0, 2);
   const addTab = TABS.find((t) => t.isAdd)!;
-  const rightTabs = TABS.filter((t) => !t.isAdd).slice(2);
+  const leftTabs = VISIBLE_TABS.slice(0, 2);
+  const rightTabs = VISIBLE_TABS.slice(2);
+
+  // --- Tab position measurement ---
+  const tabLayouts = React.useRef<Record<string, TabLayout>>({});
+  const pillX = useSharedValue(0);
+  const pillWidth = useSharedValue(PILL_WIDTH);
+  const pillScale = useSharedValue(1);
+  const pillOpacity = useSharedValue(1);
+  const prevIndex = React.useRef(state.index);
+  const initialised = React.useRef(false);
+  const isDragging = useSharedValue(false);
+  const dragStartX = useSharedValue(0);
 
   const findRouteIndex = (name: string) =>
     state.routes.findIndex((r: any) => r.name === name);
+
+  // Map route index → visible tab name
+  const routeNameForIndex = (idx: number): string | undefined =>
+    state.routes[idx]?.name;
+
+  // Get sorted tab center positions (only visible tabs, not "add")
+  const getTabCenters = (): { name: string; centerX: number }[] => {
+    return VISIBLE_TABS
+      .map((t) => {
+        const layout = tabLayouts.current[t.name];
+        if (!layout) return null;
+        return { name: t.name, centerX: layout.x + layout.width / 2 };
+      })
+      .filter(Boolean) as { name: string; centerX: number }[];
+  };
+
+  // Find nearest tab to a given x position
+  const findNearestTab = (x: number): string | null => {
+    const centers = getTabCenters();
+    if (centers.length === 0) return null;
+    let nearest = centers[0];
+    let minDist = Math.abs(x - centers[0].centerX);
+    for (let i = 1; i < centers.length; i++) {
+      const dist = Math.abs(x - centers[i].centerX);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = centers[i];
+      }
+    }
+    return nearest.name;
+  };
+
+  // Navigate to a tab by name (called from worklet via runOnJS)
+  const navigateToTab = React.useCallback((name: string) => {
+    haptic.light();
+    const idx = findRouteIndex(name);
+    const route = state.routes[idx];
+    if (state.index !== idx) {
+      navigation.navigate(route.name, route.params);
+    }
+  }, [state.routes, state.index, navigation]);
+
+  // Snap pill to nearest tab (called from worklet via runOnJS)
+  const snapToNearestTab = React.useCallback((currentPillCenter: number) => {
+    const name = findNearestTab(currentPillCenter);
+    if (name) {
+      const layout = tabLayouts.current[name];
+      if (layout) {
+        pillX.value = withSpring(
+          layout.x + (layout.width - PILL_WIDTH) / 2,
+          SLIDE_SPRING,
+        );
+        // Settle pulse
+        pillScale.value = withSequence(
+          withSpring(1.04, { damping: 14, stiffness: 300, mass: 0.5 }),
+          withSpring(1.0, { damping: 16, stiffness: 200, mass: 0.6 }),
+        );
+        pillWidth.value = withSpring(PILL_WIDTH, CONTRACT_SPRING);
+        navigateToTab(name);
+      }
+    }
+  }, [navigateToTab]);
+
+  // --- Pan gesture for dragging the pill ---
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-8, 8]) // Must drag 8px horizontally before activating
+    .onStart(() => {
+      isDragging.value = true;
+      dragStartX.value = pillX.value;
+    })
+    .onUpdate((e) => {
+      // Move pill directly with finger
+      pillX.value = dragStartX.value + e.translationX;
+      // Slight stretch while dragging
+      const speed = Math.abs(e.velocityX);
+      const stretch = Math.min(speed / 2000, 0.15);
+      pillWidth.value = PILL_WIDTH + PILL_WIDTH * stretch;
+    })
+    .onEnd((e) => {
+      isDragging.value = false;
+      // Snap to nearest tab based on pill center position
+      const pillCenter = pillX.value + PILL_WIDTH / 2;
+      runOnJS(snapToNearestTab)(pillCenter);
+    });
+
+  // When active tab changes (from tap), slide the pill
+  React.useEffect(() => {
+    // Skip if currently dragging
+    if (isDragging.value) return;
+
+    const name = routeNameForIndex(state.index);
+    if (!name) return;
+    const layout = tabLayouts.current[name];
+    if (!layout) return;
+
+    const targetX = layout.x + (layout.width - PILL_WIDTH) / 2;
+
+    // If the tab is the "add" tab, hide the pill
+    if (name === 'add') {
+      pillOpacity.value = withSpring(0, ICON_SPRING);
+      prevIndex.current = state.index;
+      return;
+    }
+
+    // Show pill if coming from add tab
+    pillOpacity.value = withSpring(1, ICON_SPRING);
+
+    if (!initialised.current) {
+      pillX.value = targetX;
+      initialised.current = true;
+      prevIndex.current = state.index;
+      return;
+    }
+
+    const prevName = routeNameForIndex(prevIndex.current);
+    const prevLayout = prevName ? tabLayouts.current[prevName] : null;
+
+    if (prevLayout && prevName !== 'add') {
+      const prevTargetX = prevLayout.x + (prevLayout.width - PILL_WIDTH) / 2;
+      const distance = Math.abs(targetX - prevTargetX);
+      const stretchWidth = PILL_WIDTH + distance * 0.25;
+
+      pillWidth.value = withSequence(
+        withSpring(stretchWidth, STRETCH_SPRING),
+        withDelay(60, withSpring(PILL_WIDTH, CONTRACT_SPRING)),
+      );
+
+      pillScale.value = withSequence(
+        withSpring(1.06, { damping: 12, stiffness: 300, mass: 0.5 }),
+        withSpring(1.0, { damping: 14, stiffness: 200, mass: 0.6 }),
+      );
+    }
+
+    pillX.value = withSpring(targetX, SLIDE_SPRING);
+    prevIndex.current = state.index;
+  }, [state.index]);
+
+  // Animated pill style
+  const slidingPillStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: pillX.value },
+      { scaleY: pillScale.value },
+    ],
+    width: pillWidth.value,
+    opacity: pillOpacity.value,
+  }));
+
+  const handleTabLayout = (tabName: string) => (e: LayoutChangeEvent) => {
+    const { x, width } = e.nativeEvent.layout;
+    tabLayouts.current[tabName] = { x, width };
+
+    const activeName = routeNameForIndex(state.index);
+    if (tabName === activeName && !initialised.current) {
+      pillX.value = x + (width - PILL_WIDTH) / 2;
+      initialised.current = true;
+    }
+  };
 
   const handlePress = (name: string) => {
     haptic.light();
@@ -263,8 +419,8 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
         onPress={() => handlePress(tab.name)}
         onLongPress={() => handleLongPress(tab.name)}
         color={color}
-        isDark={isDark}
         badge={badge}
+        onTabLayout={handleTabLayout(tab.name)}
       />
     );
   };
@@ -277,7 +433,6 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       ]}
       pointerEvents="box-none"
     >
-      {/* + button overlay — absolutely centered, outside GlassView */}
       <View style={iosStyles.addButtonOverlay} pointerEvents="box-none">
         <AddButton
           isFocused={state.index === findRouteIndex(addTab.name)}
@@ -287,17 +442,30 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
         />
       </View>
 
-      {/* Glass bar */}
-      <GlassView
-        style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
-        interactive
-      >
-        <View style={iosStyles.tabRow}>
-          {leftTabs.map(renderTab)}
-          <View style={iosStyles.centerSpacer} />
-          {rightTabs.map(renderTab)}
-        </View>
-      </GlassView>
+      <GestureDetector gesture={panGesture}>
+        <GlassView
+          style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
+          interactive
+        >
+          <View style={iosStyles.tabRow}>
+            {/* Sliding liquid glass pill — single shared indicator */}
+            <Animated.View
+              style={[
+                iosStyles.slidingPill,
+                {
+                  backgroundColor: isDark ? 'rgba(226, 55, 68, 0.18)' : PILL_COLOR,
+                  borderColor: isDark ? 'rgba(226, 55, 68, 0.12)' : 'rgba(226, 55, 68, 0.08)',
+                },
+                slidingPillStyle,
+              ]}
+            />
+
+            {leftTabs.map(renderTab)}
+            <View style={iosStyles.centerSpacer} onLayout={handleTabLayout('add')} />
+            {rightTabs.map(renderTab)}
+          </View>
+        </GlassView>
+      </GestureDetector>
     </View>
   );
 }
@@ -486,13 +654,6 @@ const iosStyles = StyleSheet.create({
     width: ADD_BUTTON_SIZE + 20,
     height: ADD_BUTTON_SIZE + 20,
   },
-  pulseRing: {
-    position: 'absolute',
-    width: ADD_BUTTON_SIZE,
-    height: ADD_BUTTON_SIZE,
-    borderRadius: ADD_BUTTON_SIZE / 2,
-    borderWidth: 2,
-  },
   addGradient: {
     width: ADD_BUTTON_SIZE,
     height: ADD_BUTTON_SIZE,
@@ -520,12 +681,6 @@ const iosStyles = StyleSheet.create({
   centerSpacer: {
     width: ADD_BUTTON_SIZE + 8,
   },
-  tabSide: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-  },
   tabItem: {
     flex: 1,
     alignItems: 'center',
@@ -539,12 +694,16 @@ const iosStyles = StyleSheet.create({
     minHeight: 44,
     gap: 2,
   },
-  pillIndicator: {
+  slidingPill: {
     position: 'absolute',
-    width: PILL_WIDTH,
-    top: 0,
-    bottom: 0,
+    height: '100%',
     borderRadius: 9999,
+    borderWidth: StyleSheet.hairlineWidth,
+    // Subtle glow for liquid glass feel
+    shadowColor: '#E23744',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
   },
   iconContainer: {
     width: 24,

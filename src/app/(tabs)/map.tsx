@@ -34,8 +34,7 @@ import {
   FontFamily,
   SpringConfig,
 } from '../../lib/constants';
-// Google Places venues only shown in dev mode as placeholder data
-import { MOCK_GOOGLE_PLACES_VENUES } from '../../lib/mockData';
+import { fetchIstanbulRestaurants } from '../../lib/overpassApi';
 import { haptic } from '../../lib/haptics';
 import ReAnimated, {
   useSharedValue,
@@ -66,28 +65,29 @@ type ClusterItem =
 // ── Grid-based clustering ──
 
 function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
-  // Only cluster non-google_places venues
-  const onyVenues = venues.filter((v) => v.source !== 'google_places');
-  const googleVenues = venues.filter((v) => v.source === 'google_places');
-
   const items: ClusterItem[] = [];
 
-  // Google Places venues are never clustered (they're tiny dots)
-  for (const v of googleVenues) {
+  // ONY (reviewed) venues are NEVER clustered — always visible individually
+  const onyVenues = venues.filter((v) => v.source !== 'google_places');
+  const osmVenues = venues.filter((v) => v.source === 'google_places');
+
+  for (const v of onyVenues) {
     items.push({ type: 'venue' as const, venue: v });
   }
 
+  // Unreviewed (OSM) venues: show individually only when zoomed in
   if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) {
-    for (const v of onyVenues) {
+    for (const v of osmVenues) {
       items.push({ type: 'venue' as const, venue: v });
     }
     return items;
   }
 
-  const cellSize = region.latitudeDelta / 4;
+  // Cluster unreviewed venues — coarse grid so clusters stay large
+  const cellSize = region.latitudeDelta / 3;
   const buckets = new Map<string, Venue[]>();
 
-  for (const v of onyVenues) {
+  for (const v of osmVenues) {
     const cellX = Math.floor(v.latitude / cellSize);
     const cellY = Math.floor(v.longitude / cellSize);
     const key = `${cellX}_${cellY}`;
@@ -163,6 +163,10 @@ export default function MapScreen() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const markerPressedRef = useRef(false);
+
+  // External restaurants from OpenStreetMap
+  const [osmVenues, setOsmVenues] = useState<Venue[]>([]);
 
   // Filter state
   const [filterPrice, setFilterPrice] = useState<number[]>([]);
@@ -172,9 +176,9 @@ export default function MapScreen() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // ── Merge ONY venues with Google Places, filtered to visible region ──
+  // ── Merge ONY venues with OSM restaurants, filtered to visible region ──
   const visibleVenues = useMemo(() => {
-    const all = __DEV__ ? [...venues, ...MOCK_GOOGLE_PLACES_VENUES] : venues;
+    const all = [...venues, ...osmVenues];
     const latHalf = region.latitudeDelta / 2 + 0.005; // small buffer
     const lngHalf = region.longitudeDelta / 2 + 0.005;
     return all.filter(
@@ -184,7 +188,7 @@ export default function MapScreen() {
         v.longitude >= region.longitude - lngHalf &&
         v.longitude <= region.longitude + lngHalf,
     );
-  }, [venues, region]);
+  }, [venues, osmVenues, region]);
 
   // ── Memoized clusters ──
   const clusteredItems = useMemo(
@@ -220,6 +224,10 @@ export default function MapScreen() {
   useEffect(() => {
     requestLocationPermission();
     fetchVenues();
+    // Fetch all Istanbul restaurants from OpenStreetMap
+    fetchIstanbulRestaurants()
+      .then(setOsmVenues)
+      .catch(() => {}); // Silent fail — OSM venues are supplementary
   }, []);
 
   // Debounced search effect
@@ -251,14 +259,15 @@ export default function MapScreen() {
   };
 
   const handleMarkerPress = (venue: Venue) => {
+    markerPressedRef.current = true;
     haptic.light();
     setSelectedVenue(venue);
     mapRef.current?.animateToRegion(
       {
         latitude: venue.latitude,
         longitude: venue.longitude,
-        latitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
-        longitudeDelta: MapConfig.DEFAULT_ZOOM_DELTA,
+        latitudeDelta: region.latitudeDelta,
+        longitudeDelta: region.longitudeDelta,
       },
       MapConfig.MARKER_ANIMATION_DURATION,
     );
@@ -325,6 +334,10 @@ export default function MapScreen() {
         userInterfaceStyle={isDark ? 'dark' : 'light'}
         mapPadding={{ top: insets.top + 60, right: 0, bottom: insets.bottom + 60, left: 0 }}
         onPress={() => {
+          if (markerPressedRef.current) {
+            markerPressedRef.current = false;
+            return;
+          }
           if (selectedVenue) setSelectedVenue(null);
         }}
       >
@@ -332,29 +345,47 @@ export default function MapScreen() {
           if (item.type === 'cluster') {
             const { cluster } = item;
             const count = cluster.venues.length;
+            const hasOnyVenue = cluster.venues.some((v) => v.source !== 'google_places');
+
+            // ONY clusters: logo + red count badge
+            if (hasOnyVenue) {
+              return (
+                <React.Fragment key={cluster.id}>
+                  <Marker
+                    coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                    image={MARKER_LOGO}
+                    onPress={() => handleClusterPress(cluster)}
+                    tracksViewChanges={false}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                  />
+                  <Marker
+                    coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                    tracksViewChanges={false}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    centerOffset={{ x: 0, y: 37 }}
+                    tappable={false}
+                  >
+                    <View style={styles.clusterCountBadge}>
+                      <Text style={styles.clusterCountText}>{count}</Text>
+                    </View>
+                  </Marker>
+                </React.Fragment>
+              );
+            }
+
+            // OSM clusters: grey dot with count
             return (
-              <React.Fragment key={cluster.id}>
-                {/* Logo — tappable, zooms into cluster area */}
-                <Marker
-                  coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-                  image={MARKER_LOGO}
-                  onPress={() => handleClusterPress(cluster)}
-                  tracksViewChanges={false}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                />
-                {/* Count label below the logo */}
-                <Marker
-                  coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-                  tracksViewChanges={false}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  centerOffset={{ x: 0, y: 37 }}
-                  tappable={false}
-                >
-                  <View style={styles.clusterCountBadge}>
-                    <Text style={styles.clusterCountText}>{count}</Text>
-                  </View>
-                </Marker>
-              </React.Fragment>
+              <Marker
+                key={cluster.id}
+                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                onPress={() => handleClusterPress(cluster)}
+                tracksViewChanges={false}
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <View style={styles.greyClusterBadge}>
+                  <Text style={styles.greyClusterText}>{count}</Text>
+                </View>
+              </Marker>
             );
           }
 
@@ -367,9 +398,9 @@ export default function MapScreen() {
           if (tier === 'google_places') {
             return (
               <Marker
-                key={venue.id + (isSelected ? '_sel' : '')}
+                key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
-                tracksViewChanges={isSelected}
+                tracksViewChanges={true}
                 onPress={() => handleMarkerPress(venue)}
               >
                 {isSelected ? (
@@ -402,10 +433,10 @@ export default function MapScreen() {
             );
             return (
               <Marker
-                key={venue.id + (isSelected ? '_sel' : '')}
+                key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
                 onPress={() => handleMarkerPress(venue)}
-                tracksViewChanges={isSelected}
+                tracksViewChanges={true}
               >
                 {isSelected ? <SelectedPop>{tagContent}</SelectedPop> : tagContent}
               </Marker>
@@ -413,31 +444,24 @@ export default function MapScreen() {
           }
 
           // ── Tier 3: Reviewed ONY venue — native logo marker ──
-          if (isSelected) {
-            return (
-              <Marker
-                key={venue.id + '_sel'}
-                coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
-                onPress={() => handleMarkerPress(venue)}
-                tracksViewChanges
-                anchor={{ x: 0.5, y: 1 }}
-              >
+          return (
+            <Marker
+              key={venue.id}
+              coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+              onPress={() => handleMarkerPress(venue)}
+              tracksViewChanges={true}
+              anchor={{ x: 0.5, y: isSelected ? 1 : 0.5 }}
+            >
+              {isSelected ? (
                 <SelectedPop>
                   <View style={styles.selectedLogoWrap}>
                     <Image source={MARKER_LOGO} style={styles.selectedLogoImage} />
                   </View>
                 </SelectedPop>
-              </Marker>
-            );
-          }
-          return (
-            <Marker
-              key={venue.id}
-              coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
-              image={MARKER_LOGO}
-              onPress={() => handleMarkerPress(venue)}
-              tracksViewChanges={false}
-            />
+              ) : (
+                <Image source={MARKER_LOGO} style={{ width: 40, height: 40 }} />
+              )}
+            </Marker>
           );
         })}
       </MapView>
@@ -560,7 +584,7 @@ export default function MapScreen() {
 
       {/* Buddy FAB */}
       <TouchableOpacity
-        style={[styles.buddyFab, { bottom: Math.max(insets.bottom, 8) + 110 }]}
+        style={[styles.buddyFab, { bottom: Math.max(insets.bottom, 8) + 130 }]}
         onPress={() => router.push('/buddy')}
         activeOpacity={0.8}
         accessibilityLabel="Yemek arkadasi bul"
@@ -883,30 +907,30 @@ const styles = StyleSheet.create({
   },
   // Tier 1: Grey dot (Google Places)
   greyDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#9CA3AF',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.8)',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(160,165,175,0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.55)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
   greyDotSelected: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(226,55,68,0.55)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.7)',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
   },
   // Selected reviewed logo
   selectedLogoWrap: {
@@ -1111,25 +1135,49 @@ const styles = StyleSheet.create({
 
   // Cluster count badge — positioned at top-right of the native logo marker
   clusterCountBadge: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(226,55,68,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   clusterCountText: {
-    color: '#FFFFFF',
+    color: 'rgba(255,255,255,0.95)',
     fontFamily: FontFamily.heading,
-    fontSize: 11,
+    fontSize: 12,
+    letterSpacing: -0.3,
+  },
+
+  // Grey cluster for unreviewed OSM venues — liquid glass style
+  greyClusterBadge: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(140,145,155,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.45)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  greyClusterText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontFamily: FontFamily.heading,
+    fontSize: 13,
     letterSpacing: -0.3,
   },
 });

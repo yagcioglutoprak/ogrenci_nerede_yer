@@ -17,7 +17,7 @@
       "bundleIdentifier": "com.ogrencinerdeyer.app",
       "buildNumber": "1",
       "config": {
-        "googleMapsApiKey": "MOCK_GOOGLE_MAPS_API_KEY"
+        "googleMapsApiKey": "AIzaSyBqpDYesxYX1wby51oxhPm9v6xyvQDCkDs"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Yakınındaki mekanları gösterebilmemiz için konum izni gerekli.",
@@ -39,7 +39,7 @@
       },
       "config": {
         "googleMaps": {
-          "apiKey": "MOCK_GOOGLE_MAPS_API_KEY"
+          "apiKey": "AIzaSyBqpDYesxYX1wby51oxhPm9v6xyvQDCkDs"
         }
       },
       "permissions": [
@@ -62,7 +62,7 @@
       [
         "react-native-maps",
         {
-          "googleMapsApiKey": "MOCK_GOOGLE_MAPS_API_KEY"
+          "googleMapsApiKey": "AIzaSyBqpDYesxYX1wby51oxhPm9v6xyvQDCkDs"
         }
       ],
       "@react-native-community/datetimepicker",
