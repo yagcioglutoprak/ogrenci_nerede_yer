@@ -14,7 +14,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, FadeOut, SlideInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -180,7 +180,7 @@ export default function ChatScreen() {
     // Image message
     if (item.message_type === 'image' && item.metadata?.image_url) {
       return (
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+        <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
           {dateHeader}
           <ImageBubble
             imageUrl={item.metadata.image_url}
@@ -195,7 +195,7 @@ export default function ChatScreen() {
     // Venue message
     if (item.message_type === 'venue' && item.metadata?.venue_id) {
       return (
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+        <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
           {dateHeader}
           <VenueBubble
             venueId={item.metadata.venue_id}
@@ -229,7 +229,7 @@ export default function ChatScreen() {
     );
 
     return (
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
+      <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
         {dateHeader}
         <View style={[
           styles.bubbleRow,
@@ -381,19 +381,19 @@ export default function ChatScreen() {
           scrollEventThrottle={100}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
-              <Animated.View entering={FadeInUp.delay(200).springify()}>
+              <Animated.View entering={FadeInUp.delay(200).springify().damping(20).stiffness(300)}>
                 <View style={[styles.emptyChatIcon, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
                   <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.textTertiary} />
                 </View>
               </Animated.View>
               <Animated.Text
-                entering={FadeInUp.delay(350).springify()}
+                entering={FadeInUp.delay(350).springify().damping(20).stiffness(300)}
                 style={[styles.emptyTitle, { color: colors.text }]}
               >
                 Sohbete başla!
               </Animated.Text>
               <Animated.Text
-                entering={FadeInUp.delay(450).springify()}
+                entering={FadeInUp.delay(450).springify().damping(20).stiffness(300)}
                 style={[styles.stateText, { color: colors.textSecondary }]}
               >
                 İlk mesajı göndererek sohbeti başlat
@@ -404,7 +404,7 @@ export default function ChatScreen() {
 
         {/* Input Bar / Request Action Bar */}
         {isRecipient ? (
-          <Animated.View entering={SlideInUp.springify().damping(16)} style={[
+          <Animated.View entering={FadeIn.duration(200)} style={[
             styles.requestActionBar,
             {
               backgroundColor: colors.background,

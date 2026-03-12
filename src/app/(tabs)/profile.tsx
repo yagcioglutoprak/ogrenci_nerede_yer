@@ -33,6 +33,7 @@ import {
   FontSize,
   FontFamily,
   FeatureColors,
+  SpringConfig,
 } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import Avatar from '../../components/ui/Avatar';
@@ -62,7 +63,7 @@ function AnimatedStat({ value, label, icon, color, delay }: {
   const progress = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withDelay(delay, withSpring(1, { damping: 15, stiffness: 120 }));
+    progress.value = withDelay(delay, withSpring(1, SpringConfig.gentle));
   }, [value]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -92,7 +93,7 @@ function XPProgressBar({ xp, colors }: { xp: number; colors: any }) {
   const pct = Math.min((xp - currentLevelBase) / 500, 1);
 
   useEffect(() => {
-    progress.value = withDelay(600, withSpring(pct, { damping: 18, stiffness: 100 }));
+    progress.value = withDelay(600, withSpring(pct, SpringConfig.gentle));
   }, [xp]);
 
   const barStyle = useAnimatedStyle(() => ({
@@ -151,7 +152,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     tabIndicatorX.value = withSpring(
       activeTab === 'favorites' ? 0 : activeTab === 'posts' ? TAB_THIRD : TAB_THIRD * 2,
-      { damping: 18, stiffness: 200 },
+      SpringConfig.snappy,
     );
   }, [activeTab, TAB_THIRD]);
 
@@ -289,7 +290,7 @@ export default function ProfileScreen() {
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.loginPrompt}>
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <Animated.View entering={FadeInDown.delay(100).springify().damping(20).stiffness(300)}>
             <LinearGradient
               colors={[Colors.primary, Colors.accent]}
               start={{ x: 0, y: 0 }}
@@ -301,19 +302,19 @@ export default function ProfileScreen() {
           </Animated.View>
 
           <Animated.Text
-            entering={FadeInDown.delay(200).springify()}
+            entering={FadeInDown.delay(200).springify().damping(20).stiffness(300)}
             style={[styles.loginTitle, { color: colors.text }]}
           >
             Hesabına Giriş Yap
           </Animated.Text>
           <Animated.Text
-            entering={FadeInDown.delay(300).springify()}
+            entering={FadeInDown.delay(300).springify().damping(20).stiffness(300)}
             style={[styles.loginSubtitle, { color: colors.textSecondary }]}
           >
             Favori mekanlarını kaydet, yorumlarını paylaş{'\n'}ve topluluğa katıl!
           </Animated.Text>
 
-          <Animated.View entering={FadeInUp.delay(400).springify()} style={{ width: '100%' }}>
+          <Animated.View entering={FadeInUp.delay(400).springify().damping(20).stiffness(300)} style={{ width: '100%' }}>
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => router.push('/auth/login')}
@@ -324,7 +325,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(500).springify()}>
+          <Animated.View entering={FadeInUp.delay(500).springify().damping(20).stiffness(300)}>
             <TouchableOpacity
               onPress={() => router.push('/auth/register')}
               style={styles.registerRow}
@@ -367,7 +368,7 @@ export default function ProfileScreen() {
         ) : (
           <>
             {/* Cover + Avatar Section */}
-            <Animated.View entering={FadeInDown.delay(0).springify()}>
+            <Animated.View entering={FadeInDown.delay(0).springify().damping(20).stiffness(300)}>
               <View style={styles.coverSection}>
                 <LinearGradient
                   colors={[Colors.primary, Colors.accent]}
@@ -395,7 +396,7 @@ export default function ProfileScreen() {
 
             {/* Name + Info */}
             <Animated.View
-              entering={FadeInDown.delay(100).springify()}
+              entering={FadeInDown.delay(100).springify().damping(20).stiffness(300)}
               style={styles.profileInfo}
             >
               <Text style={[styles.profileName, { color: colors.text }]}>{user.full_name}</Text>
@@ -414,14 +415,14 @@ export default function ProfileScreen() {
             </Animated.View>
 
             {/* XP Progress Bar */}
-            <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <Animated.View entering={FadeInDown.delay(200).springify().damping(20).stiffness(300)}>
               <View style={{ paddingHorizontal: Spacing.lg, marginTop: Spacing.md }}>
                 <XPProgressBar xp={user.xp_points || 250} colors={colors} />
               </View>
             </Animated.View>
 
             {/* Stats Row — animated counters */}
-            <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <Animated.View entering={FadeInDown.delay(300).springify().damping(20).stiffness(300)}>
               <GlassView
                 style={[styles.statsCard, Platform.OS === 'ios' && styles.statsCardGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
                 fallbackColor={colors.background}
@@ -437,7 +438,7 @@ export default function ProfileScreen() {
             </Animated.View>
 
             {/* Tab Switch — with animated indicator */}
-            <Animated.View entering={FadeInDown.delay(400).springify()}>
+            <Animated.View entering={FadeInDown.delay(400).springify().damping(20).stiffness(300)}>
               <View style={[styles.tabContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <Animated.View
                   style={[
@@ -515,7 +516,7 @@ export default function ProfileScreen() {
 
             {/* Badges Section */}
             {badges.length > 0 && (
-              <Animated.View entering={FadeInDown.delay(450).springify()}>
+              <Animated.View entering={FadeInDown.delay(450).springify().damping(20).stiffness(300)}>
                 <View style={styles.badgesSection}>
                   <View style={styles.badgesSectionHeader}>
                     <Ionicons name="trophy" size={18} color={Colors.accent} />
@@ -551,7 +552,7 @@ export default function ProfileScreen() {
                   {favorites.map((venue, index) => (
                     <Animated.View
                       key={venue.id}
-                      entering={FadeInDown.delay(Math.min(index * 60, 300)).springify()}
+                      entering={FadeInDown.delay(Math.min(index * 60, 300)).springify().damping(20).stiffness(300)}
                     >
                       <TouchableOpacity
                         style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}
@@ -604,7 +605,7 @@ export default function ProfileScreen() {
                     return (
                       <Animated.View
                         key={post.id}
-                        entering={FadeInDown.delay(Math.min(index * 60, 300)).springify()}
+                        entering={FadeInDown.delay(Math.min(index * 60, 300)).springify().damping(20).stiffness(300)}
                       >
                         <TouchableOpacity
                           style={[styles.gridItem, { width: GRID_ITEM_WIDTH }, { backgroundColor: colors.background, borderColor: colors.border }]}

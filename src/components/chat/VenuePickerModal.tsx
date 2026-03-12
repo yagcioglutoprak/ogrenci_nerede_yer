@@ -75,7 +75,7 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
     const priceLabel = PriceRanges.find((p) => p.value === item.price_range)?.label ?? '\u20ba';
 
     return (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 150)).springify().damping(18)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 150)).springify().damping(22).stiffness(340)}>
         <TouchableOpacity
           style={[styles.venueRow, { backgroundColor: colors.background }]}
           onPress={() => handleSelect(item)}

@@ -30,7 +30,7 @@ const AuthGate = React.memo(function AuthGate({
   return (
     <View style={styles.container}>
       {/* Gradient icon circle */}
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
+      <Animated.View entering={FadeInDown.delay(100).springify().damping(20).stiffness(300)}>
         <LinearGradient
           colors={[Colors.primary, Colors.accent]}
           start={{ x: 0, y: 0 }}
@@ -43,7 +43,7 @@ const AuthGate = React.memo(function AuthGate({
 
       {/* Title */}
       <Animated.Text
-        entering={FadeInDown.delay(200).springify()}
+        entering={FadeInDown.delay(200).springify().damping(20).stiffness(300)}
         style={[styles.title, { color: colors.text }]}
       >
         {title}
@@ -51,14 +51,14 @@ const AuthGate = React.memo(function AuthGate({
 
       {/* Subtitle */}
       <Animated.Text
-        entering={FadeInDown.delay(300).springify()}
+        entering={FadeInDown.delay(300).springify().damping(20).stiffness(300)}
         style={[styles.subtitle, { color: colors.textSecondary }]}
       >
         {subtitle}
       </Animated.Text>
 
       {/* Login button with gradient */}
-      <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.buttonWrapper}>
+      <Animated.View entering={FadeInUp.delay(400).springify().damping(20).stiffness(300)} style={styles.buttonWrapper}>
         <TouchableOpacity
           onPress={onLogin}
           activeOpacity={0.8}

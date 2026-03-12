@@ -36,6 +36,7 @@ import {
   PriceRanges,
   VenueLevels,
   RatingCategories,
+  SpringConfig,
 } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { useVenueStore } from '../../stores/venueStore';
@@ -105,7 +106,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
       if (e.translationY > 80 || e.velocityY > 500) {
         runOnJS(dismissRating)();
       } else {
-        rateTranslateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+        rateTranslateY.value = withSpring(0, SpringConfig.default);
       }
     });
   const rateSheetAnimStyle = useAnimatedStyle(() => ({

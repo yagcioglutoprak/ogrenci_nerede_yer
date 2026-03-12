@@ -11,10 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, AnimationConfig } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
@@ -40,11 +39,9 @@ export default function MessageRequestsScreen() {
     if (user) fetchMessageRequests(user.id);
   }, [user?.id]);
 
-  const renderRequest = useCallback(({ item, index }: { item: Conversation; index: number }) => {
-    const staggerDelay = Math.min(index * AnimationConfig.staggerInterval, AnimationConfig.maxStaggerDelay);
-
+  const renderRequest = useCallback(({ item }: { item: Conversation }) => {
     return (
-      <Animated.View entering={FadeInDown.delay(staggerDelay).springify().damping(16)} exiting={FadeOut.duration(150)}>
+      <View>
         <TouchableOpacity
           style={[styles.requestCard, {
             backgroundColor: colors.background,
@@ -88,7 +85,7 @@ export default function MessageRequestsScreen() {
             </Text>
           </View>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     );
   }, [colors, router]);
 

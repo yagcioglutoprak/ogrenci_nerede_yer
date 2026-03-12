@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image, Animated,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
   ScrollView, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,12 @@ import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
 import { haptic } from '../lib/haptics';
 import SwipeDeck from '../components/buddy/SwipeDeck';
 import * as Location from 'expo-location';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import type { MealBuddy, BuddyMatch } from '../types';
 
 // -- Constants --
@@ -277,8 +283,12 @@ export default function BuddyScreen() {
   const [xpAnimVisible, setXpAnimVisible] = useState(false);
   const [useMockBuddies, setUseMockBuddies] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const xpOpacity = useRef(new Animated.Value(0)).current;
-  const xpTranslateY = useRef(new Animated.Value(0)).current;
+  const xpOpacity = useSharedValue(0);
+  const xpTranslateY = useSharedValue(0);
+  const xpAnimStyle = useAnimatedStyle(() => ({
+    opacity: xpOpacity.value,
+    transform: [{ translateY: xpTranslateY.value }],
+  }));
 
   // -- Derived: effective nearby list --
   const effectiveNearbyBuddies = useMemo(() => {
@@ -433,16 +443,15 @@ export default function BuddyScreen() {
     setRatingDone(true);
 
     setXpAnimVisible(true);
-    xpOpacity.setValue(1);
-    xpTranslateY.setValue(0);
-    Animated.parallel([
-      Animated.timing(xpOpacity, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      Animated.timing(xpTranslateY, { toValue: -60, duration: 2000, useNativeDriver: true }),
-    ]).start(() => {
+    xpOpacity.value = 1;
+    xpTranslateY.value = 0;
+    xpOpacity.value = withTiming(0, { duration: 1200, easing: Easing.out(Easing.cubic) });
+    xpTranslateY.value = withTiming(-60, { duration: 1200, easing: Easing.out(Easing.cubic) });
+    setTimeout(() => {
       setXpAnimVisible(false);
       clearActiveSession();
       if (user) goUnavailable();
-    });
+    }, 1300);
   };
 
   // ============================
@@ -504,9 +513,9 @@ export default function BuddyScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.xpContainer}>
-          <Animated.View style={{ opacity: xpOpacity, transform: [{ translateY: xpTranslateY }] }}>
+          <ReAnimated.View style={xpAnimStyle}>
             <Text style={styles.xpText}>+20 XP</Text>
-          </Animated.View>
+          </ReAnimated.View>
           <Text style={[styles.xpSubtext, { color: colors.textSecondary }]}>Tesekkurler!</Text>
         </View>
       </SafeAreaView>

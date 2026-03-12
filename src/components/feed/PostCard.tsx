@@ -99,9 +99,9 @@ function PostCard({
   const handleLike = useCallback(() => {
     haptic.light();
     likeScale.value = withSequence(
-      withSpring(1.35, { damping: 4, stiffness: 400 }),
-      withSpring(0.85, { damping: 4, stiffness: 400 }),
-      withSpring(1, { damping: 8, stiffness: 300 }),
+      withSpring(1.35, SpringConfig.microBounce),
+      withSpring(0.85, SpringConfig.microBounce),
+      withSpring(1, SpringConfig.default),
     );
     onLike?.(post.id);
   }, [post.id, onLike]);
@@ -109,8 +109,8 @@ function PostCard({
   const handleBookmark = useCallback(() => {
     haptic.selection();
     bookmarkScale.value = withSequence(
-      withSpring(1.3, { damping: 4, stiffness: 400 }),
-      withSpring(1, { damping: 8, stiffness: 300 }),
+      withSpring(1.3, SpringConfig.microBounce),
+      withSpring(1, SpringConfig.default),
     );
     onBookmark?.(post.id);
   }, [post.id, onBookmark]);
@@ -131,13 +131,13 @@ function PostCard({
 
     // Like button bounce (same as handleLike)
     likeScale.value = withSequence(
-      withSpring(1.35, { damping: 4, stiffness: 400 }),
-      withSpring(0.85, { damping: 4, stiffness: 400 }),
-      withSpring(1, { damping: 8, stiffness: 300 }),
+      withSpring(1.35, SpringConfig.microBounce),
+      withSpring(0.85, SpringConfig.microBounce),
+      withSpring(1, SpringConfig.default),
     );
 
     // Heart overlay: scale in with overshoot, hold, then fade out
-    heartOpacity.value = 1;
+    heartOpacity.value = withTiming(1, { duration: 150 });
     heartScale.value = withSequence(
       withSpring(1.2, SpringConfig.bouncy),
       withSpring(1, SpringConfig.default),

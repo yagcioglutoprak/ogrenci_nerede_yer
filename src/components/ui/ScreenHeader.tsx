@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
@@ -58,7 +58,7 @@ export default function ScreenHeader({ title, subtitle, leftAction, rightAction,
   }
 
   return (
-    <Animated.View entering={FadeIn.duration(300)} style={styles.container}>
+    <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} style={styles.container}>
       <View style={styles.titleRow}>
         <View style={styles.titleBlock}>
           <Text style={[styles.largeTitle, { color: colors.text }]}>{title}</Text>

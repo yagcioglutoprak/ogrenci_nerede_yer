@@ -16,8 +16,9 @@ import Animated, {
   withSequence,
   withTiming,
   withSpring,
+  Easing,
 } from 'react-native-reanimated';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors, SpringConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -54,8 +55,8 @@ function LiveDot() {
   React.useEffect(() => {
     pulseScale.value = withRepeat(
       withSequence(
-        withTiming(1.4, { duration: 800 }),
-        withTiming(1, { duration: 800 }),
+        withTiming(1.4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
       true,
@@ -95,9 +96,9 @@ function MomentCard({
   const handleLike = React.useCallback(() => {
     haptic.light();
     likeScale.value = withSequence(
-      withSpring(1.35, { damping: 4, stiffness: 400 }),
-      withSpring(0.85, { damping: 4, stiffness: 400 }),
-      withSpring(1, { damping: 8, stiffness: 300 }),
+      withSpring(1.35, SpringConfig.microBounce),
+      withSpring(0.85, SpringConfig.microBounce),
+      withSpring(1, SpringConfig.default),
     );
     onLike(post.id);
   }, [post.id, onLike]);

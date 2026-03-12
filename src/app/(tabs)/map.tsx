@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   FlatList,
-  Animated as RNAnimated,
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,10 +32,18 @@ import {
   BorderRadius,
   FontSize,
   FontFamily,
+  SpringConfig,
 } from '../../lib/constants';
 // Google Places venues only shown in dev mode as placeholder data
 import { MOCK_GOOGLE_PLACES_VENUES } from '../../lib/mockData';
 import { haptic } from '../../lib/haptics';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import type { Venue } from '../../types';
 
 // Native marker images — rendered by Apple Maps / Google Maps natively,
@@ -119,17 +126,20 @@ const getMarkerTier = (venue: Venue): MarkerTier => {
 
 // Subtle spring-in animation when a marker becomes selected
 function SelectedPop({ children }: { children: React.ReactNode }) {
-  const scale = useRef(new RNAnimated.Value(1)).current;
+  const scale = useSharedValue(1);
   useEffect(() => {
-    RNAnimated.sequence([
-      RNAnimated.timing(scale, { toValue: 1.15, duration: 100, useNativeDriver: true }),
-      RNAnimated.spring(scale, { toValue: 1, tension: 140, friction: 6, useNativeDriver: true }),
-    ]).start();
+    scale.value = withSequence(
+      withTiming(1.15, { duration: 100 }),
+      withSpring(1, SpringConfig.bouncy),
+    );
   }, []);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
   return (
-    <RNAnimated.View style={{ transform: [{ scale }] }}>
+    <ReAnimated.View style={animStyle}>
       {children}
-    </RNAnimated.View>
+    </ReAnimated.View>
   );
 }
 

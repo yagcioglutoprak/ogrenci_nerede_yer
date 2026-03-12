@@ -359,10 +359,12 @@ export const MapConfig = {
 
 // Shared animation configs
 export const SpringConfig = {
-  default: { damping: 15, stiffness: 180, mass: 0.7 },
-  snappy: { damping: 18, stiffness: 200 },
-  gentle: { damping: 15, stiffness: 120 },
-  bouncy: { damping: 12, stiffness: 200 },
+  default: { damping: 20, stiffness: 300, mass: 0.8 },
+  snappy: { damping: 22, stiffness: 340 },
+  gentle: { damping: 20, stiffness: 180 },
+  bouncy: { damping: 16, stiffness: 280 },
+  // Interaction feedback — intentionally underdamped for playful micro-interactions
+  microBounce: { damping: 6, stiffness: 400 },
 } as const;
 
 export const AnimationConfig = {

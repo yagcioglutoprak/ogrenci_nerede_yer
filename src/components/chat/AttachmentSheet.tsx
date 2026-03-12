@@ -37,8 +37,8 @@ export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickV
 
       {/* Sheet */}
       <Animated.View
-        entering={SlideInDown.springify().damping(18)}
-        exiting={SlideOutDown.duration(200)}
+        entering={SlideInDown.springify().damping(22).stiffness(340)}
+        exiting={SlideOutDown.springify().damping(22).stiffness(340)}
         style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.borderLight }]}
       >
         <View style={styles.handle}>

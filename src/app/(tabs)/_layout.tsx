@@ -14,12 +14,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withTiming,
-  withSequence,
-  withDelay,
-  Easing,
-  interpolate,
 } from 'react-native-reanimated';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
@@ -61,7 +55,7 @@ function AddButton({ isFocused, onPress, onLongPress, isDark }: {
   const rotation = useSharedValue(0);
 
   React.useEffect(() => {
-    rotation.value = withSpring(isFocused ? 45 : 0, { damping: 14, stiffness: 180 });
+    rotation.value = withSpring(isFocused ? 45 : 0, SpringConfig.snappy);
   }, [isFocused]);
 
   const rotateStyle = useAnimatedStyle(() => ({

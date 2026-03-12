@@ -94,15 +94,15 @@ export default function SwipeDeck({ buddies, onSwipeRight, onSwipeLeft, userLoca
     .onEnd((event) => {
       'worklet';
       if (event.translationX > SWIPE_THRESHOLD) {
-        translateX.value = withTiming(SCREEN_WIDTH + 100, { duration: 250 }, () => {
+        translateX.value = withSpring(SCREEN_WIDTH + 100, SpringConfig.snappy, () => {
           runOnJS(handleSwipeComplete)('right');
         });
-        translateY.value = withTiming(event.translationY, { duration: 250 });
+        translateY.value = withSpring(event.translationY, SpringConfig.snappy);
       } else if (event.translationX < -SWIPE_THRESHOLD) {
-        translateX.value = withTiming(-SCREEN_WIDTH - 100, { duration: 250 }, () => {
+        translateX.value = withSpring(-SCREEN_WIDTH - 100, SpringConfig.snappy, () => {
           runOnJS(handleSwipeComplete)('left');
         });
-        translateY.value = withTiming(event.translationY, { duration: 250 });
+        translateY.value = withSpring(event.translationY, SpringConfig.snappy);
       } else {
         translateX.value = withSpring(0, SpringConfig.snappy);
         translateY.value = withSpring(0, SpringConfig.snappy);

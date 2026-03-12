@@ -97,7 +97,7 @@ export default function MessagesScreen() {
           contentContainerStyle={styles.activeRow}
         >
           {recentActive.map((c, i) => (
-            <Animated.View key={c.id} entering={FadeInRight.delay(i * 60).springify().damping(14)}>
+            <Animated.View key={c.id} entering={FadeInRight.delay(i * 60).springify().damping(20).stiffness(300)}>
               <TouchableOpacity
                 style={styles.activeItem}
                 onPress={() => router.push(`/chat/${c.id}`)}
@@ -145,7 +145,7 @@ export default function MessagesScreen() {
     const otherUser = otherBuddy?.user;
 
     return (
-      <Animated.View entering={FadeInDown.delay(50).springify().damping(16)} exiting={FadeOut.duration(150)}>
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(20).stiffness(300)} exiting={FadeOut.duration(150)}>
         <Text style={[styles.sectionLabel, { color: BUDDY_COLOR }]}>Yemek Buddy</Text>
         <TouchableOpacity
           style={[styles.buddyMatchCard, {
@@ -345,7 +345,7 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.duration(400).springify().damping(18)} exiting={FadeOut.duration(150)} style={styles.header}>
+      <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} exiting={FadeOut.duration(150)} style={styles.header}>
         <View>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Mesajlar</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textTertiary }]}>
@@ -393,7 +393,7 @@ export default function MessagesScreen() {
       </Animated.View>
 
       {/* Search bar */}
-      <Animated.View entering={FadeInDown.delay(80).springify().damping(16)} exiting={FadeOut.duration(150)} style={styles.searchWrap}>
+      <Animated.View entering={FadeInDown.delay(80).springify().damping(20).stiffness(300)} exiting={FadeOut.duration(150)} style={styles.searchWrap}>
         <View style={[styles.searchBar, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary, borderColor: isDark ? colors.border : 'transparent' }]}>
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput

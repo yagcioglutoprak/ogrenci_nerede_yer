@@ -29,7 +29,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { Colors, Spacing, FontSize, FontFamily } from '../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../lib/constants';
 import { haptic } from '../lib/haptics';
 import { MOCK_STORIES, MOCK_VENUES } from '../lib/mockData';
 import type { Story } from '../types';
@@ -273,12 +273,12 @@ export default function ReelsScreen() {
 
       if (isVert && e.translationY > DISMISS_THRESHOLD) {
         // Dismiss — animate off-screen then close
-        dismissY.value = withTiming(height, { duration: 250 }, () => {
+        dismissY.value = withSpring(height, SpringConfig.snappy, () => {
           runOnJS(handleClose)();
         });
       } else if (isVert && e.translationY < -80) {
         // Swipe up — open video URL
-        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        dismissY.value = withSpring(0, SpringConfig.snappy);
         runOnJS(openVideoUrl)();
       } else if (!isVert && e.translationX < -50) {
         // Swipe left — next reel
@@ -288,14 +288,14 @@ export default function ReelsScreen() {
         runOnJS(goPrevAnimated)();
       } else {
         // Spring back
-        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        dismissY.value = withSpring(0, SpringConfig.snappy);
       }
       gestureDir.value = 'none';
     })
     .onFinalize((_, success) => {
       // Safety: if gesture was cancelled mid-drag, spring back
       if (!success && dismissY.value > 0) {
-        dismissY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        dismissY.value = withSpring(0, SpringConfig.snappy);
       }
       gestureDir.value = 'none';
     });

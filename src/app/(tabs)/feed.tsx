@@ -297,7 +297,7 @@ export default function FeedScreen() {
       }
 
       return (
-        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(18)} exiting={FadeOut.duration(200)}>
+        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(22).stiffness(340)} exiting={FadeOut.duration(200)}>
           {card}
         </Animated.View>
       );
@@ -409,7 +409,7 @@ export default function FeedScreen() {
 
       {/* Search Bar */}
       {showSearch && (
-        <Animated.View entering={FadeInDown.duration(300)} exiting={FadeOut.duration(200)} style={styles.searchBarContainer}>
+        <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)} exiting={FadeOut.duration(200)} style={styles.searchBarContainer}>
           <View style={[styles.searchBar, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
             <Ionicons name="search" size={18} color={colors.textTertiary} />
             <TextInput
