@@ -817,106 +817,127 @@ export default function VenueDetailScreen() {
         <Modal
           visible={showRatingForm}
           animationType="slide"
-          presentationStyle="pageSheet"
+          transparent
           onRequestClose={() => setShowRatingForm(false)}
         >
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          <TouchableOpacity
+            style={styles.ratingModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowRatingForm(false)}
           >
-            <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-              {/* Modal Header */}
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <TouchableOpacity onPress={() => setShowRatingForm(false)} style={styles.modalCloseBtn}>
-                  <Ionicons name="close" size={24} color={colors.text} />
-                </TouchableOpacity>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Puan Ver</Text>
-                <View style={{ width: 40 }} />
-              </View>
-
-              {/* Venue info at top */}
-              {venue && (
-                <View style={[styles.modalVenueInfo, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.modalVenueName, { color: colors.text }]}>{venue.name}</Text>
-                  <Text style={[styles.modalVenueAddress, { color: colors.textSecondary }]}>{venue.address}</Text>
-                </View>
-              )}
-
-              <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalFormContent}>
-                {/* Taste */}
-                <View style={styles.rateFormRow}>
-                  <View style={styles.rateFormLabel}>
-                    <Ionicons name="restaurant" size={18} color={Colors.primary} />
-                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
-                  </View>
-                  <CirclePicker
-                    value={ratingTaste}
-                    onValueChange={setRatingTaste}
-                    color={Colors.primary}
-                    icons={['thumbs-down', 'sad-outline', 'remove-outline', 'happy-outline', 'flame']}
-                  />
-                </View>
-
-                {/* Value */}
-                <View style={styles.rateFormRow}>
-                  <View style={styles.rateFormLabel}>
-                    <Ionicons name="pricetag" size={18} color={Colors.accent} />
-                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Fiyat/Performans</Text>
-                  </View>
-                  <CirclePicker
-                    value={ratingValue}
-                    onValueChange={setRatingValue}
-                    color={Colors.accent}
-                    icons={['trending-down', 'remove-outline', 'swap-horizontal', 'trending-up', 'diamond']}
-                  />
-                </View>
-
-                {/* Ortam */}
-                <View style={styles.rateFormRow}>
-                  <View style={styles.rateFormLabel}>
-                    <Ionicons name="cafe" size={18} color={Colors.verified} />
-                    <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Ortam</Text>
-                  </View>
-                  <CirclePicker
-                    value={ratingFriendliness}
-                    onValueChange={setRatingFriendliness}
-                    color={Colors.verified}
-                    icons={['thunderstorm', 'cloudy', 'partly-sunny', 'sunny', 'sparkles']}
-                  />
-                </View>
-
-                {/* Comment */}
-                <TextInput
-                  style={[styles.rateCommentInput, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border, color: colors.text }]}
-                  placeholder="Deneyimini paylaş..."
-                  placeholderTextColor={colors.textTertiary}
-                  multiline
-                  value={ratingComment}
-                  onChangeText={setRatingComment}
-                  textAlignVertical="top"
-                />
-              </ScrollView>
-
-              {/* Submit button fixed at bottom */}
-              <View style={[styles.modalFooter, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-                <TouchableOpacity
-                  style={[styles.rateSubmitButton, submittingReview && styles.rateSubmitDisabled]}
-                  onPress={handleSubmitReview}
-                  disabled={submittingReview}
-                  activeOpacity={0.8}
+            <KeyboardAvoidingView
+              style={styles.ratingModalSheetWrap}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+              <TouchableOpacity activeOpacity={1} style={{ flex: 1 }}>
+                <GlassView
+                  style={styles.ratingModalGlass}
+                  fallbackColor={colors.card}
+                  blurIntensity={90}
                 >
-                  {submittingReview ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="send" size={16} color="#FFFFFF" />
-                      <Text style={styles.rateSubmitText}>Gönder</Text>
-                    </>
+                  {/* Drag handle */}
+                  <View style={styles.ratingModalHandle} />
+
+                  {/* Modal Header */}
+                  <View style={styles.ratingModalHeader}>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Puan Ver</Text>
+                    <TouchableOpacity onPress={() => setShowRatingForm(false)} style={styles.ratingModalCloseCircle}>
+                      <Ionicons name="close" size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Venue info */}
+                  {venue && (
+                    <View style={styles.ratingModalVenueInfo}>
+                      <Text style={[styles.modalVenueName, { color: colors.text }]}>{venue.name}</Text>
+                      <Text style={[styles.modalVenueAddress, { color: colors.textSecondary }]}>{venue.address}</Text>
+                    </View>
                   )}
-                </TouchableOpacity>
-              </View>
-            </SafeAreaView>
-          </KeyboardAvoidingView>
+
+                  <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalFormContent} bounces={false}>
+                    {/* Taste */}
+                    <View style={styles.rateFormRow}>
+                      <View style={styles.rateFormLabel}>
+                        <Ionicons name="restaurant" size={18} color={Colors.primary} />
+                        <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Lezzet</Text>
+                      </View>
+                      <CirclePicker
+                        value={ratingTaste}
+                        onValueChange={setRatingTaste}
+                        color={Colors.primary}
+                        icons={['thumbs-down', 'sad-outline', 'remove-outline', 'happy-outline', 'flame']}
+                      />
+                    </View>
+
+                    {/* Value */}
+                    <View style={styles.rateFormRow}>
+                      <View style={styles.rateFormLabel}>
+                        <Ionicons name="pricetag" size={18} color={Colors.accent} />
+                        <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Fiyat/Performans</Text>
+                      </View>
+                      <CirclePicker
+                        value={ratingValue}
+                        onValueChange={setRatingValue}
+                        color={Colors.accent}
+                        icons={['trending-down', 'remove-outline', 'swap-horizontal', 'trending-up', 'diamond']}
+                      />
+                    </View>
+
+                    {/* Ortam */}
+                    <View style={styles.rateFormRow}>
+                      <View style={styles.rateFormLabel}>
+                        <Ionicons name="cafe" size={18} color={Colors.verified} />
+                        <Text style={[styles.rateFormLabelText, { color: colors.text }]}>Ortam</Text>
+                      </View>
+                      <CirclePicker
+                        value={ratingFriendliness}
+                        onValueChange={setRatingFriendliness}
+                        color={Colors.verified}
+                        icons={['thunderstorm', 'cloudy', 'partly-sunny', 'sunny', 'sparkles']}
+                      />
+                    </View>
+
+                    {/* Comment */}
+                    <TextInput
+                      style={[styles.rateCommentInput, { backgroundColor: colors.backgroundSecondary + '80', borderColor: colors.border, color: colors.text }]}
+                      placeholder="Deneyimini paylaş..."
+                      placeholderTextColor={colors.textTertiary}
+                      multiline
+                      value={ratingComment}
+                      onChangeText={setRatingComment}
+                      textAlignVertical="top"
+                    />
+                  </ScrollView>
+
+                  {/* Submit / Cancel buttons */}
+                  <View style={styles.ratingModalFooter}>
+                    <TouchableOpacity
+                      style={styles.ratingCancelButton}
+                      onPress={() => setShowRatingForm(false)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.ratingCancelText, { color: colors.text }]}>Vazgeç</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.rateSubmitButton, { flex: 1 }, submittingReview && styles.rateSubmitDisabled]}
+                      onPress={handleSubmitReview}
+                      disabled={submittingReview}
+                      activeOpacity={0.8}
+                    >
+                      {submittingReview ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="send" size={16} color="#FFFFFF" />
+                          <Text style={styles.rateSubmitText}>Gönder</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </GlassView>
+              </TouchableOpacity>
+            </KeyboardAvoidingView>
+          </TouchableOpacity>
         </Modal>
 
         {/* ============================
@@ -1594,21 +1615,43 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // ---- RATING MODAL ----
-  modalContainer: {
+  // ---- RATING MODAL (Liquid Glass) ----
+  ratingModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  ratingModalSheetWrap: {
+    maxHeight: '75%',
+  },
+  ratingModalGlass: {
+    borderTopLeftRadius: BorderRadius.xxl,
+    borderTopRightRadius: BorderRadius.xxl,
+    paddingBottom: Platform.OS === 'ios' ? 34 : Spacing.lg,
     flex: 1,
   },
-  modalHeader: {
+  ratingModalHandle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(150,150,150,0.4)',
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  ratingModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.md,
   },
-  modalCloseBtn: {
-    width: 40,
-    height: 40,
+  ratingModalCloseCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(150,150,150,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1616,10 +1659,9 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xl,
     fontFamily: FontFamily.headingBold,
   },
-  modalVenueInfo: {
+  ratingModalVenueInfo: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
+    paddingBottom: Spacing.md,
   },
   modalVenueName: {
     fontSize: FontSize.lg,
@@ -1631,13 +1673,28 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   modalFormContent: {
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
     gap: Spacing.md,
   },
-  modalFooter: {
+  ratingModalFooter: {
+    flexDirection: 'row',
+    gap: Spacing.md,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    borderTopWidth: 1,
+    paddingTop: Spacing.md,
+  },
+  ratingCancelButton: {
+    flex: 0.4,
+    paddingVertical: Spacing.md + 2,
+    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(150,150,150,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ratingCancelText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bodySemiBold,
   },
 
   // ---- REVIEWS ----
