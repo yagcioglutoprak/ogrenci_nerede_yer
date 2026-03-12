@@ -372,13 +372,13 @@ export default function FeedScreen() {
             <Animated.View
               style={[
                 styles.chipIndicator,
-                { backgroundColor: Colors.primary },
+                { backgroundColor: Colors.primaryDark },
                 indicatorStyle,
               ]}
               pointerEvents="none"
             >
               <LinearGradient
-                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.15)']}
+                colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.08)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.chipIndicatorShimmer}
