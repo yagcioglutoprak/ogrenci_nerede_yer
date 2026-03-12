@@ -9,6 +9,7 @@ import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, M
 const PAGE_SIZE = 20;
 
 interface FeedState {
+  allPosts: Post[];
   posts: Post[];
   selectedPost: Post | null;
   comments: Comment[];
@@ -177,6 +178,7 @@ function buildCategoryQuery(category: FeedCategory) {
 }
 
 export const useFeedStore = create<FeedState>((set, get) => ({
+  allPosts: [],
   posts: [],
   selectedPost: null,
   comments: [],
@@ -192,49 +194,55 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { category } = get();
 
     try {
-      const { data, error } = await buildCategoryQuery(category)
-        .range(0, PAGE_SIZE - 1);
+      // Always fetch ALL posts so category switching can be instant
+      const { data, error } = await buildCategoryQuery('all')
+        .range(0, PAGE_SIZE * 3 - 1);
 
       if (!error && data && data.length > 0) {
         const { useBlockStore } = await import('./blockStore');
         const blockedUsers = useBlockStore.getState().blockedUsers;
-        const filtered = (data as Post[]).filter(
+        const all = (data as Post[]).filter(
           (p) => !blockedUsers.includes(p.user_id)
         );
+        const filtered = applyCategoryToMockPosts(all, category);
         set({
-          posts: filtered,
-          hasMore: data.length >= PAGE_SIZE,
+          allPosts: all,
+          posts: filtered.slice(0, PAGE_SIZE),
+          hasMore: filtered.length > PAGE_SIZE,
         });
       } else {
         // Supabase empty or error — fall back to mock data in dev
         if (__DEV__) {
           const { useBlockStore } = await import('./blockStore');
           const blockedUsers = useBlockStore.getState().blockedUsers;
-          const mockPosts = buildMockPostsWithJoins();
-          const sorted = applyCategoryToMockPosts(mockPosts, category)
+          const all = buildMockPostsWithJoins()
             .filter((p) => !blockedUsers.includes(p.user_id));
+          const filtered = applyCategoryToMockPosts(all, category);
           set({
-            posts: sorted.slice(0, PAGE_SIZE) as Post[],
-            hasMore: sorted.length > PAGE_SIZE,
+            allPosts: all as Post[],
+            posts: filtered.slice(0, PAGE_SIZE) as Post[],
+            hasMore: filtered.length > PAGE_SIZE,
           });
         } else {
-          set({ posts: [], hasMore: false, error: error?.message || null });
+          set({ allPosts: [], posts: [], hasMore: false, error: error?.message || null });
         }
       }
     } catch (err: any) {
       if (__DEV__) {
         const { useBlockStore } = await import('./blockStore');
         const blockedUsers = useBlockStore.getState().blockedUsers;
-        const mockPosts = buildMockPostsWithJoins();
-        const sorted = applyCategoryToMockPosts(mockPosts, get().category)
+        const all = buildMockPostsWithJoins()
           .filter((p) => !blockedUsers.includes(p.user_id));
+        const filtered = applyCategoryToMockPosts(all, get().category);
         set({
-          posts: sorted.slice(0, PAGE_SIZE) as Post[],
-          hasMore: sorted.length > PAGE_SIZE,
+          allPosts: all as Post[],
+          posts: filtered.slice(0, PAGE_SIZE) as Post[],
+          hasMore: filtered.length > PAGE_SIZE,
           error: err?.message || 'Gonderiler yuklenirken hata olustu',
         });
       } else {
         set({
+          allPosts: [],
           posts: [],
           hasMore: false,
           error: err?.message || 'Gonderiler yuklenirken hata olustu',
@@ -573,8 +581,13 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   setCategory: (category) => {
-    set({ category, hasMore: true });
-    get().fetchPosts();
+    const { allPosts } = get();
+    const filtered = applyCategoryToMockPosts(allPosts, category);
+    set({
+      category,
+      posts: filtered.slice(0, PAGE_SIZE) as Post[],
+      hasMore: filtered.length > PAGE_SIZE,
+    });
   },
 
   clearError: () => set({ error: null }),

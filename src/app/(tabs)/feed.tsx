@@ -317,7 +317,7 @@ export default function FeedScreen() {
       }
 
       return (
-        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(22).stiffness(340)} exiting={FadeOut.duration(200)}>
+        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(22).stiffness(340)}>
           {card}
         </Animated.View>
       );
