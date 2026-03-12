@@ -14,6 +14,7 @@ export interface User {
   last_active_date?: string | null;
   followers_count?: number;
   following_count?: number;
+  dm_privacy?: 'followers_only' | 'everyone';
   created_at: string;
 }
 
@@ -312,10 +313,18 @@ export interface Conversation {
   last_message_text: string | null;
   last_message_at: string;
   last_message_sender_id: string | null;
+  status?: 'accepted' | 'pending' | 'rejected';
+  initiated_by?: string;
   created_at: string;
   // Joined
   other_user?: User;
   unread_count?: number;
+}
+
+export interface UserBlock {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
 }
 
 export interface DirectMessageMetadata {
