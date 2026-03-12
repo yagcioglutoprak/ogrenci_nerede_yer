@@ -358,7 +358,7 @@ export default function FeedScreen() {
     );
   };
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <>
       <StoriesBar />
       <View style={styles.categoryRow}>
@@ -366,6 +366,7 @@ export default function FeedScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.chipContainer}>
             {/* Liquid glass sliding indicator — red base + glass sheen */}
@@ -377,7 +378,6 @@ export default function FeedScreen() {
               ]}
               pointerEvents="none"
             >
-              {/* Glass sheen on top of red */}
               <LinearGradient
                 colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.15)']}
                 start={{ x: 0, y: 0 }}
@@ -394,6 +394,7 @@ export default function FeedScreen() {
                   style={styles.categoryChip}
                   onPress={() => handleCategoryChange(cat.key)}
                   activeOpacity={0.7}
+                  delayPressIn={60}
                   accessibilityRole="tab"
                   accessibilityLabel={cat.label + ' kategorisi'}
                   accessibilityState={{ selected: isActive }}
@@ -418,7 +419,7 @@ export default function FeedScreen() {
         </ScrollView>
       </View>
     </>
-  );
+  ), [category, colors, handleCategoryChange, handleChipLayout, indicatorStyle]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
