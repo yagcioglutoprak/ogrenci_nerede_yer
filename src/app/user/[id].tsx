@@ -16,7 +16,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { supabase } from '../../lib/supabase';
 import { MOCK_USERS, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { User, Post } from '../../types';
@@ -125,21 +125,44 @@ export default function UserProfileScreen() {
       return;
     }
 
+    const prevFollowing = isFollowing;
+    const prevStats = { ...stats };
+
     if (isFollowing) {
-      await supabase
+      // Optimistic update
+      setIsFollowing(false);
+      setStats((s) => ({ ...s, followers: Math.max(0, s.followers - 1) }));
+
+      supabase
         .from('follows')
         .delete()
         .eq('follower_id', currentUser.id)
-        .eq('following_id', id);
-      setIsFollowing(false);
-      setStats((s) => ({ ...s, followers: Math.max(0, s.followers - 1) }));
+        .eq('following_id', id)
+        .then(({ error }) => {
+          if (error) {
+            // Rollback on failure
+            setIsFollowing(prevFollowing);
+            setStats(prevStats);
+          }
+        });
     } else {
-      await supabase.from('follows').insert({
-        follower_id: currentUser.id,
-        following_id: id,
-      });
+      // Optimistic update
       setIsFollowing(true);
       setStats((s) => ({ ...s, followers: s.followers + 1 }));
+
+      supabase
+        .from('follows')
+        .insert({
+          follower_id: currentUser.id,
+          following_id: id,
+        })
+        .then(({ error }) => {
+          if (error) {
+            // Rollback on failure
+            setIsFollowing(prevFollowing);
+            setStats(prevStats);
+          }
+        });
     }
   };
 
@@ -154,11 +177,41 @@ export default function UserProfileScreen() {
     }
   };
 
-  if (loading || !profileUser) {
+  // Loading state
+  if (loading) {
     return (
-      <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
+      <SafeAreaView style={[styles.loadingScreen, { backgroundColor: colors.background }]} edges={['top']}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  // Not found state
+  if (!profileUser) {
+    return (
+      <SafeAreaView style={[styles.loadingScreen, { backgroundColor: colors.background }]} edges={['top']}>
+        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.notFoundContent}>
+          <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
+          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Kullanıcı bulunamadı</Text>
+          <TouchableOpacity
+            style={[styles.notFoundBackButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.notFoundBackButtonText}>Geri Dön</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -180,7 +233,7 @@ export default function UserProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: Spacing.xxl + insets.bottom }]}>
         {/* Profile card */}
-        <View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}>
           <Avatar
             uri={profileUser.avatar_url}
             name={profileUser.full_name || profileUser.username}
@@ -191,7 +244,7 @@ export default function UserProfileScreen() {
 
           {profileUser.university && (
             <View style={[styles.universityRow, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="school-outline" size={14} color={Colors.textSecondary} />
+              <Ionicons name="school-outline" size={14} color={colors.textSecondary} />
               <Text style={[styles.universityText, { color: colors.textSecondary }]}>{profileUser.university}</Text>
             </View>
           )}
@@ -204,41 +257,45 @@ export default function UserProfileScreen() {
           {!isOwnProfile && (
             <View style={styles.actionRow}>
               <TouchableOpacity
-                style={[styles.followButton, isFollowing && styles.followButtonActive, isFollowing && { backgroundColor: colors.backgroundSecondary }]}
+                style={[
+                  styles.followButton,
+                  { backgroundColor: colors.primary, shadowColor: colors.primary },
+                  isFollowing && { backgroundColor: colors.backgroundSecondary, borderWidth: 1.5, borderColor: colors.primary, shadowOpacity: 0, elevation: 0 },
+                ]}
                 onPress={handleFollowToggle}
                 activeOpacity={0.8}
               >
                 <Ionicons
                   name={isFollowing ? 'checkmark' : 'person-add-outline'}
                   size={16}
-                  color={isFollowing ? Colors.primary : '#FFFFFF'}
+                  color={isFollowing ? colors.primary : '#FFFFFF'}
                 />
-                <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+                <Text style={[styles.followButtonText, isFollowing && { color: colors.primary }]}>
                   {isFollowing ? 'Takip Ediliyor' : 'Takip Et'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.messageButton}
+                style={[styles.messageButton, { borderColor: colors.primary }]}
                 onPress={handleMessage}
                 activeOpacity={0.8}
               >
-                <Ionicons name="chatbubble-outline" size={16} color={Colors.primary} />
-                <Text style={styles.messageButtonText}>Mesaj At</Text>
+                <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
+                <Text style={[styles.messageButtonText, { color: colors.primary }]}>Mesaj At</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         {/* Stats */}
-        <View style={[styles.statsCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <View style={[styles.statsCard, { backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}>
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.posts}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Gonderi</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Gönderi</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.followers}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Takipci</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Takipçi</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
@@ -249,15 +306,15 @@ export default function UserProfileScreen() {
 
         {/* Posts grid */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gonderiler</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gönderiler</Text>
         </View>
 
         {userPosts.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-              <Ionicons name="camera-outline" size={32} color={Colors.textTertiary} />
+              <Ionicons name="camera-outline" size={32} color={colors.textTertiary} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Henuz gonderi yok</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Henüz gönderi yok</Text>
           </View>
         ) : (
           <View style={styles.gridContainer}>
@@ -266,7 +323,7 @@ export default function UserProfileScreen() {
               return (
                 <TouchableOpacity
                   key={post.id}
-                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH, backgroundColor: colors.background, borderColor: colors.border }]}
+                  style={[styles.gridItem, { width: GRID_ITEM_WIDTH, backgroundColor: colors.background, borderColor: colors.border, shadowColor: colors.shadow }]}
                   onPress={() => router.push(`/post/${post.id}`)}
                   activeOpacity={0.85}
                 >
@@ -275,7 +332,7 @@ export default function UserProfileScreen() {
                       <Image source={{ uri: firstImage }} style={styles.gridImage} />
                     ) : (
                       <View style={[styles.gridImage, styles.gridImagePlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-                        <Ionicons name="document-text-outline" size={28} color={Colors.textTertiary} />
+                        <Ionicons name="document-text-outline" size={28} color={colors.textTertiary} />
                       </View>
                     )}
                     {post.images && post.images.length > 1 && (
@@ -286,7 +343,7 @@ export default function UserProfileScreen() {
                   </View>
                   <View style={styles.gridItemInfo}>
                     <Text style={[styles.gridItemCaption, { color: colors.text }]} numberOfLines={2}>
-                      {post.caption || 'Gonderi'}
+                      {post.caption || 'Gönderi'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -302,13 +359,35 @@ export default function UserProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundSecondary,
   },
   loadingScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+  },
+
+  // Not found
+  notFoundContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.lg,
+    paddingBottom: 80,
+  },
+  notFoundText: {
+    fontSize: FontSize.lg,
+    fontFamily: FontFamily.headingBold,
+  },
+  notFoundBackButton: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  notFoundBackButtonText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
   },
 
   // Header
@@ -318,14 +397,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   headerTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
   },
 
   scrollContent: {
@@ -335,15 +411,12 @@ const styles = StyleSheet.create({
   // Profile card
   profileCard: {
     alignItems: 'center',
-    backgroundColor: Colors.background,
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.lg,
     paddingVertical: Spacing.xxl,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -352,14 +425,12 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 22,
     fontFamily: FontFamily.heading,
-    color: Colors.text,
     marginTop: Spacing.md,
     letterSpacing: -0.3,
   },
   profileUsername: {
     fontSize: FontSize.sm,
     fontWeight: '500',
-    color: Colors.textSecondary,
     marginTop: Spacing.xs,
   },
   universityRow: {
@@ -367,19 +438,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs + 2,
     marginTop: Spacing.md,
-    backgroundColor: Colors.backgroundSecondary,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 2,
     borderRadius: BorderRadius.full,
   },
   universityText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: '500',
   },
   bioText: {
     fontSize: FontSize.sm,
-    color: Colors.text,
     textAlign: 'center',
     lineHeight: 20,
     marginTop: Spacing.md,
@@ -395,11 +463,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -413,42 +479,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
   },
   messageButtonText: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
-    color: Colors.primary,
-  },
-  followButtonActive: {
-    backgroundColor: Colors.backgroundSecondary,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   followButtonText: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
     color: '#FFFFFF',
   },
-  followButtonTextActive: {
-    color: Colors.primary,
-  },
 
   // Stats
   statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     paddingVertical: Spacing.lg + 2,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -461,18 +512,15 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.heading,
-    color: Colors.text,
   },
   statLabel: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: '500',
     marginTop: Spacing.xs,
   },
   statDivider: {
     width: 1,
     height: 32,
-    backgroundColor: Colors.border,
   },
 
   // Section
@@ -484,7 +532,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
   },
 
   // Empty
@@ -497,17 +544,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   emptyTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.headingBold,
-    color: Colors.text,
   },
 
   // Grid
@@ -518,12 +562,9 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   gridItem: {
-    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -539,7 +580,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   gridImagePlaceholder: {
-    backgroundColor: Colors.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -549,7 +589,6 @@ const styles = StyleSheet.create({
   },
   gridItemCaption: {
     fontSize: FontSize.sm,
-    color: Colors.text,
     lineHeight: 18,
   },
   multiImageBadge: {

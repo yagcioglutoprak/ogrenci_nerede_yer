@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { uploadImage } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
+import { haptic } from '../lib/haptics';
 import type { Venue, Review, VenueFilters } from '../types';
 import { MOCK_VENUES, MOCK_REVIEWS, MOCK_USERS } from '../lib/mockData';
 
@@ -12,6 +13,7 @@ interface VenueState {
   selectedVenue: Venue | null;
   reviews: Review[];
   filters: VenueFilters;
+  favoriteVenueIds: Set<string>;
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -25,6 +27,7 @@ interface VenueState {
   addVenue: (venue: Omit<Venue, 'id' | 'created_at' | 'avg_taste_rating' | 'avg_value_rating' | 'avg_friendliness_rating' | 'overall_rating' | 'total_reviews' | 'level'>) => Promise<{ data: Venue | null; error: string | null }>;
   addReview: (review: Omit<Review, 'id' | 'created_at'>) => Promise<{ error: string | null }>;
   toggleFavorite: (venueId: string, userId: string) => Promise<void>;
+  isFavorite: (venueId: string) => boolean;
   setFilters: (filters: VenueFilters) => void;
   clearError: () => void;
 }
@@ -67,6 +70,7 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   selectedVenue: null,
   reviews: [],
   filters: {},
+  favoriteVenueIds: new Set<string>(),
   loading: false,
   loadingMore: false,
   hasMore: true,
@@ -363,22 +367,36 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   },
 
   toggleFavorite: async (venueId, userId) => {
-    try {
-      const { data: existing } = await supabase
-        .from('favorites')
-        .select('*')
-        .eq('venue_id', venueId)
-        .eq('user_id', userId)
-        .single();
+    const previousFavorites = new Set(get().favoriteVenueIds);
+    const wasFavorited = previousFavorites.has(venueId);
 
-      if (existing) {
-        await supabase.from('favorites').delete().eq('venue_id', venueId).eq('user_id', userId);
+    // Optimistic update: toggle immediately for instant UI feedback
+    const updatedFavorites = new Set(previousFavorites);
+    if (wasFavorited) {
+      updatedFavorites.delete(venueId);
+      haptic.light();
+    } else {
+      updatedFavorites.add(venueId);
+      haptic.success();
+    }
+    set({ favoriteVenueIds: updatedFavorites });
+
+    try {
+      if (wasFavorited) {
+        const { error } = await supabase.from('favorites').delete().eq('venue_id', venueId).eq('user_id', userId);
+        if (error) throw error;
       } else {
-        await supabase.from('favorites').insert({ venue_id: venueId, user_id: userId });
+        const { error } = await supabase.from('favorites').insert({ venue_id: venueId, user_id: userId });
+        if (error) throw error;
       }
     } catch {
-      // Favorite toggle is non-critical — silently ignore
+      // Rollback optimistic update on failure
+      set({ favoriteVenueIds: previousFavorites });
     }
+  },
+
+  isFavorite: (venueId) => {
+    return get().favoriteVenueIds.has(venueId);
   },
 
   setFilters: (filters) => {

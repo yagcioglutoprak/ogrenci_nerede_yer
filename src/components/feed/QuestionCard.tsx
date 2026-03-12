@@ -6,12 +6,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
+import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, RecommendationAnswer } from '../../types';
 import Avatar from '../ui/Avatar';
-
-const QUESTION_COLOR = '#8B5CF6';
 
 interface QuestionCardProps {
   post: Post;
@@ -21,23 +20,6 @@ interface QuestionCardProps {
   onUserPress: (userId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onPress?: () => void;
-}
-
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  const diffWeeks = Math.floor(diffDays / 7);
-
-  if (diffMinutes < 1) return 'simdi';
-  if (diffMinutes < 60) return `${diffMinutes}dk`;
-  if (diffHours < 24) return `${diffHours}sa`;
-  if (diffDays < 7) return `${diffDays}g`;
-  if (diffWeeks < 4) return `${diffWeeks}hf`;
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
 function QuestionCard({
@@ -70,6 +52,8 @@ function QuestionCard({
       ]}
       activeOpacity={0.85}
       onPress={onPress}
+      accessibilityLabel={`${post.caption || 'Soru'} tavsiye sorusu`}
+      accessibilityRole="button"
     >
       {/* Header: Avatar + Username + Time + Question Badge */}
       <View style={styles.header}>
@@ -174,7 +158,7 @@ function QuestionCard({
       <View style={[styles.footer, { borderTopColor: colors.borderLight }]}>
         {answerCount > 0 ? (
           <TouchableOpacity onPress={onPress} activeOpacity={0.6}>
-            <Text style={[styles.answersLink, { color: QUESTION_COLOR }]}>
+            <Text style={[styles.answersLink, { color: FeatureColors.question }]}>
               {answerCount} yanit
             </Text>
           </TouchableOpacity>
@@ -189,7 +173,7 @@ function QuestionCard({
           activeOpacity={0.7}
           onPress={() => onAnswer(post.id)}
         >
-          <Ionicons name="chatbubble-outline" size={16} color={QUESTION_COLOR} />
+          <Ionicons name="chatbubble-outline" size={16} color={FeatureColors.question} />
           <Text style={styles.answerButtonText}>Yanitla</Text>
         </TouchableOpacity>
       </View>
@@ -237,7 +221,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: QUESTION_COLOR,
+    backgroundColor: FeatureColors.question,
     paddingHorizontal: Spacing.sm + 2,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
@@ -338,12 +322,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs + 2,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
-    borderColor: QUESTION_COLOR,
+    borderColor: FeatureColors.question,
   },
   answerButtonText: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bodySemiBold,
-    color: QUESTION_COLOR,
+    color: FeatureColors.question,
   },
 });
 

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Spacing, FontSize, FontFamily } from '../../lib/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface ImageBubbleProps {
   imageUrl: string;
@@ -12,12 +13,15 @@ interface ImageBubbleProps {
 }
 
 export default function ImageBubble({ imageUrl, isOwn, time, isRead }: ImageBubbleProps) {
+  const colors = useThemeColors();
+
   return (
     <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
       <TouchableOpacity
         activeOpacity={0.9}
         style={[
           styles.imageWrapper,
+          { shadowColor: colors.shadow },
           isOwn ? styles.ownImageWrapper : styles.otherImageWrapper,
         ]}
       >
@@ -53,7 +57,6 @@ const styles = StyleSheet.create({
   imageWrapper: {
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

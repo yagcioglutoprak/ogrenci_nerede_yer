@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sendPushNotification } from './notifications';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * Check user stats against all badge conditions and award any newly-earned badges.
@@ -44,13 +45,56 @@ export async function checkAndAwardBadges(userId: string): Promise<void> {
     ]);
 
     const upvotesReceived = (answersData || []).reduce((sum: number, a: any) => sum + (a.upvotes || 0), 0);
-    const streakDays = (() => {
-      if (!userData?.last_active_date) return 0;
-      const daysSinceActive = Math.floor((Date.now() - new Date(userData.last_active_date).getTime()) / (1000 * 60 * 60 * 24));
-      // If active today or yesterday, count as maintaining streak
-      // Without a dedicated counter, we can't know the real streak length,
-      // so we use 1 as minimum when recently active
-      return daysSinceActive <= 1 ? 1 : 0;
+
+    // Calculate streak: count distinct active days in the last 30 days by querying
+    // posts and reviews created by the user, then counting consecutive days from today backwards.
+    const streakDays = await (async () => {
+      try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const cutoff = thirtyDaysAgo.toISOString();
+
+        // Fetch recent activity timestamps (posts + reviews) in parallel
+        const [{ data: recentPosts }, { data: recentReviews }] = await Promise.all([
+          supabase.from('posts').select('created_at').eq('user_id', userId).gte('created_at', cutoff),
+          supabase.from('reviews').select('created_at').eq('user_id', userId).gte('created_at', cutoff),
+        ]);
+
+        // Collect all unique active dates (YYYY-MM-DD)
+        const activeDates = new Set<string>();
+        for (const item of [...(recentPosts || []), ...(recentReviews || [])]) {
+          activeDates.add(item.created_at.split('T')[0]);
+        }
+        // Also include the last_active_date from user data if present
+        if (userData?.last_active_date) {
+          activeDates.add(userData.last_active_date.split('T')[0]);
+        }
+
+        if (activeDates.size === 0) return 0;
+
+        // Count consecutive days backwards from today
+        let streak = 0;
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+          const checkDate = new Date(today);
+          checkDate.setDate(today.getDate() - i);
+          const dateStr = checkDate.toISOString().split('T')[0];
+          if (activeDates.has(dateStr)) {
+            streak++;
+          } else if (i === 0) {
+            // If not active today, still check if active yesterday to not break the streak prematurely
+            continue;
+          } else {
+            break;
+          }
+        }
+        return streak;
+      } catch {
+        // Fallback: if queries fail, use the simple last_active_date check
+        if (!userData?.last_active_date) return 0;
+        const daysSinceActive = Math.floor((Date.now() - new Date(userData.last_active_date).getTime()) / (1000 * 60 * 60 * 24));
+        return daysSinceActive <= 1 ? 1 : 0;
+      }
     })();
 
     const statsMap: Record<string, number> = {
@@ -102,13 +146,24 @@ export async function addXP(userId: string, points: number): Promise<void> {
 
     if (user) {
       const currentXP = user.xp_points || 0;
-      await supabase
+      const newXP = currentXP + points;
+      const { error } = await supabase
         .from('users')
         .update({
-          xp_points: currentXP + points,
+          xp_points: newXP,
           last_active_date: new Date().toISOString().split('T')[0],
         })
         .eq('id', userId);
+
+      // Refresh auth store so XP changes are visible in the UI immediately
+      if (!error) {
+        const authState = useAuthStore.getState();
+        if (authState.user && authState.user.id === userId) {
+          useAuthStore.setState({
+            user: { ...authState.user, xp_points: newXP },
+          });
+        }
+      }
     }
   } catch {
     // Silently ignore XP errors

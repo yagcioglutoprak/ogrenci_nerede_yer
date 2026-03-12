@@ -41,6 +41,8 @@ import CirclePicker from '../../components/ui/CirclePicker';
 import Avatar from '../../components/ui/Avatar';
 import type { Review, SocialVideo, Post } from '../../types';
 import GlassView from '../../components/ui/GlassView';
+import { VenueDetailSkeleton } from '../../components/ui/Skeleton';
+import ErrorState from '../../components/ui/ErrorState';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -213,11 +215,30 @@ export default function VenueDetailScreen() {
   };
 
   // -- Loading state --
-  if (loading || !venue) {
+  if (loading && !venue) {
     return (
-      <View style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
+      <SafeAreaView style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ position: 'absolute', top: 56, left: Spacing.lg, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <VenueDetailSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  // -- Not found state --
+  if (!venue) {
+    return (
+      <SafeAreaView style={[styles.loadingScreen, { backgroundColor: colors.background }]}>
+        <ErrorState
+          message="Mekan bulunamadı"
+          onRetry={() => { if (id) fetchVenueById(id); }}
+        />
+      </SafeAreaView>
     );
   }
 

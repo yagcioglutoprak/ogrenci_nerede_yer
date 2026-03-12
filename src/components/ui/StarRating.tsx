@@ -53,7 +53,7 @@ export default function StarRating({
       ? 'star'
       : halfFilled
         ? 'star-half'
-        : 'star';
+        : 'star-outline';
 
     const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
 

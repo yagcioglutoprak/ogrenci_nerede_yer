@@ -186,7 +186,7 @@ export default function MessagesScreen() {
               </View>
             </View>
             <Text style={[styles.buddyMatchPreview, { color: colors.textSecondary }]} numberOfLines={1}>
-              Yemek buddy eslesmesi - Mesaj gonder!
+              Yemek buddy eşleşmesi - Mesaj gönder!
             </Text>
           </View>
 
@@ -203,7 +203,7 @@ export default function MessagesScreen() {
       ? isMySent
         ? `Sen: ${item.last_message_text}`
         : item.last_message_text
-      : 'Henuz mesaj yok';
+      : 'Henüz mesaj yok';
 
     const staggerDelay = Math.min(index * AnimationConfig.staggerInterval, AnimationConfig.maxStaggerDelay);
 
@@ -224,7 +224,7 @@ export default function MessagesScreen() {
           onPress={() => { haptic.light(); router.push(`/chat/${item.id}`); }}
           activeOpacity={0.65}
           accessibilityRole="button"
-          accessibilityLabel={(item.other_user?.full_name || 'Kullanici') + ' ile sohbet' + (hasUnread ? ', ' + item.unread_count + ' okunmamis mesaj' : '')}
+          accessibilityLabel={(item.other_user?.full_name || 'Kullanıcı') + ' ile sohbet' + (hasUnread ? ', ' + item.unread_count + ' okunmamış mesaj' : '')}
         >
           {/* Unread accent bar */}
           {hasUnread && (
@@ -257,7 +257,7 @@ export default function MessagesScreen() {
                 ]}
                 numberOfLines={1}
               >
-                {item.other_user?.full_name || item.other_user?.username || 'Kullanici'}
+                {item.other_user?.full_name || item.other_user?.username || 'Kullanıcı'}
               </Text>
               <Text style={[
                 styles.conversationTime,
@@ -314,9 +314,9 @@ export default function MessagesScreen() {
           <View style={[styles.lockCircle, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
             <Ionicons name="lock-closed-outline" size={32} color={colors.textTertiary} />
           </View>
-          <Text style={[styles.stateTitle, { color: colors.text }]}>Giris Yap</Text>
+          <Text style={[styles.stateTitle, { color: colors.text }]}>Giriş Yap</Text>
           <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
-            Mesajlarini gormek icin giris yapman gerekiyor
+            Mesajlarını görmek için giriş yapman gerekiyor
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/auth/login')}
@@ -328,7 +328,7 @@ export default function MessagesScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryAction}
             >
-              <Text style={styles.primaryActionText}>Giris Yap</Text>
+              <Text style={styles.primaryActionText}>Giriş Yap</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -417,12 +417,12 @@ export default function MessagesScreen() {
                 <Ionicons name="chatbubbles-outline" size={36} color={colors.textTertiary} />
               </View>
               <Text style={[styles.stateTitle, { color: colors.text }]}>
-                {searchQuery ? 'Sonuc bulunamadi' : 'Henuz mesajin yok'}
+                {searchQuery ? 'Sonuç bulunamadı' : 'Henüz mesajın yok'}
               </Text>
               <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
                 {searchQuery
-                  ? 'Baska bir isimle aramayı dene'
-                  : 'Birinin profiline gidip mesaj atarak sohbete baslayabilirsin'}
+                  ? 'Başka bir isimle aramayı dene'
+                  : 'Birinin profiline gidip mesaj atarak sohbete başlayabilirsin'}
               </Text>
             </View>
           }
@@ -447,9 +447,10 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.sm,
   },
   headerTitle: {
-    fontSize: FontSize.xxxl,
-    fontFamily: FontFamily.heading,
-    letterSpacing: -0.5,
+    fontSize: 34,
+    fontFamily: FontFamily.headingBold,
+    letterSpacing: 0.37,
+    lineHeight: 41,
   },
   headerSubtitle: {
     fontSize: FontSize.sm,

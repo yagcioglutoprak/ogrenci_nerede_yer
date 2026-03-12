@@ -32,8 +32,8 @@ function formatDateLabel(dateStr: string): string {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) return 'Bugun';
-  if (date.toDateString() === yesterday.toDateString()) return 'Dun';
+  if (date.toDateString() === today.toDateString()) return 'Bugün';
+  if (date.toDateString() === yesterday.toDateString()) return 'Dün';
   return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
 }
 
@@ -61,6 +61,7 @@ export default function ChatScreen() {
   const [attachmentSheetVisible, setAttachmentSheetVisible] = useState(false);
   const [venuePickerVisible, setVenuePickerVisible] = useState(false);
   const flatListRef = useRef<FlatList<DirectMessage>>(null);
+  const isNearBottom = useRef(true);
 
   const conversation = conversations.find((c) => c.id === conversationId);
   const otherUser = conversation?.other_user;
@@ -81,7 +82,15 @@ export default function ChatScreen() {
   }, [conversationId]);
 
   const scrollToBottom = useCallback(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
+    if (isNearBottom.current) {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }
+  }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    isNearBottom.current = distanceFromBottom < 100;
   }, []);
 
   const handleSend = useCallback(() => {
@@ -256,9 +265,9 @@ export default function ChatScreen() {
           <View style={[styles.lockCircle, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}>
             <Ionicons name="lock-closed-outline" size={32} color={colors.textTertiary} />
           </View>
-          <Text style={[styles.stateTitle, { color: colors.text }]}>Giris Yap</Text>
+          <Text style={[styles.stateTitle, { color: colors.text }]}>Giriş Yap</Text>
           <Text style={[styles.stateText, { color: colors.textSecondary }]}>
-            Mesajlari gormek icin giris yap
+            Mesajları görmek için giriş yap
           </Text>
           <TouchableOpacity onPress={() => router.push('/auth/login')} activeOpacity={0.8}>
             <LinearGradient
@@ -267,7 +276,7 @@ export default function ChatScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.primaryAction}
             >
-              <Text style={styles.primaryActionText}>Giris Yap</Text>
+              <Text style={styles.primaryActionText}>Giriş Yap</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -305,11 +314,10 @@ export default function ChatScreen() {
               name={otherUser?.full_name || otherUser?.username || '?'}
               size={40}
             />
-            <View style={[styles.onlineDot, { borderColor: colors.background }]} />
           </View>
           <View style={styles.headerInfo}>
             <Text style={[styles.headerName, { color: colors.text }]} numberOfLines={1}>
-              {otherUser?.full_name || otherUser?.username || 'Kullanici'}
+              {otherUser?.full_name || otherUser?.username || 'Kullanıcı'}
             </Text>
             {otherUser?.university && (
               <Text style={[styles.headerSubtext, { color: colors.textTertiary }]} numberOfLines={1}>
@@ -323,10 +331,10 @@ export default function ChatScreen() {
           style={[styles.headerAction, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}
           onPress={() => otherUser && router.push(`/user/${otherUser.id}`)}
           activeOpacity={0.7}
-          accessibilityLabel="Profili gor"
+          accessibilityLabel="Profili gör"
           accessibilityRole="button"
         >
-          <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+          <Ionicons name="person-circle-outline" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -345,6 +353,8 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
           onLayout={scrollToBottom}
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
           ListEmptyComponent={
             <View style={styles.emptyChat}>
               <Animated.View entering={FadeInUp.delay(200).springify()}>
@@ -356,13 +366,13 @@ export default function ChatScreen() {
                 entering={FadeInUp.delay(350).springify()}
                 style={[styles.emptyTitle, { color: colors.text }]}
               >
-                Sohbete basla!
+                Sohbete başla!
               </Animated.Text>
               <Animated.Text
                 entering={FadeInUp.delay(450).springify()}
                 style={[styles.stateText, { color: colors.textSecondary }]}
               >
-                Ilk mesaji gondererek sohbeti baslat
+                İlk mesajı göndererek sohbeti başlat
               </Animated.Text>
             </View>
           }
@@ -410,7 +420,7 @@ export default function ChatScreen() {
             onPress={handleSend}
             disabled={!canSend}
             activeOpacity={0.7}
-            accessibilityLabel="Mesaj gonder"
+            accessibilityLabel="Mesaj gönder"
             accessibilityRole="button"
           >
             <LinearGradient

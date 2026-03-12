@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/c
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -35,7 +37,7 @@ export default function LoginScreen() {
       return;
     }
     if (!password) {
-      setError('Sifre gereklidir.');
+      setError('Şifre gereklidir.');
       return;
     }
 
@@ -74,8 +76,8 @@ export default function LoginScreen() {
               <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
 
-            <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
-            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Lezzetli kesiflere basla!</Text>
+            <Text style={styles.brandName}>Öğrenci Nerede Yer?</Text>
+            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Lezzetli keşiflere başla!</Text>
           </View>
 
           {/* Form Section */}
@@ -95,8 +97,8 @@ export default function LoginScreen() {
             />
 
             <Input
-              label="Sifre"
-              placeholder="Sifrenizi girin"
+              label="Şifre"
+              placeholder="Şifrenizi girin"
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -106,6 +108,24 @@ export default function LoginScreen() {
               secureTextEntry
               autoComplete="password"
             />
+
+            {/* Forgot Password Link */}
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => {
+                if (!email.trim()) {
+                  Alert.alert('Uyarı', 'Lütfen e-posta adresini gir');
+                  return;
+                }
+                supabase.auth.resetPasswordForEmail(email.trim()).then(() => {
+                  Alert.alert('Başarılı', 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi');
+                }).catch(() => {
+                  Alert.alert('Hata', 'Şifre sıfırlama bağlantısı gönderilemedi');
+                });
+              }}
+            >
+              <Text style={styles.forgotPasswordText}>Şifremi Unuttum?</Text>
+            </TouchableOpacity>
 
             {/* Error Message */}
             {error ? (
@@ -117,7 +137,7 @@ export default function LoginScreen() {
 
             {/* Login Button */}
             <Button
-              title="Giris Yap"
+              title="Giriş Yap"
               onPress={handleLogin}
               loading={loading}
               disabled={loading}
@@ -134,9 +154,9 @@ export default function LoginScreen() {
 
           {/* Register Link */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Hesabin yok mu? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Hesabın yok mu? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/register')}>
-              <Text style={styles.footerLink}>Kayit Ol</Text>
+              <Text style={styles.footerLink}>Kayıt Ol</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -209,6 +229,15 @@ const styles = StyleSheet.create({
   // Form
   formSection: {
     gap: Spacing.xs,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    paddingVertical: Spacing.xs,
+  },
+  forgotPasswordText: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.primary,
   },
   loginButton: {
     marginTop: Spacing.md,

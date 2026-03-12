@@ -17,7 +17,9 @@ import Animated, {
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
+import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -27,9 +29,6 @@ const IMAGE_MARGIN = Spacing.lg;
 const IMAGE_WIDTH = SCREEN_WIDTH - IMAGE_MARGIN * 2;
 const IMAGE_HEIGHT = IMAGE_WIDTH * 0.85;
 
-const LIVE_GREEN = '#22C55E';
-const MOMENT_ORANGE = '#F97316';
-
 interface MomentCardProps {
   post: Post;
   onLike: (postId: string) => void;
@@ -37,23 +36,6 @@ interface MomentCardProps {
   onUserPress: (userId: string) => void;
   onVenuePress?: (venueId: string) => void;
   onPress?: () => void;
-}
-
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  const diffWeeks = Math.floor(diffDays / 7);
-
-  if (diffMinutes < 1) return 'simdi';
-  if (diffMinutes < 60) return `${diffMinutes}dk`;
-  if (diffHours < 24) return `${diffHours}sa`;
-  if (diffDays < 7) return `${diffDays}g`;
-  if (diffWeeks < 4) return `${diffWeeks}hf`;
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
 function getTimeRemaining(expiresAt: string | null): string | null {
@@ -111,6 +93,7 @@ function MomentCard({
   }));
 
   const handleLike = React.useCallback(() => {
+    haptic.light();
     likeScale.value = withSequence(
       withSpring(1.35, { damping: 4, stiffness: 400 }),
       withSpring(0.85, { damping: 4, stiffness: 400 }),
@@ -120,7 +103,11 @@ function MomentCard({
   }, [post.id, onLike]);
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.card, { backgroundColor: colors.background }]}
+      accessibilityLabel={`${post.user?.full_name || 'Kullanici'} tarafindan paylasilan anlik`}
+      accessibilityRole="button"
+    >
       {/* Image Section */}
       <TouchableOpacity
         style={styles.imageWrapper}
@@ -234,7 +221,7 @@ function MomentCard({
             activeOpacity={0.7}
             onPress={() => onJoinMoment(post.id)}
           >
-            <Ionicons name="flash-outline" size={16} color={MOMENT_ORANGE} />
+            <Ionicons name="flash-outline" size={16} color={FeatureColors.moment} />
             <Text style={styles.joinMomentText}>Ben de geliyorum!</Text>
           </TouchableOpacity>
         </View>
@@ -279,7 +266,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: LIVE_GREEN,
+    backgroundColor: FeatureColors.liveGreen,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 1,
     borderRadius: BorderRadius.full,
@@ -400,12 +387,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs + 2,
     borderRadius: BorderRadius.full,
     borderWidth: 1.5,
-    borderColor: MOMENT_ORANGE,
+    borderColor: FeatureColors.moment,
   },
   joinMomentText: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bodySemiBold,
-    color: MOMENT_ORANGE,
+    color: FeatureColors.moment,
   },
 });
 

@@ -119,7 +119,7 @@ export default function Button({
 function getTextColor(variant: ButtonVariant, isDisabled: boolean, colors: ThemeColors): string {
   if (isDisabled) {
     if (variant === 'outline' || variant === 'ghost') {
-      return Colors.textTertiary;
+      return colors.textTertiary;
     }
     return 'rgba(255, 255, 255, 0.6)';
   }
@@ -130,9 +130,9 @@ function getTextColor(variant: ButtonVariant, isDisabled: boolean, colors: Theme
     case 'secondary':
       return Colors.textOnPrimary;
     case 'outline':
-      return Colors.primary;
+      return colors.primary;
     case 'ghost':
-      return Colors.primary;
+      return colors.primary;
     case 'glass':
       return Colors.textOnPrimary;
   }

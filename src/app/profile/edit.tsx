@@ -9,13 +9,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { uploadImage } from '../../lib/imageUpload';
 
 const UNIVERSITIES = [
-  'Istanbul Universitesi', 'Istanbul Teknik Universitesi', 'Bogazici Universitesi',
-  'Marmara Universitesi', 'Yildiz Teknik Universitesi', 'Galatasaray Universitesi',
-  'Medipol Universitesi', 'Sabanci Universitesi', 'Koc Universitesi',
-  'Bahcesehir Universitesi', 'Bilgi Universitesi', 'Ozyegin Universitesi',
-  'Kultur Universitesi', 'Diger',
+  'İstanbul Üniversitesi', 'İstanbul Teknik Üniversitesi', 'Boğaziçi Üniversitesi',
+  'Marmara Üniversitesi', 'Yıldız Teknik Üniversitesi', 'Galatasaray Üniversitesi',
+  'Medipol Üniversitesi', 'Sabancı Üniversitesi', 'Koç Üniversitesi',
+  'Bahçeşehir Üniversitesi', 'Bilgi Üniversitesi', 'Özyeğin Üniversitesi',
+  'Kültür Üniversitesi', 'Diğer',
 ];
 
 export default function ProfileEditScreen() {
@@ -28,7 +29,9 @@ export default function ProfileEditScreen() {
   const [university, setUniversity] = useState(user?.university || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [showUniPicker, setShowUniPicker] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   const handlePickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -38,12 +41,26 @@ export default function ProfileEditScreen() {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      setAvatarUrl(result.assets[0].uri);
+      const localUri = result.assets[0].uri;
+      setAvatarUploading(true);
+      const { url, error } = await uploadImage(localUri, 'avatars');
+      setAvatarUploading(false);
+      if (url) {
+        setAvatarUrl(url);
+      } else {
+        // Fallback to local URI if upload fails, warn user
+        setAvatarUrl(localUri);
+        Alert.alert('Uyarı', error || 'Fotoğraf yüklenemedi, yerel dosya kullanılacak');
+      }
     }
   };
 
   const handleSave = async () => {
-    if (!fullName.trim()) { Alert.alert('Hata', 'Ad soyad zorunludur'); return; }
+    if (!fullName.trim()) {
+      setNameError('Ad soyad zorunludur');
+      return;
+    }
+    setNameError('');
     setSaving(true);
 
     const { error } = await updateProfile({
@@ -68,7 +85,7 @@ export default function ProfileEditScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Profili Duzenle</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profili Düzenle</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveBtn}>
           {saving ? (
             <ActivityIndicator size="small" color={Colors.primary} />
@@ -79,12 +96,17 @@ export default function ProfileEditScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.avatarContainer} onPress={handlePickAvatar}>
+        <TouchableOpacity style={styles.avatarContainer} onPress={handlePickAvatar} disabled={avatarUploading}>
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Ionicons name="person" size={40} color={Colors.textTertiary} />
+            </View>
+          )}
+          {avatarUploading && (
+            <View style={styles.avatarUploadingOverlay}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
             </View>
           )}
           <View style={styles.avatarBadge}>
@@ -95,18 +117,28 @@ export default function ProfileEditScreen() {
         <View style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Ad Soyad</Text>
           <TextInput
-            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
-            value={fullName} onChangeText={setFullName}
-            placeholder="Adiniz Soyadiniz" placeholderTextColor={colors.textTertiary}
+            style={[styles.input, { color: colors.text, borderColor: nameError ? Colors.error : colors.border, backgroundColor: colors.backgroundSecondary }]}
+            value={fullName}
+            onChangeText={(text) => {
+              setFullName(text);
+              if (nameError) setNameError('');
+            }}
+            placeholder="Adınız Soyadınız" placeholderTextColor={colors.textTertiary}
           />
+          {nameError ? (
+            <View style={styles.inlineError}>
+              <Ionicons name="alert-circle" size={14} color={Colors.error} />
+              <Text style={styles.inlineErrorText}>{nameError}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Kullanici Adi</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Kullanıcı Adı</Text>
           <TextInput
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
             value={username} onChangeText={setUsername}
-            placeholder="kullanici_adi" placeholderTextColor={colors.textTertiary} autoCapitalize="none"
+            placeholder="kullanıcı_adı" placeholderTextColor={colors.textTertiary} autoCapitalize="none"
           />
         </View>
 
@@ -121,13 +153,13 @@ export default function ProfileEditScreen() {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Universite</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Üniversite</Text>
           <TouchableOpacity
             style={[styles.input, styles.pickerBtn, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
             onPress={() => setShowUniPicker(!showUniPicker)}
           >
             <Text style={{ color: university ? colors.text : colors.textTertiary, fontSize: FontSize.md }}>
-              {university || 'Universite secin'}
+              {university || 'Üniversite seçin'}
             </Text>
             <Ionicons name="chevron-down" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
@@ -166,6 +198,13 @@ const styles = StyleSheet.create({
   avatarContainer: { alignSelf: 'center' },
   avatar: { width: 100, height: 100, borderRadius: 50 },
   avatarPlaceholder: { backgroundColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center' },
+  avatarUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarBadge: {
     position: 'absolute', bottom: 0, right: 0,
     width: 30, height: 30, borderRadius: 15,
@@ -183,4 +222,18 @@ const styles = StyleSheet.create({
   pickerBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   uniList: { borderWidth: 1, borderRadius: BorderRadius.md, overflow: 'hidden' },
   uniItem: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  inlineError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.primarySoft,
+    borderRadius: BorderRadius.sm,
+  },
+  inlineErrorText: {
+    fontSize: FontSize.xs,
+    color: Colors.error,
+    fontWeight: '500',
+  },
 });

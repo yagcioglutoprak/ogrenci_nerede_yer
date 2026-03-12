@@ -25,10 +25,10 @@ type TabMode = 'venue' | 'post' | 'meetup' | 'question' | 'moment';
 
 const TAB_OPTIONS = [
   { key: 'venue' as TabMode, label: 'Mekan', icon: 'restaurant' as const },
-  { key: 'post' as TabMode, label: 'Kesif', icon: 'camera' as const },
-  { key: 'meetup' as TabMode, label: 'Bulusma', icon: 'people' as const },
+  { key: 'post' as TabMode, label: 'Keşif', icon: 'camera' as const },
+  { key: 'meetup' as TabMode, label: 'Buluşma', icon: 'people' as const },
   { key: 'question' as TabMode, label: 'Soru', icon: 'help-circle' as const },
-  { key: 'moment' as TabMode, label: 'Anlik', icon: 'flash' as const },
+  { key: 'moment' as TabMode, label: 'Anlık', icon: 'flash' as const },
 ];
 
 export default function AddScreen() {
@@ -46,9 +46,9 @@ export default function AddScreen() {
           <View style={[styles.authIconCircle, { backgroundColor: colors.primarySoft }]}>
             <Ionicons name="restaurant-outline" size={44} color={Colors.primary} />
           </View>
-          <Text style={[styles.authTitle, { color: colors.text }]}>Giris Yap</Text>
+          <Text style={[styles.authTitle, { color: colors.text }]}>Giriş Yap</Text>
           <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
-            Mekan eklemek veya gonderi paylasmak icin{'\n'}hesabiniza giris yapin.
+            Mekan eklemek veya gönderi paylaşmak için{'\n'}hesabınıza giriş yapın.
           </Text>
           <TouchableOpacity
             style={styles.authButton}
@@ -56,7 +56,7 @@ export default function AddScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.authButtonText}>Giris Yap</Text>
+            <Text style={styles.authButtonText}>Giriş Yap</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

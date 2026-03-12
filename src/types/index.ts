@@ -12,6 +12,8 @@ export interface User {
   bio: string | null;
   xp_points: number;
   last_active_date?: string | null;
+  followers_count?: number;
+  following_count?: number;
   created_at: string;
 }
 
@@ -92,6 +94,7 @@ export interface Post {
   likes_count?: number;
   comments_count?: number;
   is_liked?: boolean;
+  is_bookmarked?: boolean;
   event?: Event;
 }
 

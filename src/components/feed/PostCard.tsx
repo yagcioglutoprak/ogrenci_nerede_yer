@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors, Spacing, FontSize, FontFamily, BorderRadius, SpringConfig } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
+import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, PostImage } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -156,7 +157,11 @@ function PostCard({
     });
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.card, { backgroundColor: colors.background }]}
+      accessibilityLabel={`${post.user?.full_name || 'Kullanici'} tarafindan paylasilan gonderi`}
+      accessibilityRole="button"
+    >
       {/* Header: Avatar + Username + Time */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -371,23 +376,6 @@ function PostCard({
       </View>
     </View>
   );
-}
-
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  const diffWeeks = Math.floor(diffDays / 7);
-
-  if (diffMinutes < 1) return 'simdi';
-  if (diffMinutes < 60) return `${diffMinutes}dk`;
-  if (diffHours < 24) return `${diffHours}sa`;
-  if (diffDays < 7) return `${diffDays}g`;
-  if (diffWeeks < 4) return `${diffWeeks}hf`;
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
 const styles = StyleSheet.create({

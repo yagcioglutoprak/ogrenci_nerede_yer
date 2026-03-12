@@ -37,11 +37,11 @@ export default function RegisterScreen() {
     setError('');
 
     if (!username.trim()) {
-      setError('Kullanici adi gereklidir.');
+      setError('Kullanıcı adı gereklidir.');
       return;
     }
     if (username.trim().length < 3) {
-      setError('Kullanici adi en az 3 karakter olmalidir.');
+      setError('Kullanıcı adı en az 3 karakter olmalıdır.');
       return;
     }
     if (!email.trim()) {
@@ -49,15 +49,15 @@ export default function RegisterScreen() {
       return;
     }
     if (!password) {
-      setError('Sifre gereklidir.');
+      setError('Şifre gereklidir.');
       return;
     }
     if (password.length < 6) {
-      setError('Sifre en az 6 karakter olmalidir.');
+      setError('Şifre en az 6 karakter olmalıdır.');
       return;
     }
     if (password !== passwordConfirm) {
-      setError('Sifreler eslesmiyor.');
+      setError('Şifreler eşleşmiyor.');
       return;
     }
 
@@ -95,14 +95,14 @@ export default function RegisterScreen() {
               <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
 
-            <Text style={styles.brandName}>Ogrenci Nerede Yer?</Text>
-            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Yeni hesap olustur</Text>
+            <Text style={styles.brandName}>Öğrenci Nerede Yer?</Text>
+            <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Yeni hesap oluştur</Text>
           </View>
 
           {/* Form Section */}
           <View style={styles.formSection}>
             <Input
-              label="Kullanici Adi"
+              label="Kullanıcı Adı"
               placeholder="ornek: yemeksever42"
               value={username}
               onChangeText={(text) => {
@@ -129,7 +129,7 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="Sifre"
+              label="Şifre"
               placeholder="En az 6 karakter"
               value={password}
               onChangeText={(text) => {
@@ -142,8 +142,8 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="Sifre Tekrar"
-              placeholder="Sifrenizi tekrar girin"
+              label="Şifre Tekrar"
+              placeholder="Şifrenizi tekrar girin"
               value={passwordConfirm}
               onChangeText={(text) => {
                 setPasswordConfirm(text);
@@ -154,7 +154,7 @@ export default function RegisterScreen() {
               autoComplete="new-password"
               error={
                 passwordConfirm.length > 0 && password !== passwordConfirm
-                  ? 'Sifreler eslesmiyor'
+                  ? 'Şifreler eşleşmiyor'
                   : undefined
               }
             />
@@ -169,7 +169,7 @@ export default function RegisterScreen() {
 
             {/* Register Button */}
             <Button
-              title="Kayit Ol"
+              title="Kayıt Ol"
               onPress={handleRegister}
               loading={loading}
               disabled={loading}
@@ -186,9 +186,9 @@ export default function RegisterScreen() {
 
           {/* Login Link */}
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Zaten hesabin var mi? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Zaten hesabın var mı? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/login')}>
-              <Text style={styles.footerLink}>Giris Yap</Text>
+              <Text style={styles.footerLink}>Giriş Yap</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

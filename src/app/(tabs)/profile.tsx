@@ -32,6 +32,7 @@ import {
   BorderRadius,
   FontSize,
   FontFamily,
+  FeatureColors,
 } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import Avatar from '../../components/ui/Avatar';
@@ -267,10 +268,10 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Cikis Yap', 'Hesabinizdan cikis yapmak istediginize emin misiniz?', [
-      { text: 'Iptal', style: 'cancel' },
+    Alert.alert('Çıkış Yap', 'Hesabınızdan çıkış yapmak istediğinize emin misiniz?', [
+      { text: 'İptal', style: 'cancel' },
       {
-        text: 'Cikis Yap',
+        text: 'Çıkış Yap',
         style: 'destructive',
         onPress: () => signOut(),
       },
@@ -303,13 +304,13 @@ export default function ProfileScreen() {
             entering={FadeInDown.delay(200).springify()}
             style={[styles.loginTitle, { color: colors.text }]}
           >
-            Hesabina Giris Yap
+            Hesabına Giriş Yap
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(300).springify()}
             style={[styles.loginSubtitle, { color: colors.textSecondary }]}
           >
-            Favori mekanlarini kaydet, yorumlarini paylas{'\n'}ve topluluga katil!
+            Favori mekanlarını kaydet, yorumlarını paylaş{'\n'}ve topluluğa katıl!
           </Animated.Text>
 
           <Animated.View entering={FadeInUp.delay(400).springify()} style={{ width: '100%' }}>
@@ -319,7 +320,7 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.loginButtonText}>Giris Yap</Text>
+              <Text style={styles.loginButtonText}>Giriş Yap</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -329,8 +330,8 @@ export default function ProfileScreen() {
               style={styles.registerRow}
             >
               <Text style={[styles.registerText, { color: colors.textSecondary }]}>
-                Hesabin yok mu?{' '}
-                <Text style={styles.registerTextBold}>Kayit Ol</Text>
+                Hesabın yok mu?{' '}
+                <Text style={styles.registerTextBold}>Kayıt Ol</Text>
               </Text>
             </TouchableOpacity>
           </Animated.View>
@@ -425,11 +426,11 @@ export default function ProfileScreen() {
                 style={[styles.statsCard, Platform.OS === 'ios' && styles.statsCardGlass, { backgroundColor: colors.background, borderColor: colors.border }]}
                 fallbackColor={colors.background}
               >
-                <AnimatedStat value={stats.venues} label="Kesif" icon="compass-outline" color={Colors.primary} delay={400} />
+                <AnimatedStat value={stats.venues} label="Keşif" icon="compass-outline" color={Colors.primary} delay={400} />
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                 <AnimatedStat value={stats.reviews} label="Yorum" icon="chatbubble-outline" color={Colors.accent} delay={500} />
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <AnimatedStat value={stats.followers} label="Takipci" icon="people-outline" color="#8B5CF6" delay={600} />
+                <AnimatedStat value={stats.followers} label="Takipçi" icon="people-outline" color={FeatureColors.question} delay={600} />
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                 <AnimatedStat value={stats.following} label="Takip" icon="person-add-outline" color="#14B8A6" delay={700} />
               </GlassView>
@@ -485,7 +486,7 @@ export default function ProfileScreen() {
                       activeTab === 'posts' ? styles.tabTextActive : { color: colors.textSecondary },
                     ]}
                   >
-                    Gonderilerim
+                    Gönderilerim
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -542,8 +543,8 @@ export default function ProfileScreen() {
               favorites.length === 0 ? (
                 <EmptyState
                   variant="favorites"
-                  title="Henuz favori mekanin yok"
-                  subtitle="Mekanlari kesfet ve favorilerine ekle!"
+                  title="Henüz favori mekanın yok"
+                  subtitle="Mekanları keşfet ve favorilerine ekle!"
                 />
               ) : (
                 <View style={styles.gridContainer}>
@@ -593,8 +594,8 @@ export default function ProfileScreen() {
               userPosts.length === 0 ? (
                 <EmptyState
                   variant="posts"
-                  title="Henuz gonderin yok"
-                  subtitle="Deneyimlerini paylasmaya basla!"
+                  title="Henüz gönderin yok"
+                  subtitle="Deneyimlerini paylaşmaya başla!"
                 />
               ) : (
                 <View style={styles.gridContainer}>
@@ -634,7 +635,7 @@ export default function ProfileScreen() {
                           </View>
                           <View style={styles.gridItemInfo}>
                             <Text style={[styles.gridItemCaption, { color: colors.text }]} numberOfLines={2}>
-                              {post.caption || 'Gonderi'}
+                              {post.caption || 'Gönderi'}
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -644,42 +645,32 @@ export default function ProfileScreen() {
                 </View>
               )
             ) : (
-              <View style={{ paddingHorizontal: Spacing.lg, gap: Spacing.md }}>
+              <View style={styles.listsContainer}>
                 <TouchableOpacity
-                  style={{
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                    padding: Spacing.md, borderRadius: BorderRadius.md,
-                    borderWidth: 1, borderStyle: 'dashed', borderColor: Colors.primary,
-                    gap: Spacing.sm,
-                  }}
+                  style={styles.createListButton}
                   onPress={() => router.push('/list/create')}
                 >
                   <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
-                  <Text style={{ color: Colors.primary, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.md }}>
-                    Yeni Liste Olustur
+                  <Text style={styles.createListButtonText}>
+                    Yeni Liste Oluştur
                   </Text>
                 </TouchableOpacity>
                 {userLists.map((list) => (
                   <TouchableOpacity
                     key={list.id}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      padding: Spacing.md, borderRadius: BorderRadius.md,
-                      backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.border,
-                      gap: Spacing.md,
-                    }}
+                    style={[styles.listRow, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
                     onPress={() => router.push(`/list/${list.id}`)}
                   >
                     {list.cover_image_url ? (
-                      <Image source={{ uri: list.cover_image_url }} style={{ width: 50, height: 50, borderRadius: BorderRadius.sm }} />
+                      <Image source={{ uri: list.cover_image_url }} style={styles.listRowImage} />
                     ) : (
-                      <View style={{ width: 50, height: 50, borderRadius: BorderRadius.sm, backgroundColor: Colors.primarySoft, justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={styles.listRowImagePlaceholder}>
                         <Ionicons name="list" size={20} color={Colors.primary} />
                       </View>
                     )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: colors.text, fontFamily: FontFamily.bodySemiBold, fontSize: FontSize.md }}>{list.title}</Text>
-                      <Text style={{ color: colors.textSecondary, fontFamily: FontFamily.body, fontSize: FontSize.xs }}>
+                    <View style={styles.listRowInfo}>
+                      <Text style={[styles.listRowTitle, { color: colors.text }]}>{list.title}</Text>
+                      <Text style={[styles.listRowSubtitle, { color: colors.textSecondary }]}>
                         {list.venues?.length || 0} mekan
                       </Text>
                     </View>
@@ -1072,5 +1063,61 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontFamily: FontFamily.bodySemiBold,
     color: '#FFFFFF',
+  },
+
+  // =========================================
+  // LISTS TAB
+  // =========================================
+  listsContainer: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+  },
+  createListButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.primary,
+    gap: Spacing.sm,
+  },
+  createListButtonText: {
+    color: Colors.primary,
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: FontSize.md,
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: Spacing.md,
+  },
+  listRowImage: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.sm,
+  },
+  listRowImagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listRowInfo: {
+    flex: 1,
+  },
+  listRowTitle: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: FontSize.md,
+  },
+  listRowSubtitle: {
+    fontFamily: FontFamily.body,
+    fontSize: FontSize.xs,
   },
 });

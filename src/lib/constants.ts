@@ -206,6 +206,7 @@ export const VenueLevels = [
 // Tasarım sabitleri
 export const Spacing = {
   xs: 4,
+  xsm: 6,
   sm: 8,
   md: 12,
   lg: 16,
@@ -217,6 +218,7 @@ export const Spacing = {
 export const BorderRadius = {
   sm: 8,
   md: 12,
+  input: 14,
   lg: 16,
   xl: 20,
   xxl: 24,
@@ -234,6 +236,7 @@ export const FontSize = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  largeTitle: 34,
   display: 40,
 } as const;
 
@@ -243,6 +246,49 @@ export const FontFamily = {
   bodySemiBold: 'Nunito_600SemiBold',
   bodyMedium: 'Nunito_500Medium',
   body: 'Nunito_400Regular',
+} as const;
+
+// ==========================================
+// Shadow Presets (platform-specific)
+// ==========================================
+export const Shadows = {
+  card: {
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  elevated: {
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  subtle: {
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+} as const;
+
+// ==========================================
+// Feature Accent Colors
+// Centralized colors for post types & features
+// ==========================================
+export const FeatureColors = {
+  buddy: '#06B6D4',
+  buddyDark: '#0891B2',
+  question: '#8B5CF6',
+  questionLight: '#EDE9FE',
+  moment: '#F97316',
+  momentLight: '#FFF7ED',
+  liveGreen: '#22C55E',
+  meetup: '#06B6D4',       // same as buddy
+  meetupLight: '#ECFEFF',
 } as const;
 
 // Supabase config

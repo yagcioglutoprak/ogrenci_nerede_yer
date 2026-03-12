@@ -19,6 +19,7 @@ interface ListState {
   removeVenueFromList: (listId: string, venueId: string) => Promise<void>;
   toggleListLike: (listId: string, userId: string) => Promise<boolean | null>;
   toggleListFollow: (listId: string, userId: string) => Promise<boolean | null>;
+  clearError: () => void;
 }
 
 export const useListStore = create<ListState>((set, get) => ({
@@ -28,8 +29,10 @@ export const useListStore = create<ListState>((set, get) => ({
   loading: false,
   error: null,
 
+  clearError: () => set({ error: null }),
+
   fetchPopularLists: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const { data, error } = await supabase
         .from('lists')
@@ -40,43 +43,59 @@ export const useListStore = create<ListState>((set, get) => ({
 
       if (!error && data) {
         set({ lists: data as List[] });
+      } else if (error) {
+        set({ error: error.message });
       }
-    } catch {}
+    } catch (err: any) {
+      set({ error: err?.message || 'Populer listeler yuklenirken hata olustu' });
+    }
     set({ loading: false });
   },
 
   fetchUserLists: async (userId) => {
+    set({ error: null });
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('lists')
         .select('*, venues:list_venues(*, venue:venues(*))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (data) set({ userLists: data as List[] });
-    } catch {}
+      if (!error && data) {
+        set({ userLists: data as List[] });
+      } else if (error) {
+        set({ error: error.message });
+      }
+    } catch (err: any) {
+      set({ error: err?.message || 'Kullanici listeleri yuklenirken hata olustu' });
+    }
   },
 
   fetchListById: async (id) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('lists')
         .select('*, user:users(*), venues:list_venues(*, venue:venues(*))')
         .eq('id', id)
         .single();
 
-      if (data) {
+      if (!error && data) {
         if (data.venues) {
           (data.venues as any[]).sort((a: any, b: any) => a.position - b.position);
         }
         set({ selectedList: data as List });
+      } else if (error) {
+        set({ error: error.message });
       }
-    } catch {}
+    } catch (err: any) {
+      set({ error: err?.message || 'Liste detayi yuklenirken hata olustu' });
+    }
     set({ loading: false });
   },
 
   createList: async ({ title, description, cover_image_url, user_id }) => {
+    set({ error: null });
     try {
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const { data, error } = await supabase
@@ -93,7 +112,8 @@ export const useListStore = create<ListState>((set, get) => ({
       const list = data as List;
       set({ userLists: [list, ...get().userLists] });
       return list;
-    } catch {
+    } catch (err: any) {
+      set({ error: err?.message || 'Liste olusturulurken hata olustu' });
       return null;
     }
   },
@@ -139,6 +159,8 @@ export const useListStore = create<ListState>((set, get) => ({
   },
 
   toggleListLike: async (listId, userId) => {
+    const previousSelectedList = get().selectedList;
+
     try {
       const { data: existing } = await supabase
         .from('list_likes')
@@ -147,21 +169,42 @@ export const useListStore = create<ListState>((set, get) => ({
         .eq('user_id', userId)
         .single();
 
-      if (existing) {
+      const isUnliking = !!existing;
+      const currentCount = get().selectedList?.likes_count ?? 0;
+      const newCount = isUnliking ? Math.max(0, currentCount - 1) : currentCount + 1;
+
+      // Optimistic update: update local selectedList immediately
+      const selectedList = get().selectedList;
+      if (selectedList && selectedList.id === listId) {
+        set({ selectedList: { ...selectedList, likes_count: newCount } });
+      }
+      // Also update in lists array
+      set({
+        lists: get().lists.map(l => l.id === listId ? { ...l, likes_count: newCount } : l),
+      });
+
+      if (isUnliking) {
         await supabase.from('list_likes').delete().eq('list_id', listId).eq('user_id', userId);
-        const { data: list } = await supabase.from('lists').select('likes_count').eq('id', listId).single();
-        if (list) await supabase.from('lists').update({ likes_count: Math.max(0, (list.likes_count || 0) - 1) }).eq('id', listId);
+        await supabase.from('lists').update({ likes_count: newCount }).eq('id', listId);
         return false;
       } else {
         await supabase.from('list_likes').insert({ list_id: listId, user_id: userId });
-        const { data: list } = await supabase.from('lists').select('likes_count').eq('id', listId).single();
-        if (list) await supabase.from('lists').update({ likes_count: (list.likes_count || 0) + 1 }).eq('id', listId);
+        await supabase.from('lists').update({ likes_count: newCount }).eq('id', listId);
         return true;
       }
-    } catch { return null; }
+    } catch (err: any) {
+      // Rollback optimistic update on failure
+      if (previousSelectedList && previousSelectedList.id === listId) {
+        set({ selectedList: previousSelectedList });
+      }
+      set({ error: err?.message || 'Liste begenilirken hata olustu' });
+      return null;
+    }
   },
 
   toggleListFollow: async (listId, userId) => {
+    const previousSelectedList = get().selectedList;
+
     try {
       const { data: existing } = await supabase
         .from('list_follows')
@@ -170,17 +213,36 @@ export const useListStore = create<ListState>((set, get) => ({
         .eq('user_id', userId)
         .single();
 
-      if (existing) {
+      const isUnfollowing = !!existing;
+      const currentCount = get().selectedList?.followers_count ?? 0;
+      const newCount = isUnfollowing ? Math.max(0, currentCount - 1) : currentCount + 1;
+
+      // Optimistic update: update local selectedList immediately
+      const selectedList = get().selectedList;
+      if (selectedList && selectedList.id === listId) {
+        set({ selectedList: { ...selectedList, followers_count: newCount } });
+      }
+      // Also update in lists array
+      set({
+        lists: get().lists.map(l => l.id === listId ? { ...l, followers_count: newCount } : l),
+      });
+
+      if (isUnfollowing) {
         await supabase.from('list_follows').delete().eq('list_id', listId).eq('user_id', userId);
-        const { data: list } = await supabase.from('lists').select('followers_count').eq('id', listId).single();
-        if (list) await supabase.from('lists').update({ followers_count: Math.max(0, (list.followers_count || 0) - 1) }).eq('id', listId);
+        await supabase.from('lists').update({ followers_count: newCount }).eq('id', listId);
         return false;
       } else {
         await supabase.from('list_follows').insert({ list_id: listId, user_id: userId });
-        const { data: list } = await supabase.from('lists').select('followers_count').eq('id', listId).single();
-        if (list) await supabase.from('lists').update({ followers_count: (list.followers_count || 0) + 1 }).eq('id', listId);
+        await supabase.from('lists').update({ followers_count: newCount }).eq('id', listId);
         return true;
       }
-    } catch { return null; }
+    } catch (err: any) {
+      // Rollback optimistic update on failure
+      if (previousSelectedList && previousSelectedList.id === listId) {
+        set({ selectedList: previousSelectedList });
+      }
+      set({ error: err?.message || 'Liste takip edilirken hata olustu' });
+      return null;
+    }
   },
 }));

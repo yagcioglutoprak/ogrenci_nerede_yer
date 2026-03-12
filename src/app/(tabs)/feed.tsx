@@ -43,11 +43,11 @@ import { MOCK_RECOMMENDATION_ANSWERS } from '../../lib/mockData';
 import type { Post, FeedCategory } from '../../types';
 
 const CATEGORIES: { key: FeedCategory; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'all', label: 'Tumu', icon: 'apps-outline' },
-  { key: 'meetups', label: 'Bulusmalar', icon: 'people-outline' },
-  { key: 'moments', label: 'Anlik', icon: 'flash-outline' },
-  { key: 'questions', label: 'Oneriler', icon: 'help-circle-outline' },
-  { key: 'top', label: 'Populer', icon: 'trending-up-outline' },
+  { key: 'all', label: 'Tümü', icon: 'apps-outline' },
+  { key: 'meetups', label: 'Buluşmalar', icon: 'people-outline' },
+  { key: 'moments', label: 'Anlık', icon: 'flash-outline' },
+  { key: 'questions', label: 'Öneriler', icon: 'help-circle-outline' },
+  { key: 'top', label: 'Popüler', icon: 'trending-up-outline' },
   { key: 'new', label: 'Yeni', icon: 'time-outline' },
 ];
 
@@ -330,9 +330,9 @@ export default function FeedScreen() {
     return (
       <EmptyState
         variant="feed"
-        title="Henuz gonderi yok"
-        subtitle={'Kesfetmeye basla! Yeni mekanlar ekle\nve deneyimlerini paylas.'}
-        actionLabel="Ilk gonderiyi paylas"
+        title="Henüz gönderi yok"
+        subtitle={'Keşfetmeye başla! Yeni mekanlar ekle\nve deneyimlerini paylaş.'}
+        actionLabel="İlk gönderiyi paylaş"
         onAction={() => router.push('/(tabs)/add')}
       />
     );
@@ -399,7 +399,7 @@ export default function FeedScreen() {
       />
 
       <ScreenHeader
-        title="Akis"
+        title="Akış"
         rightAction={{
           icon: showSearch ? 'close' : 'search',
           onPress: () => setShowSearch(!showSearch),
@@ -414,7 +414,7 @@ export default function FeedScreen() {
             <Ionicons name="search" size={18} color={colors.textTertiary} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Mekan veya gonderi ara..."
+              placeholder="Mekan veya gönderi ara..."
               placeholderTextColor={colors.textTertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -445,10 +445,10 @@ export default function FeedScreen() {
             <Ionicons name="people" size={24} color="#FFF" />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: FontSize.md, fontFamily: FontFamily.headingBold, color: '#FFF' }}>
-                Yalniz yemek yeme!
+                Yalnız yemek yeme!
               </Text>
               <Text style={{ fontSize: FontSize.xs, fontFamily: FontFamily.body, color: 'rgba(255,255,255,0.8)' }}>
-                Yakininda yemek arkadasi bul
+                Yakınında yemek arkadaşı bul
               </Text>
             </View>
             <TouchableOpacity onPress={(e) => { e.stopPropagation(); setShowBuddyBanner(false); }}>
@@ -491,7 +491,7 @@ export default function FeedScreen() {
       {/* Floating Create Post Button */}
       {Platform.OS === 'ios' ? (
         <GlassView
-          style={styles.floatingCreateButtonGlass}
+          style={[styles.floatingCreateButtonGlass, { bottom: insets.bottom + 80 }]}
           fallbackColor="rgba(226, 55, 68, 0.85)"
           interactive
         >
@@ -505,7 +505,7 @@ export default function FeedScreen() {
         </GlassView>
       ) : (
         <TouchableOpacity
-          style={styles.floatingCreateButton}
+          style={[styles.floatingCreateButton, { bottom: insets.bottom + 80 }]}
           onPress={() => router.push('/(tabs)/add')}
           activeOpacity={0.85}
         >
@@ -597,7 +597,6 @@ const styles = StyleSheet.create({
   floatingCreateButton: {
     position: 'absolute',
     right: Spacing.xl,
-    bottom: Spacing.xxl,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -613,7 +612,6 @@ const styles = StyleSheet.create({
   floatingCreateButtonGlass: {
     position: 'absolute',
     right: Spacing.xl,
-    bottom: Spacing.xxl,
     width: 56,
     height: 56,
     borderRadius: 28,

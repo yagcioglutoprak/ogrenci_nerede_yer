@@ -6,7 +6,9 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, FeatureColors } from '../../lib/constants';
+import { haptic } from '../../lib/haptics';
+import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Post, Event, EventAttendee } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -33,23 +35,6 @@ function formatEventDate(dateStr: string): string {
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${day} ${month}, ${hours}:${minutes}`;
-}
-
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  const diffWeeks = Math.floor(diffDays / 7);
-
-  if (diffMinutes < 1) return 'simdi';
-  if (diffMinutes < 60) return `${diffMinutes}dk`;
-  if (diffHours < 24) return `${diffHours}sa`;
-  if (diffDays < 7) return `${diffDays}g`;
-  if (diffWeeks < 4) return `${diffWeeks}hf`;
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
 function EventCard({
@@ -79,6 +64,7 @@ function EventCard({
     .slice(0, 4);
 
   const handleJoinPress = useCallback(() => {
+    haptic.light();
     if (hasJoined) {
       onLeave?.(event.id);
     } else {
@@ -99,6 +85,8 @@ function EventCard({
       ]}
       activeOpacity={0.85}
       onPress={onPress}
+      accessibilityLabel={`${event.title} bulusma etkinligi`}
+      accessibilityRole="button"
     >
       {/* Header: Avatar + Username + Time */}
       <View style={styles.header}>
@@ -287,7 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#06B6D4',
+    backgroundColor: FeatureColors.meetup,
     paddingHorizontal: Spacing.sm + 2,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,

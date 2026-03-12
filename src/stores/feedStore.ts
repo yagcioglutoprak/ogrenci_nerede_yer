@@ -394,6 +394,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   addComment: async (postId, userId, text) => {
+    // Optimistically append the comment locally for instant UI feedback
+    const optimisticComment: Comment = {
+      id: `c-local-${Date.now()}`,
+      post_id: postId,
+      user_id: userId,
+      text,
+      created_at: new Date().toISOString(),
+      user: MOCK_USERS.find((u) => u.id === userId),
+    };
+    const previousComments = get().comments;
+    set({ comments: [...previousComments, optimisticComment] });
+
+    // Update local post comments_count immediately
+    const posts = get().posts.map((p) => {
+      if (p.id === postId) {
+        return { ...p, comments_count: (p.comments_count || 0) + 1 };
+      }
+      return p;
+    });
+    set({ posts });
+
     const { error } = await supabase.from('comments').insert({
       post_id: postId,
       user_id: userId,
@@ -401,7 +422,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     });
 
     if (!error) {
-      await get().fetchComments(postId);
+      // Background re-fetch to sync with server (replaces optimistic comment with real data)
+      get().fetchComments(postId).catch(() => {});
 
       // Send push notification to post owner on new comment
       const commentedPost = get().posts.find(p => p.id === postId);
@@ -414,27 +436,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         ).catch(() => {});
       }
     } else {
-      // Fallback: add comment to local state for mock data
-      const newComment: Comment = {
-        id: `c-local-${Date.now()}`,
-        post_id: postId,
-        user_id: userId,
-        text,
-        created_at: new Date().toISOString(),
-        user: MOCK_USERS.find((u) => u.id === userId),
-      };
-      const currentComments = get().comments;
-      set({ comments: [...currentComments, newComment] });
+      // Supabase insert failed — optimistic comment stays as local-only fallback
+      // (no rollback needed since mock mode keeps local state)
     }
-
-    // Update local post comments_count
-    const posts = get().posts.map((p) => {
-      if (p.id === postId) {
-        return { ...p, comments_count: (p.comments_count || 0) + 1 };
-      }
-      return p;
-    });
-    set({ posts });
 
     return { error: error?.message || null };
   },
@@ -558,7 +562,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   setCategory: (category) => {
-    set({ category, posts: [], hasMore: true });
+    set({ category, hasMore: true });
     get().fetchPosts();
   },
 
