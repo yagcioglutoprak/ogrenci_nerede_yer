@@ -23,14 +23,13 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { useFeedStore } from '../../stores/feedStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useEventStore } from '../../stores/eventStore';
 import { useMessageStore } from '../../stores/messageStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import PostCard from '../../components/feed/PostCard';
@@ -54,59 +53,6 @@ const CATEGORIES: { key: FeedCategory; label: string; icon: keyof typeof Ionicon
   { key: 'top', label: 'Popüler', icon: 'trending-up-outline' },
   { key: 'new', label: 'Yeni', icon: 'time-outline' },
 ];
-
-/** Animated chip with per-item scale bounce */
-function AnimatedChip({
-  cat,
-  isActive,
-  scale,
-  onLayout,
-  onPress,
-  activeColor,
-  inactiveColor,
-  inactiveTextColor,
-}: {
-  cat: (typeof CATEGORIES)[number];
-  isActive: boolean;
-  scale: SharedValue<number>;
-  onLayout: (e: LayoutChangeEvent) => void;
-  onPress: () => void;
-  activeColor: string;
-  inactiveColor: string;
-  inactiveTextColor: string;
-}) {
-  const chipAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View style={chipAnimStyle}>
-      <TouchableOpacity
-        onLayout={onLayout}
-        style={styles.categoryChip}
-        onPress={onPress}
-        activeOpacity={0.7}
-        accessibilityRole="tab"
-        accessibilityLabel={cat.label + ' kategorisi'}
-        accessibilityState={{ selected: isActive }}
-      >
-        <Ionicons
-          name={cat.icon}
-          size={14}
-          color={isActive ? activeColor : inactiveColor}
-        />
-        <Text
-          style={[
-            styles.categoryChipText,
-            isActive ? styles.categoryChipTextActive : { color: inactiveTextColor },
-          ]}
-        >
-          {cat.label}
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
 
 export default function FeedScreen() {
   const colors = useThemeColors();
@@ -135,52 +81,42 @@ export default function FeedScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [showBuddyBanner, setShowBuddyBanner] = useState(true);
 
-  // Liquid glass chip indicator animation
+  // Liquid glass chip indicator
   const chipLayouts = useRef<Record<string, { x: number; width: number }>>({});
   const indicatorX = useSharedValue(0);
   const indicatorW = useSharedValue(60);
-  const indicatorScale = useSharedValue(1);
+  const indicatorScaleY = useSharedValue(1);
   const indicatorOpacity = useSharedValue(1);
-
-  // Fluid glass spring — slightly underdamped for organic overshoot
-  const glassSpring = { damping: 18, stiffness: 220, mass: 0.9 };
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: indicatorX.value },
-      { scaleY: indicatorScale.value },
+      { scaleY: indicatorScaleY.value },
     ],
     width: indicatorW.value,
     opacity: indicatorOpacity.value,
   }));
 
-  // Per-chip press scale shared values (stable — CATEGORIES is constant)
-  /* eslint-disable react-hooks/rules-of-hooks */
-  const chipScaleValues = CATEGORIES.reduce((acc, cat) => {
-    acc[cat.key] = useSharedValue(1);
-    return acc;
-  }, {} as Record<string, SharedValue<number>>);
-  /* eslint-enable react-hooks/rules-of-hooks */
-
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // Update indicator when category changes — liquid glass transition
+  // Liquid morph when category changes
   useEffect(() => {
     const layout = chipLayouts.current[category];
     if (layout) {
-      // Squish then expand for a "liquid" morph feel
-      indicatorScale.value = withSequence(
-        withTiming(0.85, { duration: 80 }),
+      // Squish → spring back for liquid feel
+      indicatorScaleY.value = withSequence(
+        withTiming(0.82, { duration: 80 }),
         withSpring(1, { damping: 14, stiffness: 300 }),
       );
       indicatorOpacity.value = withSequence(
         withTiming(0.7, { duration: 60 }),
         withTiming(1, { duration: 200 }),
       );
-      indicatorX.value = withSpring(layout.x, glassSpring);
-      indicatorW.value = withSpring(layout.width, glassSpring);
+      // Fluid spring slide
+      indicatorX.value = withSpring(layout.x, { damping: 18, stiffness: 220, mass: 0.9 });
+      indicatorW.value = withSpring(layout.width, { damping: 18, stiffness: 220, mass: 0.9 });
     }
   }, [category]);
 
@@ -288,16 +224,8 @@ export default function FeedScreen() {
 
   const handleCategoryChange = useCallback((cat: FeedCategory) => {
     haptic.selection();
-    // Micro-bounce on the pressed chip
-    const sv = chipScaleValues[cat];
-    if (sv) {
-      sv.value = withSequence(
-        withSpring(0.88, SpringConfig.microBounce),
-        withSpring(1, { damping: 12, stiffness: 280 }),
-      );
-    }
     setCategory(cat);
-  }, []);
+  }, [setCategory]);
 
   const handleEndReached = useCallback(() => {
     if (!loadingMore && hasMore) {
@@ -459,19 +387,31 @@ export default function FeedScreen() {
             </Animated.View>
             {CATEGORIES.map((cat) => {
               const isActive = category === cat.key;
-              const chipScale = chipScaleValues[cat.key];
               return (
-                <AnimatedChip
+                <TouchableOpacity
                   key={cat.key}
-                  cat={cat}
-                  isActive={isActive}
-                  scale={chipScale}
                   onLayout={(e) => handleChipLayout(cat.key, e)}
+                  style={styles.categoryChip}
                   onPress={() => handleCategoryChange(cat.key)}
-                  activeColor="#FFFFFF"
-                  inactiveColor={colors.textTertiary}
-                  inactiveTextColor={colors.textSecondary}
-                />
+                  activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityLabel={cat.label + ' kategorisi'}
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Ionicons
+                    name={cat.icon}
+                    size={14}
+                    color={isActive ? '#FFFFFF' : colors.textTertiary}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
               );
             })}
           </View>

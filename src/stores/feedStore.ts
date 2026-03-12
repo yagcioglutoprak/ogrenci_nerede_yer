@@ -195,7 +195,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const { data, error } = await buildCategoryQuery(category)
         .range(0, PAGE_SIZE - 1);
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         const { useBlockStore } = await import('./blockStore');
         const blockedUsers = useBlockStore.getState().blockedUsers;
         const filtered = (data as Post[]).filter(
@@ -205,8 +205,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           posts: filtered,
           hasMore: data.length >= PAGE_SIZE,
         });
-      } else if (error) {
-        // Supabase hatasi - sadece dev modda mock data goster
+      } else {
+        // Supabase empty or error — fall back to mock data in dev
         if (__DEV__) {
           const { useBlockStore } = await import('./blockStore');
           const blockedUsers = useBlockStore.getState().blockedUsers;
@@ -218,7 +218,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
             hasMore: sorted.length > PAGE_SIZE,
           });
         } else {
-          set({ posts: [], hasMore: false, error: error.message });
+          set({ posts: [], hasMore: false, error: error?.message || null });
         }
       }
     } catch (err: any) {
