@@ -196,15 +196,23 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         .range(0, PAGE_SIZE - 1);
 
       if (!error && data) {
+        const { useBlockStore } = await import('./blockStore');
+        const blockedUsers = useBlockStore.getState().blockedUsers;
+        const filtered = (data as Post[]).filter(
+          (p) => !blockedUsers.includes(p.user_id)
+        );
         set({
-          posts: data as Post[],
+          posts: filtered,
           hasMore: data.length >= PAGE_SIZE,
         });
       } else if (error) {
         // Supabase hatasi - sadece dev modda mock data goster
         if (__DEV__) {
+          const { useBlockStore } = await import('./blockStore');
+          const blockedUsers = useBlockStore.getState().blockedUsers;
           const mockPosts = buildMockPostsWithJoins();
-          const sorted = applyCategoryToMockPosts(mockPosts, category);
+          const sorted = applyCategoryToMockPosts(mockPosts, category)
+            .filter((p) => !blockedUsers.includes(p.user_id));
           set({
             posts: sorted.slice(0, PAGE_SIZE) as Post[],
             hasMore: sorted.length > PAGE_SIZE,
@@ -215,8 +223,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       }
     } catch (err: any) {
       if (__DEV__) {
+        const { useBlockStore } = await import('./blockStore');
+        const blockedUsers = useBlockStore.getState().blockedUsers;
         const mockPosts = buildMockPostsWithJoins();
-        const sorted = applyCategoryToMockPosts(mockPosts, get().category);
+        const sorted = applyCategoryToMockPosts(mockPosts, get().category)
+          .filter((p) => !blockedUsers.includes(p.user_id));
         set({
           posts: sorted.slice(0, PAGE_SIZE) as Post[],
           hasMore: sorted.length > PAGE_SIZE,
