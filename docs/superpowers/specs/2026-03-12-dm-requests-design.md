@@ -306,19 +306,46 @@ Helper function `checkMutualFollow(userA, userB)`:
 
 ## Migration File
 
-Single migration: `010_message_requests.sql`
+Single migration: `011_message_requests.sql` (010 already exists)
 1. Add `status` and `initiated_by` columns to `conversations`
-2. Backfill existing rows with `status = 'accepted'`
+2. Backfill existing rows with `status = 'accepted'` (`initiated_by` left NULL for existing — intentional, they're already accepted)
 3. Create `user_blocks` table with RLS
 4. Add `dm_privacy` column to `users`
 5. Replace `get_or_create_conversation` RPC (with block/reject/mutual-follow checks)
 6. Create `is_blocked_between` RPC
 7. Add DELETE policy on `conversations` (scoped to pending/rejected only)
-8. Update existing conversation RLS policies to exclude `rejected` from SELECT
+8. Replace `conversations_select` policy to exclude `rejected`:
+   ```sql
+   DROP POLICY "conversations_select" ON conversations;
+   CREATE POLICY "conversations_select" ON conversations
+     FOR SELECT USING (
+       (auth.uid() = participant_1 OR auth.uid() = participant_2)
+       AND status != 'rejected'
+     );
+   ```
+9. Update `dm_insert` policy on `direct_messages` to prevent inserts into rejected conversations:
+   ```sql
+   DROP POLICY "dm_insert" ON direct_messages;
+   CREATE POLICY "dm_insert" ON direct_messages
+     FOR INSERT WITH CHECK (
+       auth.uid() = sender_id
+       AND EXISTS (
+         SELECT 1 FROM conversations c
+         WHERE c.id = direct_messages.conversation_id
+           AND (c.participant_1 = auth.uid() OR c.participant_2 = auth.uid())
+           AND c.status != 'rejected'
+       )
+     );
+   ```
+
+## Implementation Notes
+
+- `blockStore.blockUser` must also update any existing conversation between the two users to `status = 'rejected'` (not just `blockFromRequest` — blocks from profile pages need this too)
+- `blockStore.blockUser` must remove existing follows in both directions (`DELETE FROM follows WHERE ...`)
 
 ## New Files
 
-- `supabase/migrations/010_message_requests.sql`
+- `supabase/migrations/011_message_requests.sql`
 - `src/stores/blockStore.ts`
 - `src/app/messages/requests.tsx`
 
