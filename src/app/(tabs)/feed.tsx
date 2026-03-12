@@ -101,24 +101,22 @@ export default function FeedScreen() {
     fetchPosts();
   }, []);
 
-  // Liquid morph when category changes
-  useEffect(() => {
-    const layout = chipLayouts.current[category];
-    if (layout) {
-      // Squish → spring back for liquid feel
-      indicatorScaleY.value = withSequence(
-        withTiming(0.82, { duration: 80 }),
-        withSpring(1, { damping: 14, stiffness: 300 }),
-      );
-      indicatorOpacity.value = withSequence(
-        withTiming(0.7, { duration: 60 }),
-        withTiming(1, { duration: 200 }),
-      );
-      // Fluid spring slide
-      indicatorX.value = withSpring(layout.x, { damping: 18, stiffness: 220, mass: 0.9 });
-      indicatorW.value = withSpring(layout.width, { damping: 18, stiffness: 220, mass: 0.9 });
-    }
-  }, [category]);
+  const animateIndicatorTo = useCallback((key: string) => {
+    const layout = chipLayouts.current[key];
+    if (!layout) return;
+    // Squish → spring back for liquid feel
+    indicatorScaleY.value = withSequence(
+      withTiming(0.82, { duration: 80 }),
+      withSpring(1, { damping: 14, stiffness: 300 }),
+    );
+    indicatorOpacity.value = withSequence(
+      withTiming(0.7, { duration: 60 }),
+      withTiming(1, { duration: 200 }),
+    );
+    // Fluid spring slide
+    indicatorX.value = withSpring(layout.x, { damping: 18, stiffness: 220, mass: 0.9 });
+    indicatorW.value = withSpring(layout.width, { damping: 18, stiffness: 220, mass: 0.9 });
+  }, []);
 
   const handleChipLayout = useCallback((key: string, event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout;
@@ -224,8 +222,9 @@ export default function FeedScreen() {
 
   const handleCategoryChange = useCallback((cat: FeedCategory) => {
     haptic.selection();
+    animateIndicatorTo(cat);
     setCategory(cat);
-  }, [setCategory]);
+  }, [setCategory, animateIndicatorTo]);
 
   const handleEndReached = useCallback(() => {
     if (!loadingMore && hasMore) {
