@@ -347,46 +347,47 @@ export default function FeedScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
-          <GlassView style={styles.chipContainerGlass} fallbackColor={colors.backgroundSecondary}>
-          <View style={styles.chipContainer}>
-            <Animated.View
-              style={[
-                styles.chipIndicator,
-                { backgroundColor: Colors.primary },
-                indicatorStyle,
-              ]}
-            />
-            {CATEGORIES.map((cat) => {
-              const isActive = category === cat.key;
-              return (
-                <TouchableOpacity
-                  key={cat.key}
-                  onLayout={(e) => handleChipLayout(cat.key, e)}
-                  style={styles.categoryChip}
-                  onPress={() => handleCategoryChange(cat.key)}
-                  activeOpacity={0.7}
-                  accessibilityRole="tab"
-                  accessibilityLabel={cat.label + ' kategorisi'}
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <Ionicons
-                    name={cat.icon}
-                    size={14}
-                    color={isActive ? '#FFFFFF' : colors.textTertiary}
-                  />
-                  <Text
-                    style={[
-                      styles.categoryChipText,
-                      isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
-                    ]}
+          <View style={styles.chipContainerOuter}>
+            <GlassView style={styles.chipContainerGlass} fallbackColor={colors.backgroundSecondary} />
+            <View style={styles.chipContainer}>
+              <Animated.View
+                style={[
+                  styles.chipIndicator,
+                  { backgroundColor: Colors.primary },
+                  indicatorStyle,
+                ]}
+              />
+              {CATEGORIES.map((cat) => {
+                const isActive = category === cat.key;
+                return (
+                  <TouchableOpacity
+                    key={cat.key}
+                    onLayout={(e) => handleChipLayout(cat.key, e)}
+                    style={styles.categoryChip}
+                    onPress={() => handleCategoryChange(cat.key)}
+                    activeOpacity={0.7}
+                    accessibilityRole="tab"
+                    accessibilityLabel={cat.label + ' kategorisi'}
+                    accessibilityState={{ selected: isActive }}
                   >
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    <Ionicons
+                      name={cat.icon}
+                      size={14}
+                      color={isActive ? '#FFFFFF' : colors.textTertiary}
+                    />
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        isActive ? styles.categoryChipTextActive : { color: colors.textSecondary },
+                      ]}
+                    >
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-          </GlassView>
         </ScrollView>
       </View>
     </>
@@ -557,7 +558,11 @@ const styles = StyleSheet.create({
   categoryScroll: {
     paddingHorizontal: Spacing.xl,
   },
+  chipContainerOuter: {
+    position: 'relative',
+  },
   chipContainerGlass: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: BorderRadius.xxl,
     overflow: 'hidden',
   },
