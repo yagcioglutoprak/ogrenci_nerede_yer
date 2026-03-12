@@ -75,12 +75,12 @@ export default function SettingsScreen() {
   ];
 
   const notifConfig = [
-    { key: 'new_follower', label: 'Yeni takipçi', icon: 'person-outline' as const, bg: Colors.primarySoft },
-    { key: 'post_comment', label: 'Yorum bildirimi', icon: 'chatbubble-outline' as const, bg: Colors.accentSoft },
-    { key: 'post_like', label: 'Beğeni bildirimi', icon: 'heart-outline' as const, bg: '#FFF0F0' },
-    { key: 'answer_received', label: 'Cevap bildirimi', icon: 'arrow-undo-outline' as const, bg: '#EFF6FF' },
-    { key: 'event_reminder', label: 'Etkinlik hatırlatması', icon: 'calendar-outline' as const, bg: '#ECFEFF' },
-    { key: 'badge_earned', label: 'Rozet bildirimi', icon: 'trophy-outline' as const, bg: Colors.accentSoft },
+    { key: 'new_follower', label: 'Yeni takipçi', icon: 'person-outline' as const, bg: colors.primarySoft },
+    { key: 'post_comment', label: 'Yorum bildirimi', icon: 'chatbubble-outline' as const, bg: colors.accentSoft },
+    { key: 'post_like', label: 'Beğeni bildirimi', icon: 'heart-outline' as const, bg: colors.primarySoft },
+    { key: 'answer_received', label: 'Cevap bildirimi', icon: 'arrow-undo-outline' as const, bg: 'rgba(59,130,246,0.1)' },
+    { key: 'event_reminder', label: 'Etkinlik hatırlatması', icon: 'calendar-outline' as const, bg: 'rgba(6,182,212,0.1)' },
+    { key: 'badge_earned', label: 'Rozet bildirimi', icon: 'trophy-outline' as const, bg: colors.accentSoft },
   ];
 
   const privacyOptions = [
@@ -141,7 +141,7 @@ export default function SettingsScreen() {
                   <Text style={[
                     styles.themeChipText,
                     { color: colors.textSecondary },
-                    mode === opt.value && { color: '#FFFFFF' },
+                    mode === opt.value && { color: Colors.textOnPrimary },
                   ]}>
                     {opt.label}
                   </Text>
@@ -188,12 +188,12 @@ export default function SettingsScreen() {
                 key={key}
                 style={[
                   styles.radioRow,
-                  dmPrivacy === key && { backgroundColor: Colors.primarySoft },
+                  dmPrivacy === key && { backgroundColor: colors.primarySoft },
                 ]}
                 onPress={() => updateDmPrivacy(key)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.iconPill, { backgroundColor: dmPrivacy === key ? Colors.primarySoft : colors.backgroundSecondary }]}>
+                <View style={[styles.iconPill, { backgroundColor: dmPrivacy === key ? colors.primarySoft : colors.backgroundSecondary }]}>
                   <Ionicons
                     name={icon}
                     size={14}
@@ -214,11 +214,11 @@ export default function SettingsScreen() {
         {/* Sign Out */}
         <Animated.View entering={FadeInDown.delay(320).springify().damping(22).stiffness(340)}>
           <TouchableOpacity
-            style={[styles.groupedCard, styles.signOutCard, { backgroundColor: Colors.primarySoft }]}
+            style={[styles.groupedCard, styles.signOutCard, { backgroundColor: colors.primarySoft }]}
             onPress={handleSignOut}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconPill, { backgroundColor: '#FFDDE0' }]}>
+            <View style={[styles.iconPill, { backgroundColor: colors.primarySoft }]}>
               <Ionicons name="log-out-outline" size={14} color={Colors.primary} />
             </View>
             <Text style={styles.signOutText}>Çıkış Yap</Text>
