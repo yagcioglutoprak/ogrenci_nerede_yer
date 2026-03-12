@@ -5,12 +5,14 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useThemeColors } from '../hooks/useThemeColors';
 import ScreenHeader from '../components/ui/ScreenHeader';
+import Avatar from '../components/ui/Avatar';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -66,108 +68,162 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const themeOptions: { label: string; value: 'light' | 'dark' | 'auto' }[] = [
-    { label: 'Açık', value: 'light' },
-    { label: 'Koyu', value: 'dark' },
-    { label: 'Otomatik', value: 'auto' },
+  const themeOptions: { label: string; value: 'light' | 'dark' | 'auto'; emoji: string }[] = [
+    { label: 'Açık', value: 'light', emoji: '☀️' },
+    { label: 'Koyu', value: 'dark', emoji: '🌙' },
+    { label: 'Otomatik', value: 'auto', emoji: '📱' },
+  ];
+
+  const notifConfig = [
+    { key: 'new_follower', label: 'Yeni takipçi', icon: 'person-outline' as const, bg: Colors.primarySoft },
+    { key: 'post_comment', label: 'Yorum bildirimi', icon: 'chatbubble-outline' as const, bg: Colors.accentSoft },
+    { key: 'post_like', label: 'Beğeni bildirimi', icon: 'heart-outline' as const, bg: '#FFF0F0' },
+    { key: 'answer_received', label: 'Cevap bildirimi', icon: 'arrow-undo-outline' as const, bg: '#EFF6FF' },
+    { key: 'event_reminder', label: 'Etkinlik hatırlatması', icon: 'calendar-outline' as const, bg: '#ECFEFF' },
+    { key: 'badge_earned', label: 'Rozet bildirimi', icon: 'trophy-outline' as const, bg: Colors.accentSoft },
+  ];
+
+  const privacyOptions = [
+    { key: 'followers_only' as const, label: 'Sadece takipleştiğim kişiler', icon: 'people-outline' as const },
+    { key: 'everyone' as const, label: 'Herkes', icon: 'globe-outline' as const },
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
       <ScreenHeader
         title="Ayarlar"
         compact
         leftAction={{ icon: 'chevron-back', onPress: () => router.back() }}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity
-          style={[styles.row, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-          onPress={() => router.push('/profile/edit')}
-        >
-          <Ionicons name="person-outline" size={20} color={colors.primary} />
-          <Text style={[styles.rowLabel, { color: colors.text }]}>Profili Düzenle</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-        </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Profile Row */}
+        <Animated.View entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}>
+          <TouchableOpacity
+            style={[styles.groupedCard, styles.profileRow, { backgroundColor: colors.surface }]}
+            onPress={() => router.push('/profile/edit')}
+            activeOpacity={0.7}
+          >
+            <Avatar
+              uri={user?.avatar_url}
+              name={user?.full_name ?? user?.username ?? 'Kullanıcı'}
+              size={48}
+            />
+            <View style={styles.profileRowInfo}>
+              <Text style={[styles.profileRowName, { color: colors.text }]}>
+                {user?.full_name ?? user?.username ?? 'Kullanıcı'}
+              </Text>
+              <Text style={[styles.profileRowSub, { color: colors.textSecondary }]}>
+                Profili Düzenle
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </TouchableOpacity>
+        </Animated.View>
 
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Tema</Text>
-          <View style={styles.themeRow}>
-            {themeOptions.map((opt) => (
+        {/* Theme Section */}
+        <Animated.View entering={FadeInDown.delay(80).springify().damping(22).stiffness(340)}>
+          <View style={[styles.groupedCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>GÖRÜNÜM</Text>
+            <View style={styles.themeRow}>
+              {themeOptions.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.themeChip,
+                    { backgroundColor: colors.surface },
+                    mode === opt.value && { backgroundColor: Colors.primary },
+                  ]}
+                  onPress={() => setMode(opt.value)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.themeEmoji}>{opt.emoji}</Text>
+                  <Text style={[
+                    styles.themeChipText,
+                    { color: colors.textSecondary },
+                    mode === opt.value && { color: '#FFFFFF' },
+                  ]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Notifications Section */}
+        <Animated.View entering={FadeInDown.delay(160).springify().damping(22).stiffness(340)}>
+          <View style={[styles.groupedCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>BİLDİRİMLER</Text>
+            {notifConfig.map(({ key, label, icon, bg }, index) => (
+              <React.Fragment key={key}>
+                <View style={styles.notifRow}>
+                  <View style={[styles.iconPill, { backgroundColor: bg }]}>
+                    <Ionicons name={icon} size={14} color={Colors.primary} />
+                  </View>
+                  <Text style={[styles.notifLabel, { color: colors.text }]}>{label}</Text>
+                  <Switch
+                    value={notifPrefs[key as keyof typeof notifPrefs]}
+                    onValueChange={(v) => updateNotifPref(key, v)}
+                    trackColor={{ true: Colors.primary }}
+                  />
+                </View>
+                {index < notifConfig.length - 1 && (
+                  <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Privacy Section */}
+        <Animated.View entering={FadeInDown.delay(240).springify().damping(22).stiffness(340)}>
+          <View style={[styles.groupedCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>GİZLİLİK</Text>
+            <Text style={[styles.privacyDescription, { color: colors.textTertiary }]}>
+              Kimler sana doğrudan mesaj atabilsin?
+            </Text>
+            {privacyOptions.map(({ key, label, icon }) => (
               <TouchableOpacity
-                key={opt.value}
+                key={key}
                 style={[
-                  styles.themeChip,
-                  { backgroundColor: colors.surface },
-                  mode === opt.value && { backgroundColor: Colors.primary },
+                  styles.radioRow,
+                  dmPrivacy === key && { backgroundColor: Colors.primarySoft },
                 ]}
-                onPress={() => setMode(opt.value)}
+                onPress={() => updateDmPrivacy(key)}
+                activeOpacity={0.7}
               >
-                <Text style={[
-                  styles.themeChipText,
-                  { color: colors.textSecondary },
-                  mode === opt.value && { color: '#FFFFFF' },
-                ]}>
-                  {opt.label}
-                </Text>
+                <View style={[styles.iconPill, { backgroundColor: dmPrivacy === key ? Colors.primarySoft : colors.backgroundSecondary }]}>
+                  <Ionicons
+                    name={icon}
+                    size={14}
+                    color={dmPrivacy === key ? Colors.primary : colors.textTertiary}
+                  />
+                </View>
+                <Text style={[styles.radioLabel, { color: colors.text }]}>{label}</Text>
+                <Ionicons
+                  name={dmPrivacy === key ? 'radio-button-on' : 'radio-button-off'}
+                  size={20}
+                  color={dmPrivacy === key ? Colors.primary : colors.textTertiary}
+                />
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Bildirimler</Text>
-          {[
-            { key: 'new_follower', label: 'Yeni takipçi' },
-            { key: 'post_comment', label: 'Yorum bildirimi' },
-            { key: 'post_like', label: 'Beğeni bildirimi' },
-            { key: 'answer_received', label: 'Cevap bildirimi' },
-            { key: 'event_reminder', label: 'Etkinlik hatırlatması' },
-            { key: 'badge_earned', label: 'Rozet bildirimi' },
-          ].map(({ key, label }) => (
-            <View key={key} style={styles.notifRow}>
-              <Text style={[styles.notifLabel, { color: colors.text }]}>{label}</Text>
-              <Switch
-                value={notifPrefs[key as keyof typeof notifPrefs]}
-                onValueChange={(v) => updateNotifPref(key, v)}
-                trackColor={{ true: Colors.primary }}
-              />
+        {/* Sign Out */}
+        <Animated.View entering={FadeInDown.delay(320).springify().damping(22).stiffness(340)}>
+          <TouchableOpacity
+            style={[styles.groupedCard, styles.signOutCard, { backgroundColor: Colors.primarySoft }]}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconPill, { backgroundColor: '#FFDDE0' }]}>
+              <Ionicons name="log-out-outline" size={14} color={Colors.primary} />
             </View>
-          ))}
-        </View>
-
-        <View style={[styles.section, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Gizlilik</Text>
-          <Text style={[styles.privacyDescription, { color: colors.textTertiary }]}>
-            Kimler sana doğrudan mesaj atabilsin?
-          </Text>
-          {[
-            { key: 'followers_only' as const, label: 'Sadece takipleştiğim kişiler' },
-            { key: 'everyone' as const, label: 'Herkes' },
-          ].map(({ key, label }) => (
-            <TouchableOpacity
-              key={key}
-              style={styles.radioRow}
-              onPress={() => updateDmPrivacy(key)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={dmPrivacy === key ? 'radio-button-on' : 'radio-button-off'}
-                size={22}
-                color={dmPrivacy === key ? Colors.primary : colors.textTertiary}
-              />
-              <Text style={[styles.radioLabel, { color: colors.text }]}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={[styles.row, styles.signOutRow, { backgroundColor: colors.primarySoft }]}
-          onPress={handleSignOut}
-        >
-          <Ionicons name="log-out-outline" size={20} color={Colors.primary} />
-          <Text style={[styles.rowLabel, { color: Colors.primary }]}>Çıkış Yap</Text>
-        </TouchableOpacity>
+            <Text style={styles.signOutText}>Çıkış Yap</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -175,22 +231,54 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: Spacing.lg, gap: Spacing.md },
-  row: {
-    flexDirection: 'row', alignItems: 'center', padding: Spacing.lg,
-    borderRadius: BorderRadius.md, borderWidth: 1, gap: Spacing.md,
+  content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxxl },
+  groupedCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  rowLabel: { flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.bodySemiBold },
-  section: { padding: Spacing.lg, borderRadius: BorderRadius.md, borderWidth: 1, gap: Spacing.sm },
-  sectionTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.bodySemiBold, marginBottom: Spacing.xs },
+  profileRow: { flexDirection: 'row', alignItems: 'center' },
+  profileRowInfo: { flex: 1, marginLeft: Spacing.md },
+  profileRowName: { fontSize: FontSize.lg, fontFamily: FontFamily.headingBold },
+  profileRowSub: { fontSize: FontSize.sm, fontFamily: FontFamily.body, marginTop: 2 },
+  sectionLabel: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+    letterSpacing: 0.5,
+    marginBottom: Spacing.md,
+  },
   themeRow: { flexDirection: 'row', gap: Spacing.sm },
   themeChip: {
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.xs,
   },
+  themeEmoji: { fontSize: 18 },
   themeChipText: { fontSize: FontSize.sm, fontFamily: FontFamily.bodySemiBold },
-  notifRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.xs },
-  notifLabel: { fontSize: FontSize.md, fontFamily: FontFamily.body },
+  notifRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  notifLabel: { flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.body },
+  iconPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  divider: {
+    height: 1,
+    marginLeft: 28 + Spacing.md,
+  },
   privacyDescription: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.body,
@@ -198,14 +286,26 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   radioRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.md,
   },
   radioLabel: {
+    flex: 1,
     fontSize: FontSize.md,
     fontFamily: FontFamily.body,
   },
-  signOutRow: { borderWidth: 0 },
+  signOutCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  signOutText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.primary,
+  },
 });
