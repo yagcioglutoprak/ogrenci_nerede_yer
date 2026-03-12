@@ -439,47 +439,41 @@ export default function FeedScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
-          <View style={styles.chipContainerOuter}>
-            <GlassView style={styles.chipContainerGlass} fallbackColor={colors.backgroundSecondary} />
-            <View style={styles.chipContainer}>
-              {/* Liquid glass sliding indicator */}
-              <Animated.View
-                style={[
-                  styles.chipIndicator,
-                  indicatorStyle,
-                ]}
-              >
-                <GlassView
-                  style={StyleSheet.absoluteFill}
-                  fallbackColor={Colors.primary}
-                  interactive
+          <View style={styles.chipContainer}>
+            {/* Liquid glass sliding indicator — red base + glass sheen */}
+            <Animated.View
+              style={[
+                styles.chipIndicator,
+                { backgroundColor: Colors.primary },
+                indicatorStyle,
+              ]}
+              pointerEvents="none"
+            >
+              {/* Glass sheen on top of red */}
+              <LinearGradient
+                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.15)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.chipIndicatorShimmer}
+              />
+            </Animated.View>
+            {CATEGORIES.map((cat) => {
+              const isActive = category === cat.key;
+              const chipScale = chipScaleValues[cat.key];
+              return (
+                <AnimatedChip
+                  key={cat.key}
+                  cat={cat}
+                  isActive={isActive}
+                  scale={chipScale}
+                  onLayout={(e) => handleChipLayout(cat.key, e)}
+                  onPress={() => handleCategoryChange(cat.key)}
+                  activeColor="#FFFFFF"
+                  inactiveColor={colors.textTertiary}
+                  inactiveTextColor={colors.textSecondary}
                 />
-                {/* Specular highlight shimmer */}
-                <LinearGradient
-                  colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0)', 'rgba(255,255,255,0.1)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.chipIndicatorShimmer}
-                />
-              </Animated.View>
-              {CATEGORIES.map((cat) => {
-                const isActive = category === cat.key;
-                const chipScale = chipScaleValues[cat.key];
-                return (
-                  <AnimatedChip
-                    key={cat.key}
-                    cat={cat}
-                    isActive={isActive}
-                    scale={chipScale}
-                    onLayout={(e) => handleChipLayout(cat.key, e)}
-                    onPress={() => handleCategoryChange(cat.key)}
-                    activeColor="#FFFFFF"
-                    inactiveColor={colors.textTertiary}
-                    inactiveTextColor={colors.textSecondary}
-                  />
-                );
-              })}
-            </View>
+              );
+            })}
           </View>
         </ScrollView>
       </View>
@@ -650,14 +644,6 @@ const styles = StyleSheet.create({
   },
   categoryScroll: {
     paddingHorizontal: Spacing.xl,
-  },
-  chipContainerOuter: {
-    position: 'relative',
-  },
-  chipContainerGlass: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BorderRadius.xxl,
-    overflow: 'hidden',
   },
   chipContainer: {
     flexDirection: 'row',
