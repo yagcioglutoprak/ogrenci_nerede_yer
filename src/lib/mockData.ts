@@ -3489,6 +3489,8 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Kadikoy\'deki o yeni yere gittim, cok iyiydi!',
     last_message_at: new Date(Date.now() - 5 * 60000).toISOString(),
     last_message_sender_id: 'u-002',
+    status: 'accepted' as const,
+    initiated_by: 'u-001',
     created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
     other_user: {
       id: 'u-002',
@@ -3510,6 +3512,8 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'O vejetaryen mekani deneyecegim, tesekkurler!',
     last_message_at: new Date(Date.now() - 3 * 3600000).toISOString(),
     last_message_sender_id: 'u-001',
+    status: 'accepted' as const,
+    initiated_by: 'u-001',
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
     other_user: {
       id: 'u-003',
@@ -3531,6 +3535,8 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Pazar kahvaltisi icin saati ayarlayalim mi?',
     last_message_at: new Date(Date.now() - 1 * 86400000).toISOString(),
     last_message_sender_id: 'u-005',
+    status: 'accepted' as const,
+    initiated_by: 'u-001',
     created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
     other_user: {
       id: 'u-005',
@@ -3552,6 +3558,8 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Doner tavsiyesini begendim, sagol!',
     last_message_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     last_message_sender_id: 'u-004',
+    status: 'accepted' as const,
+    initiated_by: 'u-001',
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
     other_user: {
       id: 'u-004',
@@ -3567,6 +3575,83 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     unread_count: 0,
   },
 ];
+
+// ==========================================
+// MOCK MESSAGE REQUESTS (pending conversations for u-001)
+// ==========================================
+export const MOCK_MESSAGE_REQUESTS: Conversation[] = [
+  {
+    id: 'conv-req-001',
+    participant_1: 'u-001',
+    participant_2: 'u-006',
+    last_message_text: 'Selam! Besiktas\'taki o mekani biliyor musun?',
+    last_message_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    last_message_sender_id: 'u-006',
+    status: 'pending',
+    initiated_by: 'u-006',
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    other_user: {
+      id: 'u-006',
+      email: 'deniz.celik@gsu.edu.tr',
+      username: 'deniz_celik',
+      full_name: 'Deniz \u00C7elik',
+      avatar_url: 'https://i.pravatar.cc/150?u=deniz',
+      university: 'Galatasaray \u00DCniversitesi',
+      bio: 'Sokak lezzetleri avc\u0131s\u0131',
+      xp_points: 430,
+      created_at: '2025-10-20T16:00:00Z',
+    },
+    unread_count: 1,
+  },
+  {
+    id: 'conv-req-002',
+    participant_1: 'u-001',
+    participant_2: 'u-007',
+    last_message_text: 'Merhaba, senin paylastigin o doner mekanina gitmek istiyorum',
+    last_message_at: new Date(Date.now() - 8 * 3600000).toISOString(),
+    last_message_sender_id: 'u-007',
+    status: 'pending',
+    initiated_by: 'u-007',
+    created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
+    other_user: {
+      id: 'u-007',
+      email: 'berk.sahin@medeniyet.edu.tr',
+      username: 'berk_sahin',
+      full_name: 'Berk \u015Eahin',
+      avatar_url: 'https://i.pravatar.cc/150?u=berk',
+      university: '\u0130stanbul Medeniyet \u00DCniversitesi',
+      bio: 'Ucuz ve doyurucu mekan arayan',
+      xp_points: 320,
+      created_at: '2025-11-01T10:00:00Z',
+    },
+    unread_count: 1,
+  },
+  {
+    id: 'conv-req-003',
+    participant_1: 'u-001',
+    participant_2: 'u-008',
+    last_message_text: 'Heyy kahvalti icin bir yer onerir misin?',
+    last_message_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    last_message_sender_id: 'u-008',
+    status: 'pending',
+    initiated_by: 'u-008',
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    other_user: {
+      id: 'u-008',
+      email: 'yagmur.dogan@bau.edu.tr',
+      username: 'yagmur_dogan',
+      full_name: 'Ya\u011Fmur Do\u011Fan',
+      avatar_url: 'https://i.pravatar.cc/150?u=yagmur',
+      university: 'Bah\u00E7e\u015Fehir \u00DCniversitesi',
+      bio: 'Tatl\u0131 tutkunu, her pastaneyi denerim',
+      xp_points: 290,
+      created_at: '2025-11-15T13:00:00Z',
+    },
+    unread_count: 1,
+  },
+];
+
+export const MOCK_BLOCKED_USERS: string[] = [];
 
 // ==========================================
 // MOCK DIRECT MESSAGES
@@ -3659,5 +3744,32 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     },
     is_read: true,
     created_at: new Date(Date.now() - 2.5 * 3600000).toISOString(),
+  },
+  // conv-req-001: u-006 -> u-001 (pending request)
+  {
+    id: 'dm-req-001',
+    conversation_id: 'conv-req-001',
+    sender_id: 'u-006',
+    content: 'Selam! Besiktas\'taki o mekani biliyor musun?',
+    is_read: false,
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+  },
+  // conv-req-002: u-007 -> u-001 (pending request)
+  {
+    id: 'dm-req-002',
+    conversation_id: 'conv-req-002',
+    sender_id: 'u-007',
+    content: 'Merhaba, senin paylastigin o doner mekanina gitmek istiyorum',
+    is_read: false,
+    created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
+  },
+  // conv-req-003: u-008 -> u-001 (pending request)
+  {
+    id: 'dm-req-003',
+    conversation_id: 'conv-req-003',
+    sender_id: 'u-008',
+    content: 'Heyy kahvalti icin bir yer onerir misin?',
+    is_read: false,
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
 ];
