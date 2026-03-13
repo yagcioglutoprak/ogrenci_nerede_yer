@@ -374,31 +374,31 @@ export default function WelcomeScreen() {
         onMomentumScrollEnd={handleMomentumScrollEnd}
       />
 
-      {/* Navigation: prev arrow + dots + next arrow */}
-      <View style={styles.navRow}>
+      {/* Arrow buttons — vertically centered, left and right edges */}
+      {currentIndex > 0 && (
         <TouchableOpacity
           onPress={() => goToSlide(currentIndex - 1)}
-          style={[styles.arrowButton, currentIndex === 0 && styles.arrowHidden]}
+          style={[styles.arrowButton, styles.arrowLeft]}
           activeOpacity={0.7}
-          disabled={currentIndex === 0}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
-
-        <View style={styles.dotContainer}>
-          {SLIDES.map((_, index) => (
-            <Dot key={index} index={index} scrollX={scrollX} width={width} />
-          ))}
-        </View>
-
+      )}
+      {currentIndex < SLIDES.length - 1 && (
         <TouchableOpacity
           onPress={() => goToSlide(currentIndex + 1)}
-          style={[styles.arrowButton, currentIndex === SLIDES.length - 1 && styles.arrowHidden]}
+          style={[styles.arrowButton, styles.arrowRight]}
           activeOpacity={0.7}
-          disabled={currentIndex === SLIDES.length - 1}
         >
-          <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
+          <Ionicons name="chevron-forward" size={24} color={colors.text} />
         </TouchableOpacity>
+      )}
+
+      {/* Dot indicators */}
+      <View style={styles.dotContainer}>
+        {SLIDES.map((_, index) => (
+          <Dot key={index} index={index} scrollX={scrollX} width={width} />
+        ))}
       </View>
 
       {/* Auth buttons -- always visible */}
@@ -513,24 +513,23 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Navigation row (arrows + dots)
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.lg,
-  },
+  // Arrow buttons — absolute, vertically centered on screen edges
   arrowButton: {
-    width: 36,
-    height: 36,
+    position: 'absolute',
+    top: '45%',
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(150,150,150,0.15)',
+    zIndex: 10,
   },
-  arrowHidden: {
-    opacity: 0,
+  arrowLeft: {
+    left: Spacing.sm,
+  },
+  arrowRight: {
+    right: Spacing.sm,
   },
 
   // Dots
@@ -539,6 +538,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: Spacing.xl,
   },
   dot: {
     height: 8,
