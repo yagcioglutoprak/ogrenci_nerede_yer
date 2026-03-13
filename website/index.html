@@ -592,6 +592,526 @@
       .features-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
+    /* ===== SOCIAL FEATURES ===== */
+    .social-features {
+      padding: 110px 0;
+      background: var(--bg-light);
+      overflow: hidden;
+    }
+
+    .social-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .social-grid.reverse {
+      direction: rtl;
+    }
+
+    .social-grid.reverse > * {
+      direction: ltr;
+    }
+
+    .social-text {
+      max-width: 480px;
+    }
+
+    .social-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+
+    .social-tag.feed { background: rgba(226, 55, 68, 0.08); color: var(--primary); }
+    .social-tag.buddy { background: rgba(245, 166, 35, 0.08); color: var(--accent); }
+    .social-tag.dm { background: rgba(20, 184, 166, 0.08); color: #14B8A6; }
+    .social-tag.events { background: rgba(99, 102, 241, 0.08); color: #6366F1; }
+
+    .social-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .social-desc {
+      font-size: 16px;
+      color: var(--text-light);
+      line-height: 1.8;
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .social-highlights {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .social-highlight {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .social-highlight-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .social-highlight-icon.red { background: rgba(226, 55, 68, 0.1); }
+    .social-highlight-icon.amber { background: rgba(245, 166, 35, 0.1); }
+    .social-highlight-icon.teal { background: rgba(20, 184, 166, 0.1); }
+    .social-highlight-icon.purple { background: rgba(99, 102, 241, 0.1); }
+
+    /* Social feature visual mockups */
+    .social-visual {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 380px;
+    }
+
+    .social-mockup {
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* Feed mockup */
+    .mock-feed-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .mock-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .mock-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    .mock-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .mock-post-type {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-weight: 700;
+    }
+
+    .mock-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .mock-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+    }
+
+    .mock-action {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .mock-action.liked { color: var(--primary); }
+
+    .mock-caption {
+      padding: 0 18px 16px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .mock-caption strong { font-weight: 800; }
+
+    /* Buddy mockup */
+    .mock-buddy-card {
+      padding: 20px;
+    }
+
+    .mock-buddy-profile {
+      width: 100%;
+      height: 260px;
+      background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mock-buddy-profile::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(transparent, rgba(0,0,0,0.4));
+    }
+
+    .mock-buddy-info {
+      position: relative;
+      z-index: 1;
+    }
+
+    .mock-buddy-name {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .mock-buddy-details {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .mock-buddy-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .mock-buddy-tag {
+      font-size: 10px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-weight: 700;
+    }
+
+    .mock-buddy-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .mock-buddy-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    .mock-buddy-btn.pass { background: #f5f5f5; }
+    .mock-buddy-btn.match { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+
+    /* DM mockup */
+    .mock-chat {
+      padding: 16px;
+    }
+
+    .mock-chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 14px;
+    }
+
+    .mock-chat-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    .mock-chat-status {
+      font-size: 11px;
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .mock-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 220px;
+    }
+
+    .mock-msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .mock-msg.received {
+      background: #f3f3f3;
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .mock-msg.sent {
+      background: var(--primary);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .mock-msg-venue {
+      background: var(--white);
+      border: 1px solid #eee;
+      border-radius: 14px;
+      padding: 10px;
+      max-width: 75%;
+      align-self: flex-end;
+    }
+
+    .mock-msg-venue-inner {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mock-msg-venue-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .mock-msg-venue-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    .mock-msg-venue-rating {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .mock-msg-venue-addr {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .mock-chat-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .mock-chat-inputbox {
+      flex: 1;
+      height: 36px;
+      background: #f5f5f5;
+      border-radius: 18px;
+      padding: 0 14px;
+      border: none;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .mock-chat-send {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Event mockup */
+    .mock-event {
+      padding: 20px;
+    }
+
+    .mock-event-banner {
+      width: 100%;
+      height: 140px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .mock-event-date {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .mock-event-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+
+    .mock-event-info {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .mock-event-attendees {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .mock-event-attendee {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: white;
+      margin-left: -8px;
+    }
+
+    .mock-event-attendee:first-child { margin-left: 0; }
+
+    .mock-event-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 8px;
+      font-weight: 600;
+    }
+
+    .mock-event-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* Social section dividers */
+    .social-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 767px) {
+      .social-features { padding: 70px 0; }
+      .social-grid { grid-template-columns: 1fr; gap: 40px; }
+      .social-grid.reverse { direction: ltr; }
+      .social-title { font-size: 26px; }
+      .social-visual { min-height: auto; }
+      .social-mockup { max-width: 340px; margin: 0 auto; }
+    }
+
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .social-grid { gap: 40px; }
+      .social-title { font-size: 28px; }
+    }
+
     /* ===== SCREENSHOTS ===== */
     .screenshots {
       padding: 110px 0;
@@ -1114,6 +1634,203 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ===== SOCIAL FEATURES ===== -->
+  <section class="social-features">
+
+    <!-- 1. Social Feed -->
+    <div class="social-grid reveal">
+      <div class="social-text">
+        <div class="social-tag feed">📸 Sosyal Akış</div>
+        <h3 class="social-title">Yemek Deneyimlerini<br>Paylaş ve Keşfet</h3>
+        <p class="social-desc">4 farklı gönderi türüyle kampüs yemek kültürünü yaşa. Mekan keşifleri, buluşma duyuruları, tavsiye soruları ve anlık paylaşımlar — hepsi tek akışta.</p>
+        <div class="social-highlights">
+          <div class="social-highlight">
+            <div class="social-highlight-icon red">🍽️</div>
+            <span>Keşif gönderileriyle yeni mekanları tanıt</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon red">❓</div>
+            <span>Tavsiye sor, öğrencilerden cevap al</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon red">⏳</div>
+            <span>Anlık paylaşımlar — 24 saatte kaybolur</span>
+          </div>
+        </div>
+      </div>
+      <div class="social-visual">
+        <div class="social-mockup">
+          <div class="mock-feed-header">
+            <div class="mock-avatar" style="background: var(--primary);">E</div>
+            <div>
+              <div class="mock-name">Elif D.</div>
+              <div class="mock-meta">Kadıköy • 2 saat önce</div>
+            </div>
+            <div class="mock-post-type" style="background: rgba(226,55,68,0.08); color: var(--primary);">Keşif</div>
+          </div>
+          <div class="mock-image">🍔</div>
+          <div class="mock-actions">
+            <div class="mock-action liked">❤️ 42</div>
+            <div class="mock-action">💬 12</div>
+            <div class="mock-action">🔖</div>
+            <div class="mock-action" style="margin-left: auto;">📤</div>
+          </div>
+          <div class="mock-caption"><strong>Elif D.</strong> Bu köfteci efsane! Lezzet 5/5, fiyatlar da öğrenci dostu. Kadıköy'e gelince mutlaka uğrayın 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-divider" style="margin: 80px auto;"></div>
+
+    <!-- 2. Meal Buddy -->
+    <div class="social-grid reverse reveal">
+      <div class="social-text">
+        <div class="social-tag buddy">🤝 Yemek Buddy</div>
+        <h3 class="social-title">Yalnız Yemek Yeme,<br>Buddy'ni Bul!</h3>
+        <p class="social-desc">Tinder tarzı kaydırma mekaniğiyle yemek arkadaşını eşleştir. Aynı kampüsten, aynı zevklerden — birlikte keşfetmek daha güzel.</p>
+        <div class="social-highlights">
+          <div class="social-highlight">
+            <div class="social-highlight-icon amber">👆</div>
+            <span>Sağa kaydır — eşleş, sola kaydır — geç</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon amber">🎯</div>
+            <span>Yemek tercihleri ve müsaitlik saatine göre eşleşme</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon amber">⭐</div>
+            <span>Buddy deneyimini puanla, güvenilir profiller oluştur</span>
+          </div>
+        </div>
+      </div>
+      <div class="social-visual">
+        <div class="social-mockup">
+          <div class="mock-buddy-card">
+            <div class="mock-buddy-profile">
+              <div class="mock-buddy-info">
+                <div class="mock-buddy-name">Ahmet K., 22</div>
+                <div class="mock-buddy-details">İTÜ — Makine Mühendisliği</div>
+                <div class="mock-buddy-tags">
+                  <span class="mock-buddy-tag">🍕 Pizza</span>
+                  <span class="mock-buddy-tag">🍔 Burger</span>
+                  <span class="mock-buddy-tag">☕ Kahve</span>
+                </div>
+              </div>
+            </div>
+            <div class="mock-buddy-actions">
+              <div class="mock-buddy-btn pass">✕</div>
+              <div class="mock-buddy-btn match">🤝</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-divider" style="margin: 80px auto;"></div>
+
+    <!-- 3. Direct Messages -->
+    <div class="social-grid reveal">
+      <div class="social-text">
+        <div class="social-tag dm">💬 Mesajlaşma</div>
+        <h3 class="social-title">Mekanları Paylaş,<br>Planları Kur</h3>
+        <p class="social-desc">Zengin mesaj türleriyle sadece yazışma değil, mekan paylaşımı da yap. Doğrudan sohbetten mekan kartı gönder, haritada birlikte keşfet.</p>
+        <div class="social-highlights">
+          <div class="social-highlight">
+            <div class="social-highlight-icon teal">📍</div>
+            <span>Sohbet içinden zengin mekan kartı paylaş</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon teal">📷</div>
+            <span>Fotoğraf ve konum gönder</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon teal">✓</div>
+            <span>Gerçek zamanlı — gönderildi, iletildi, okundu</span>
+          </div>
+        </div>
+      </div>
+      <div class="social-visual">
+        <div class="social-mockup">
+          <div class="mock-chat">
+            <div class="mock-chat-header">
+              <div class="mock-avatar" style="background: #14B8A6;">S</div>
+              <div>
+                <div class="mock-chat-name">Selin A.</div>
+                <div class="mock-chat-status">● Çevrimiçi</div>
+              </div>
+            </div>
+            <div class="mock-messages">
+              <div class="mock-msg received">Bu akşam yemeğe çıkalım mı? 🍕</div>
+              <div class="mock-msg sent">Olur! Nereye gidelim?</div>
+              <div class="mock-msg received">Dün keşfettiğim bir yer var, bak 👇</div>
+              <div class="mock-msg-venue">
+                <div class="mock-msg-venue-inner">
+                  <div class="mock-msg-venue-img">🍕</div>
+                  <div>
+                    <div class="mock-msg-venue-name">Pizzeria Napoli</div>
+                    <div class="mock-msg-venue-rating">⭐ 4.6 — ₺₺</div>
+                    <div class="mock-msg-venue-addr">Beşiktaş, İstanbul</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mock-msg sent">Süper görünüyor! Saat 7'de buluşalım ✨</div>
+            </div>
+            <div class="mock-chat-input">
+              <div class="mock-chat-inputbox">Mesaj yaz...</div>
+              <div class="mock-chat-send">➤</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-divider" style="margin: 80px auto;"></div>
+
+    <!-- 4. Events -->
+    <div class="social-grid reverse reveal">
+      <div class="social-text">
+        <div class="social-tag events">🎉 Etkinlikler</div>
+        <h3 class="social-title">Buluşma Oluştur,<br>Birlikte Keşfet</h3>
+        <p class="social-desc">Yemek etkinlikleri oluştur veya mevcut buluşmalara katıl. Grup sohbeti ile planları koordine et, yeni insanlarla tanış.</p>
+        <div class="social-highlights">
+          <div class="social-highlight">
+            <div class="social-highlight-icon purple">📅</div>
+            <span>Tarih, saat ve mekan belirleyerek buluşma oluştur</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon purple">👥</div>
+            <span>Katılımcı listesi ve bekleme sırası</span>
+          </div>
+          <div class="social-highlight">
+            <div class="social-highlight-icon purple">💬</div>
+            <span>Etkinlik içi grup sohbeti</span>
+          </div>
+        </div>
+      </div>
+      <div class="social-visual">
+        <div class="social-mockup">
+          <div class="mock-event">
+            <div class="mock-event-banner">
+              🎉
+              <div class="mock-event-date">15 Mar, Cum 19:00</div>
+            </div>
+            <div class="mock-event-title">Kadıköy Street Food Turu</div>
+            <div class="mock-event-info">📍 Kadıköy Çarşı buluşma noktası<br>🍽️ 5 farklı sokak lezzeti deneyeceğiz!</div>
+            <div class="mock-event-attendees">
+              <div class="mock-event-attendee" style="background: var(--primary);">E</div>
+              <div class="mock-event-attendee" style="background: var(--accent);">M</div>
+              <div class="mock-event-attendee" style="background: #14B8A6;">Z</div>
+              <div class="mock-event-attendee" style="background: #6366F1;">A</div>
+              <div class="mock-event-count">+8 kişi katılıyor</div>
+            </div>
+            <div class="mock-event-btn">Katıl</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </section>
 
   <!-- ===== SCREENSHOTS ===== -->
