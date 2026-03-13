@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  FlatList,
   StyleSheet,
   useWindowDimensions,
   NativeSyntheticEvent,
@@ -13,10 +14,7 @@ import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  useAnimatedRef,
-  scrollTo as reanimatedScrollTo,
   interpolate,
-  useAnimatedScrollHandler,
   Extrapolation,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -294,13 +292,14 @@ export default function WelcomeScreen() {
 
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useAnimatedRef<any>();
+  const flatListRef = useRef<FlatList<Slide>>(null);
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollX.value = event.nativeEvent.contentOffset.x;
     },
-  });
+    [],
+  );
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -316,11 +315,11 @@ export default function WelcomeScreen() {
   const goToSlide = useCallback(
     (index: number) => {
       if (index < 0 || index >= SLIDES.length) return;
-      reanimatedScrollTo(flatListRef, index * width, 0, true);
+      flatListRef.current?.scrollToIndex({ index, animated: true });
       haptic.light();
       setCurrentIndex(index);
     },
-    [width],
+    [],
   );
 
   const renderIllustration = (type: SlideType) => {
@@ -360,7 +359,7 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Slides */}
-      <Animated.FlatList
+      <FlatList
         ref={flatListRef}
         data={SLIDES}
         keyExtractor={(item) => item.id}
@@ -370,7 +369,7 @@ export default function WelcomeScreen() {
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         bounces={false}
-        onScroll={scrollHandler}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         onMomentumScrollEnd={handleMomentumScrollEnd}
       />
