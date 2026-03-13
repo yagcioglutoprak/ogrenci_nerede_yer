@@ -22,15 +22,17 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { supabase } from '../../lib/supabase';
 import { haptic } from '../../lib/haptics';
 import { hasCompletedOnboarding } from '../../lib/onboarding';
+import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithEmail, loading } = useAuthStore();
+  const { signInWithEmail, signInWithApple, signInWithGoogle, loading } = useAuthStore();
   const colors = useThemeColors();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loadingProvider, setLoadingProvider] = useState<'apple' | 'google' | null>(null);
 
   const handleLogin = async () => {
     setError('');
@@ -54,6 +56,38 @@ export default function LoginScreen() {
       haptic.success();
       const onboardingDone = await hasCompletedOnboarding();
       router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+    }
+  };
+
+  const handleSocialSuccess = async () => {
+    haptic.success();
+    const onboardingDone = await hasCompletedOnboarding();
+    router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+  };
+
+  const handleAppleLogin = async () => {
+    setError('');
+    setLoadingProvider('apple');
+    const result = await signInWithApple();
+    setLoadingProvider(null);
+    if (result.error) {
+      setError(result.error);
+      haptic.error();
+    } else {
+      await handleSocialSuccess();
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoadingProvider('google');
+    const result = await signInWithGoogle();
+    setLoadingProvider(null);
+    if (result.error) {
+      setError(result.error);
+      haptic.error();
+    } else {
+      await handleSocialSuccess();
     }
   };
 
@@ -82,7 +116,6 @@ export default function LoginScreen() {
             entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}
             style={styles.brandSection}
           >
-            {/* Red circle with restaurant icon */}
             <View style={styles.logoCircle}>
               <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
             </View>
@@ -91,9 +124,36 @@ export default function LoginScreen() {
             <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Lezzetli keşiflere başla!</Text>
           </Animated.View>
 
-          {/* Form Section */}
+          {/* Social Login Buttons — PRIMARY */}
+          <SocialLoginButtons
+            onApplePress={handleAppleLogin}
+            onGooglePress={handleGoogleLogin}
+            loadingProvider={loadingProvider}
+            disabled={loading}
+            animationDelay={100}
+          />
+
+          {/* Error Message */}
+          {error ? (
+            <Animated.View
+              entering={FadeInDown.springify().damping(20).stiffness(300)}
+              style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}
+            >
+              <Ionicons name="alert-circle" size={18} color={Colors.error} />
+              <Text style={styles.errorText}>{error}</Text>
+            </Animated.View>
+          ) : null}
+
+          {/* Divider */}
+          <Animated.View entering={FadeInUp.delay(200).springify().damping(22).stiffness(340)} style={styles.divider}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </Animated.View>
+
+          {/* Email Form — SECONDARY */}
           <View style={styles.formSection}>
-            <Animated.View entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(250).springify().damping(22).stiffness(340)}>
               <Input
                 label="E-posta"
                 placeholder="ornek@universite.edu.tr"
@@ -109,7 +169,7 @@ export default function LoginScreen() {
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)}>
               <Input
                 label="Şifre"
                 placeholder="Şifrenizi girin"
@@ -126,7 +186,7 @@ export default function LoginScreen() {
             </Animated.View>
 
             {/* Forgot Password Link */}
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)}>
               <TouchableOpacity
                 style={styles.forgotPassword}
                 onPress={() => {
@@ -145,19 +205,8 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Error Message */}
-            {error ? (
-              <Animated.View
-                entering={FadeInDown.springify().damping(20).stiffness(300)}
-                style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}
-              >
-                <Ionicons name="alert-circle" size={18} color={Colors.error} />
-                <Text style={styles.errorText}>{error}</Text>
-              </Animated.View>
-            ) : null}
-
             {/* Login Button */}
-            <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInUp.delay(350).springify().damping(22).stiffness(340)}>
               <Button
                 title="Giriş Yap"
                 onPress={handleLogin}
@@ -168,15 +217,8 @@ export default function LoginScreen() {
             </Animated.View>
           </View>
 
-          {/* Divider */}
-          <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)} style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </Animated.View>
-
           {/* Register Link */}
-          <Animated.View entering={FadeInUp.delay(300).springify().damping(22).stiffness(340)} style={styles.footer}>
+          <Animated.View entering={FadeInUp.delay(400).springify().damping(22).stiffness(340)} style={styles.footer}>
             <Text style={[styles.footerText, { color: colors.textSecondary }]}>Hesabın yok mu? </Text>
             <TouchableOpacity onPress={() => router.replace('/auth/register')}>
               <Text style={styles.footerLink}>Kayıt Ol</Text>
@@ -287,8 +329,8 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.xxxl,
-    marginBottom: Spacing.xxl,
+    marginTop: Spacing.xxl,
+    marginBottom: Spacing.xl,
   },
   dividerLine: {
     flex: 1,
