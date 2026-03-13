@@ -21,6 +21,7 @@ import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { supabase } from '../../lib/supabase';
 import { haptic } from '../../lib/haptics';
+import { hasCompletedOnboarding } from '../../lib/onboarding';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -51,7 +52,8 @@ export default function LoginScreen() {
       haptic.error();
     } else {
       haptic.success();
-      router.replace('/(tabs)/map');
+      const onboardingDone = await hasCompletedOnboarding();
+      router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
     }
   };
 
