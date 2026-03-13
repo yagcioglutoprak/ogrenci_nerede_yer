@@ -29,7 +29,7 @@ import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { useIsDarkMode } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
-import type { Conversation } from '../../types';
+import type { Conversation, MessageStatus } from '../../types';
 
 const BUDDY_COLOR = '#06B6D4';
 const BUDDY_COLOR_DARK = '#0891B2';
@@ -203,6 +203,7 @@ export default function MessagesScreen() {
   const renderConversation = useCallback(({ item, index }: { item: Conversation; index: number }) => {
     const hasUnread = (item.unread_count ?? 0) > 0;
     const isMySent = item.last_message_sender_id === user?.id;
+    const lastStatus = item.last_message_status;
     const previewText = item.last_message_text
       ? isMySent
         ? `Sen: ${item.last_message_text}`
@@ -253,12 +254,26 @@ export default function MessagesScreen() {
               >
                 {item.other_user?.full_name || item.other_user?.username || 'Kullanıcı'}
               </Text>
-              <Text style={[
-                styles.conversationTime,
-                { color: hasUnread ? Colors.primary : colors.textTertiary },
-              ]}>
-                {getRelativeTime(item.last_message_at)}
-              </Text>
+              <View style={styles.timeStatusRow}>
+                {isMySent && lastStatus && (() => {
+                  switch (lastStatus) {
+                    case 'sending':
+                      return <Ionicons name="time-outline" size={12} color={colors.textTertiary} />;
+                    case 'sent':
+                      return <Ionicons name="checkmark" size={12} color={colors.textTertiary} />;
+                    case 'seen':
+                      return <Ionicons name="checkmark-done" size={12} color={Colors.accent} />;
+                    default:
+                      return null;
+                  }
+                })()}
+                <Text style={[
+                  styles.conversationTime,
+                  { color: hasUnread ? Colors.primary : colors.textTertiary },
+                ]}>
+                  {getRelativeTime(item.last_message_at)}
+                </Text>
+              </View>
             </View>
 
             <View style={styles.previewRow}>
@@ -641,6 +656,11 @@ const styles = StyleSheet.create({
   },
   conversationNameUnread: {
     fontFamily: FontFamily.headingBold,
+  },
+  timeStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   conversationTime: {
     fontSize: FontSize.xs,

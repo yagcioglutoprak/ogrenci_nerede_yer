@@ -25,7 +25,19 @@ import AttachmentSheet from '../../components/chat/AttachmentSheet';
 import VenuePickerModal from '../../components/chat/VenuePickerModal';
 import ImageBubble from '../../components/chat/ImageBubble';
 import VenueBubble from '../../components/chat/VenueBubble';
-import type { DirectMessage } from '../../types';
+import type { DirectMessage, MessageStatus } from '../../types';
+
+function MessageStatusIcon({ status, light }: { status: MessageStatus; light?: boolean }) {
+  const color = light ? 'rgba(255,255,255,0.55)' : Colors.textTertiary;
+  switch (status) {
+    case 'sending':
+      return <Ionicons name="time-outline" size={13} color={color} style={{ marginLeft: 4 }} />;
+    case 'sent':
+      return <Ionicons name="checkmark" size={13} color={color} style={{ marginLeft: 4 }} />;
+    case 'seen':
+      return <Ionicons name="checkmark-done" size={13} color={Colors.accent} style={{ marginLeft: 4 }} />;
+  }
+}
 
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr);
@@ -53,7 +65,7 @@ export default function ChatScreen() {
   const messages = useMessageStore((s) => s.messages);
   const fetchMessages = useMessageStore((s) => s.fetchMessages);
   const sendMessage = useMessageStore((s) => s.sendMessage);
-  const markAsRead = useMessageStore((s) => s.markAsRead);
+  const markAsSeen = useMessageStore((s) => s.markAsSeen);
   const subscribeToMessages = useMessageStore((s) => s.subscribeToMessages);
   const unsubscribeChannel = useMessageStore((s) => s.unsubscribeChannel);
   const conversations = useMessageStore((s) => s.conversations);
@@ -87,7 +99,7 @@ export default function ChatScreen() {
     if (!conversationId) return;
 
     fetchMessages(conversationId);
-    if (user && !isPending) markAsRead(conversationId, user.id);
+    if (user && !isPending) markAsSeen(conversationId, user.id);
 
     const channel = subscribeToMessages(conversationId);
     return () => { if (channel) unsubscribeChannel(channel); };
@@ -186,7 +198,7 @@ export default function ChatScreen() {
             imageUrl={item.metadata.image_url}
             isOwn={isOwn}
             time={time}
-            isRead={item.is_read}
+            status={item.status}
           />
         </Animated.View>
       );
@@ -205,7 +217,7 @@ export default function ChatScreen() {
             venuePriceRange={item.metadata.venue_price_range ?? 1}
             isOwn={isOwn}
             time={time}
-            isRead={item.is_read}
+            status={item.status}
           />
         </Animated.View>
       );
@@ -221,9 +233,7 @@ export default function ChatScreen() {
           <Text style={[styles.bubbleTime, { color: isOwn ? 'rgba(255,255,255,0.55)' : colors.textTertiary }]}>
             {time}
           </Text>
-          {isOwn && item.is_read && (
-            <Ionicons name="checkmark-done" size={13} color="rgba(255,255,255,0.55)" style={{ marginLeft: 4 }} />
-          )}
+          {isOwn && <MessageStatusIcon status={item.status} light />}
         </View>
       </View>
     );
@@ -417,7 +427,7 @@ export default function ChatScreen() {
               onPress={async () => {
                 haptic.success();
                 await acceptRequest(conversationId!);
-                if (user) markAsRead(conversationId!, user.id);
+                if (user) markAsSeen(conversationId!, user.id);
               }}
               activeOpacity={0.8}
             >

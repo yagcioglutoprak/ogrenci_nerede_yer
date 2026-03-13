@@ -2,17 +2,29 @@ import React from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Spacing, FontSize, FontFamily } from '../../lib/constants';
+import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import type { MessageStatus } from '../../types';
 
 interface ImageBubbleProps {
   imageUrl: string;
   isOwn: boolean;
   time: string;
-  isRead?: boolean;
+  status?: MessageStatus;
 }
 
-export default function ImageBubble({ imageUrl, isOwn, time, isRead }: ImageBubbleProps) {
+function StatusIcon({ status }: { status: MessageStatus }) {
+  switch (status) {
+    case 'sending':
+      return <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.7)" style={{ marginLeft: 3 }} />;
+    case 'sent':
+      return <Ionicons name="checkmark" size={13} color="rgba(255,255,255,0.7)" style={{ marginLeft: 3 }} />;
+    case 'seen':
+      return <Ionicons name="checkmark-done" size={13} color={Colors.accent} style={{ marginLeft: 3 }} />;
+  }
+}
+
+export default function ImageBubble({ imageUrl, isOwn, time, status }: ImageBubbleProps) {
   const colors = useThemeColors();
 
   return (
@@ -26,16 +38,13 @@ export default function ImageBubble({ imageUrl, isOwn, time, isRead }: ImageBubb
         ]}
       >
         <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
-        {/* Time overlay inside the image */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.45)']}
           style={styles.timeOverlay}
         >
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{time}</Text>
-            {isOwn && isRead && (
-              <Ionicons name="checkmark-done" size={13} color="rgba(255,255,255,0.7)" style={{ marginLeft: 3 }} />
-            )}
+            {isOwn && status && <StatusIcon status={status} />}
           </View>
         </LinearGradient>
       </TouchableOpacity>

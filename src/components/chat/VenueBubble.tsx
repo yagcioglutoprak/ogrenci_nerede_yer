@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, PriceRanges } from '../../lib/constants';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
+import type { MessageStatus } from '../../types';
 
 interface VenueBubbleProps {
   venueId: string;
@@ -14,7 +15,7 @@ interface VenueBubbleProps {
   venuePriceRange: number;
   isOwn: boolean;
   time: string;
-  isRead?: boolean;
+  status?: MessageStatus;
 }
 
 export default function VenueBubble({
@@ -25,7 +26,7 @@ export default function VenueBubble({
   venuePriceRange,
   isOwn,
   time,
-  isRead,
+  status,
 }: VenueBubbleProps) {
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
@@ -102,9 +103,16 @@ export default function VenueBubble({
         <Text style={[styles.time, { color: colors.textTertiary }]}>
           {time}
         </Text>
-        {isOwn && isRead && (
-          <Ionicons name="checkmark-done" size={13} color={colors.textTertiary} style={{ marginLeft: 3 }} />
-        )}
+        {isOwn && status && (() => {
+          switch (status) {
+            case 'sending':
+              return <Ionicons name="time-outline" size={13} color={colors.textTertiary} style={{ marginLeft: 3 }} />;
+            case 'sent':
+              return <Ionicons name="checkmark" size={13} color={colors.textTertiary} style={{ marginLeft: 3 }} />;
+            case 'seen':
+              return <Ionicons name="checkmark-done" size={13} color={Colors.accent} style={{ marginLeft: 3 }} />;
+          }
+        })()}
       </View>
     </View>
   );

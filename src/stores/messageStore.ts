@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { sendPushNotification } from '../lib/notifications';
-import type { Conversation, DirectMessage, DirectMessageType, DirectMessageMetadata, User } from '../types';
+import type { Conversation, DirectMessage, DirectMessageType, DirectMessageMetadata, MessageStatus, User } from '../types';
 
 function isMockId(id: string): boolean {
   return id.startsWith('local-') || id.startsWith('mock-') || id.startsWith('conv-') || id.startsWith('u-') || id.startsWith('dm-');
@@ -20,7 +20,7 @@ interface MessageState {
   fetchMessages: (conversationId: string) => Promise<void>;
   sendMessage: (convId: string, senderId: string, content: string, otherUserId: string, messageType?: DirectMessageType, metadata?: DirectMessageMetadata) => Promise<void>;
   searchUsers: (query: string, currentUserId: string) => Promise<Array<User & { mutual_followers: number }>>;
-  markAsRead: (convId: string, myId: string) => Promise<void>;
+  markAsSeen: (convId: string, myId: string) => Promise<void>;
   subscribeToMessages: (convId: string) => any;
   subscribeToConversations: (userId: string) => any;
   fetchUnreadCount: (userId: string) => Promise<void>;
@@ -60,6 +60,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         last_message_text: c.last_message_text,
         last_message_at: c.last_message_at,
         last_message_sender_id: c.last_message_sender_id,
+        last_message_status: c.last_message_status ?? 'sent',
         status: c.status,
         initiated_by: c.initiated_by,
         created_at: c.created_at,
@@ -74,7 +75,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             .from('direct_messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
-            .eq('is_read', false)
+            .neq('status', 'seen')
             .neq('sender_id', userId),
         ),
       );
@@ -203,7 +204,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       content: previewText,
       message_type: messageType,
       metadata,
-      is_read: false,
+      status: 'sending',
       created_at: new Date().toISOString(),
     };
 
@@ -211,7 +212,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
     const updatedConversations = get().conversations.map((c) =>
       c.id === convId
-        ? { ...c, last_message_text: previewText, last_message_at: optimisticMessage.created_at, last_message_sender_id: senderId }
+        ? { ...c, last_message_text: previewText, last_message_at: optimisticMessage.created_at, last_message_sender_id: senderId, last_message_status: 'sent' as const }
         : c,
     );
     set({ conversations: updatedConversations });
@@ -243,6 +244,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           last_message_text: previewText,
           last_message_at: new Date().toISOString(),
           last_message_sender_id: senderId,
+          last_message_status: 'sent',
         })
         .eq('id', convId);
 
@@ -262,10 +264,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     }
   },
 
-  markAsRead: async (convId, myId) => {
+  markAsSeen: async (convId, myId) => {
     set({
       messages: get().messages.map((m) =>
-        m.conversation_id === convId && m.sender_id !== myId ? { ...m, is_read: true } : m,
+        m.conversation_id === convId && m.sender_id !== myId && m.status !== 'seen'
+          ? { ...m, status: 'seen' }
+          : m,
       ),
     });
 
@@ -283,12 +287,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       await supabase
         .from('direct_messages')
-        .update({ is_read: true })
+        .update({ status: 'seen' })
         .eq('conversation_id', convId)
-        .eq('is_read', false)
+        .neq('status', 'seen')
         .neq('sender_id', myId);
     } catch {
-      // Read status is non-critical
+      // Seen status is non-critical
     }
   },
 
@@ -314,11 +318,28 @@ export const useMessageStore = create<MessageState>((set, get) => ({
               .eq('id', incoming.sender_id)
               .single();
 
-            const message: DirectMessage = { ...incoming, user: senderProfile || undefined };
+            const message: DirectMessage = { ...incoming, status: incoming.status ?? 'sent', user: senderProfile || undefined };
             const currentMessages = get().messages;
             if (!currentMessages.find((m) => m.id === message.id)) {
               set({ messages: [...currentMessages, message] });
             }
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'direct_messages',
+            filter: `conversation_id=eq.${convId}`,
+          },
+          (payload) => {
+            const updated = payload.new as any;
+            set({
+              messages: get().messages.map((m) =>
+                m.id === updated.id ? { ...m, status: updated.status as MessageStatus } : m,
+              ),
+            });
           },
         )
         .subscribe();
@@ -393,7 +414,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         .from('direct_messages')
         .select('*', { count: 'exact', head: true })
         .in('conversation_id', userConversations.map((c) => c.id))
-        .eq('is_read', false)
+        .neq('status', 'seen')
         .neq('sender_id', userId);
 
       set({ totalUnreadCount: count ?? 0 });
@@ -478,6 +499,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         last_message_text: c.last_message_text,
         last_message_at: c.last_message_at,
         last_message_sender_id: c.last_message_sender_id,
+        last_message_status: c.last_message_status ?? 'sent',
         status: c.status,
         initiated_by: c.initiated_by,
         created_at: c.created_at,

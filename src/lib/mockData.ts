@@ -3489,6 +3489,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Kadikoy\'deki o yeni yere gittim, cok iyiydi!',
     last_message_at: new Date(Date.now() - 5 * 60000).toISOString(),
     last_message_sender_id: 'u-002',
+    last_message_status: 'sent' as const,
     status: 'accepted' as const,
     initiated_by: 'u-001',
     created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
@@ -3512,6 +3513,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'O vejetaryen mekani deneyecegim, tesekkurler!',
     last_message_at: new Date(Date.now() - 3 * 3600000).toISOString(),
     last_message_sender_id: 'u-001',
+    last_message_status: 'seen' as const,
     status: 'accepted' as const,
     initiated_by: 'u-001',
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
@@ -3535,6 +3537,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Pazar kahvaltisi icin saati ayarlayalim mi?',
     last_message_at: new Date(Date.now() - 1 * 86400000).toISOString(),
     last_message_sender_id: 'u-005',
+    last_message_status: 'sent' as const,
     status: 'accepted' as const,
     initiated_by: 'u-001',
     created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -3558,6 +3561,7 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     last_message_text: 'Doner tavsiyesini begendim, sagol!',
     last_message_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     last_message_sender_id: 'u-004',
+    last_message_status: 'seen' as const,
     status: 'accepted' as const,
     initiated_by: 'u-001',
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
@@ -3663,7 +3667,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-001',
     sender_id: 'u-001',
     content: 'Selam Can! O kafeden bahsettiklerin nasil?',
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
   {
@@ -3671,7 +3675,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-001',
     sender_id: 'u-002',
     content: 'Harika, filtre kahvesi mukemmeldi',
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 90 * 60000).toISOString(),
   },
   {
@@ -3679,7 +3683,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-001',
     sender_id: 'u-002',
     content: 'Kadikoy\'deki o yeni yere gittim, cok iyiydi!',
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 5 * 60000).toISOString(),
   },
   // conv-002: u-001 <-> u-003
@@ -3688,7 +3692,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-002',
     sender_id: 'u-003',
     content: 'Besiktas\'ta yeni vejetaryen mekani acildi, denedin mi?',
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 4 * 3600000).toISOString(),
   },
   {
@@ -3696,7 +3700,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-002',
     sender_id: 'u-001',
     content: 'O vejetaryen mekani deneyecegim, tesekkurler!',
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 3 * 3600000).toISOString(),
   },
   // conv-003: u-001 <-> u-005
@@ -3705,7 +3709,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-003',
     sender_id: 'u-001',
     content: 'Bu hafta sonu kahvalti yapacak misin?',
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 26 * 3600000).toISOString(),
   },
   {
@@ -3713,7 +3717,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-003',
     sender_id: 'u-005',
     content: 'Pazar kahvaltisi icin saati ayarlayalim mi?',
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
   // Typed messages: image + venue
@@ -3726,7 +3730,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     metadata: {
       image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
     },
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 3 * 60000).toISOString(),
   },
   {
@@ -3742,7 +3746,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
       venue_rating: 4.3,
       venue_price_range: 2,
     },
-    is_read: true,
+    status: 'seen' as const,
     created_at: new Date(Date.now() - 2.5 * 3600000).toISOString(),
   },
   // conv-req-001: u-006 -> u-001 (pending request)
@@ -3751,7 +3755,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-req-001',
     sender_id: 'u-006',
     content: 'Selam! Besiktas\'taki o mekani biliyor musun?',
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
   },
   // conv-req-002: u-007 -> u-001 (pending request)
@@ -3760,7 +3764,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-req-002',
     sender_id: 'u-007',
     content: 'Merhaba, senin paylastigin o doner mekanina gitmek istiyorum',
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
   },
   // conv-req-003: u-008 -> u-001 (pending request)
@@ -3769,7 +3773,7 @@ export const MOCK_DIRECT_MESSAGES: DirectMessage[] = [
     conversation_id: 'conv-req-003',
     sender_id: 'u-008',
     content: 'Heyy kahvalti icin bir yer onerir misin?',
-    is_read: false,
+    status: 'sent' as const,
     created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
 ];

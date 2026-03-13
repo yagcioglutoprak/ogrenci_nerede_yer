@@ -313,6 +313,7 @@ export interface Conversation {
   last_message_text: string | null;
   last_message_at: string;
   last_message_sender_id: string | null;
+  last_message_status?: MessageStatus;
   status?: 'accepted' | 'pending' | 'rejected';
   initiated_by?: string;
   created_at: string;
@@ -338,6 +339,8 @@ export interface DirectMessageMetadata {
 
 export type DirectMessageType = 'text' | 'image' | 'venue';
 
+export type MessageStatus = 'sending' | 'sent' | 'seen';
+
 export interface DirectMessage {
   id: string;
   conversation_id: string;
@@ -345,7 +348,7 @@ export interface DirectMessage {
   content: string;
   message_type?: DirectMessageType;
   metadata?: DirectMessageMetadata;
-  is_read: boolean;
+  status: MessageStatus;
   created_at: string;
   // Joined
   user?: User;
