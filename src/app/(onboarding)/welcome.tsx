@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,14 @@ import {
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  FlatList as RNFlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedRef,
+  scrollTo as reanimatedScrollTo,
   interpolate,
   useAnimatedScrollHandler,
   Extrapolation,
@@ -293,7 +294,7 @@ export default function WelcomeScreen() {
 
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<RNFlatList<Slide>>(null);
+  const flatListRef = useAnimatedRef<any>();
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -315,7 +316,7 @@ export default function WelcomeScreen() {
   const goToSlide = useCallback(
     (index: number) => {
       if (index < 0 || index >= SLIDES.length) return;
-      flatListRef.current?.scrollToOffset({ offset: index * width, animated: true });
+      reanimatedScrollTo(flatListRef, index * width, 0, true);
       haptic.light();
       setCurrentIndex(index);
     },
@@ -360,7 +361,7 @@ export default function WelcomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Slides */}
       <Animated.FlatList
-        ref={flatListRef as any}
+        ref={flatListRef}
         data={SLIDES}
         keyExtractor={(item) => item.id}
         renderItem={renderSlide}
