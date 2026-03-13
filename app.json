@@ -80,7 +80,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.your-ios-client-id"
+          "iosUrlScheme": "com.googleusercontent.apps.212067618558-2nrcfludvac63nk77mpev0hehtdtrdt6"
         }
       ]
     ]
