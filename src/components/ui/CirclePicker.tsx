@@ -45,7 +45,7 @@ function AnimatedCircle({
   const selectionScale = useSharedValue(filled ? 1 : 0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value * (0.92 + 0.08 * selectionScale.value) }],
   }));
 
   // Animate selection indicator on fill change

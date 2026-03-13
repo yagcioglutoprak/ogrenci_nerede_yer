@@ -67,12 +67,21 @@ export default function RatingBar({
   useEffect(() => {
     if (!hasMounted.current) {
       hasMounted.current = true;
+      // Start from 0 on first mount for entrance animation
       fillProgress.value = 0;
+      // Small delay so the initial 0 is committed before animating
+      requestAnimationFrame(() => {
+        fillProgress.value = withSpring(percentage, {
+          damping: 22,
+          stiffness: 120,
+        });
+      });
+    } else {
+      fillProgress.value = withSpring(percentage, {
+        damping: 22,
+        stiffness: 120,
+      });
     }
-    fillProgress.value = withSpring(percentage, {
-      damping: 22,
-      stiffness: 120,
-    });
   }, [percentage, fillProgress]);
 
   const animatedFillStyle = useAnimatedStyle(() => ({

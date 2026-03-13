@@ -190,6 +190,12 @@ function PostCard({
         <TouchableOpacity
           style={[styles.moreButton, { backgroundColor: colors.backgroundSecondary }]}
           activeOpacity={0.6}
+          onPress={() => {
+            haptic.light();
+            Share.share({
+              message: `${post.caption || ''}\n\nOgrenci Nerede Yer? uygulamasinda kesfet!`.trim(),
+            }).catch(() => {});
+          }}
         >
           <Ionicons name="ellipsis-horizontal" size={16} color={colors.textTertiary} />
         </TouchableOpacity>

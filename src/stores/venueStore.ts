@@ -328,32 +328,61 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     const { error } = await supabase.from('reviews').insert(review);
 
     if (!error) {
-      // Mekan ortalamalarini guncelle
-      const { data: reviews } = await supabase
+      // Mekan ortalamalarini guncelle — use aggregate query to avoid race conditions
+      const { data: avgData } = await supabase
         .from('reviews')
-        .select('taste_rating, value_rating, friendliness_rating')
-        .eq('venue_id', review.venue_id);
+        .select('taste_rating.avg(), value_rating.avg(), friendliness_rating.avg(), venue_id.count()')
+        .eq('venue_id', review.venue_id)
+        .single();
 
-      if (reviews && reviews.length > 0) {
-        const avgTaste = reviews.reduce((sum, r) => sum + r.taste_rating, 0) / reviews.length;
-        const avgValue = reviews.reduce((sum, r) => sum + r.value_rating, 0) / reviews.length;
-        const avgFriendliness = reviews.reduce((sum, r) => sum + r.friendliness_rating, 0) / reviews.length;
+      if (avgData) {
+        const avgTaste = avgData.avg_taste_rating ?? avgData.avg ?? 0;
+        const avgValue = avgData.avg_value_rating ?? avgData.avg ?? 0;
+        const avgFriendliness = avgData.avg_friendliness_rating ?? avgData.avg ?? 0;
+        const reviewCount = avgData.count ?? 0;
         const overall = (avgTaste + avgValue + avgFriendliness) / 3;
 
         // Level hesapla
         let level = 1;
-        if (reviews.length >= 50) level = 4;
-        else if (reviews.length >= 15) level = 3;
-        else if (reviews.length >= 5) level = 2;
+        if (reviewCount >= 50) level = 4;
+        else if (reviewCount >= 15) level = 3;
+        else if (reviewCount >= 5) level = 2;
 
         await supabase.from('venues').update({
           avg_taste_rating: Math.round(avgTaste * 10) / 10,
           avg_value_rating: Math.round(avgValue * 10) / 10,
           avg_friendliness_rating: Math.round(avgFriendliness * 10) / 10,
           overall_rating: Math.round(overall * 10) / 10,
-          total_reviews: reviews.length,
+          total_reviews: reviewCount,
           level,
         }).eq('id', review.venue_id);
+      } else {
+        // Fallback: fetch all reviews and compute client-side
+        const { data: reviews } = await supabase
+          .from('reviews')
+          .select('taste_rating, value_rating, friendliness_rating')
+          .eq('venue_id', review.venue_id);
+
+        if (reviews && reviews.length > 0) {
+          const avgTaste = reviews.reduce((sum, r) => sum + r.taste_rating, 0) / reviews.length;
+          const avgValue = reviews.reduce((sum, r) => sum + r.value_rating, 0) / reviews.length;
+          const avgFriendliness = reviews.reduce((sum, r) => sum + r.friendliness_rating, 0) / reviews.length;
+          const overall = (avgTaste + avgValue + avgFriendliness) / 3;
+
+          let level = 1;
+          if (reviews.length >= 50) level = 4;
+          else if (reviews.length >= 15) level = 3;
+          else if (reviews.length >= 5) level = 2;
+
+          await supabase.from('venues').update({
+            avg_taste_rating: Math.round(avgTaste * 10) / 10,
+            avg_value_rating: Math.round(avgValue * 10) / 10,
+            avg_friendliness_rating: Math.round(avgFriendliness * 10) / 10,
+            overall_rating: Math.round(overall * 10) / 10,
+            total_reviews: reviews.length,
+            level,
+          }).eq('id', review.venue_id);
+        }
       }
 
       await get().fetchReviews(review.venue_id);

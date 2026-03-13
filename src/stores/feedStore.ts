@@ -520,18 +520,44 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         .single();
 
       if (existing) {
+        // Remove upvote and decrement atomically
         await supabase.from('answer_upvotes').delete().eq('answer_id', answerId).eq('user_id', userId);
-        const { data: answer } = await supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single();
-        if (answer) {
-          await supabase.from('recommendation_answers').update({ upvotes: Math.max(0, (answer.upvotes || 0) - 1) }).eq('id', answerId);
-        }
+        await supabase.rpc('increment_field', {
+          table_name: 'recommendation_answers',
+          row_id: answerId,
+          field_name: 'upvotes',
+          increment_by: -1,
+        }).then(({ error }) => {
+          // Fallback: if RPC doesn't exist, do a read-then-write
+          if (error) {
+            return supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single()
+              .then(({ data: answer }) => {
+                if (answer) {
+                  return supabase.from('recommendation_answers').update({ upvotes: Math.max(0, (answer.upvotes || 0) - 1) }).eq('id', answerId);
+                }
+              });
+          }
+        });
         return false;
       } else {
+        // Add upvote and increment atomically
         await supabase.from('answer_upvotes').insert({ answer_id: answerId, user_id: userId });
-        const { data: answer } = await supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single();
-        if (answer) {
-          await supabase.from('recommendation_answers').update({ upvotes: (answer.upvotes || 0) + 1 }).eq('id', answerId);
-        }
+        await supabase.rpc('increment_field', {
+          table_name: 'recommendation_answers',
+          row_id: answerId,
+          field_name: 'upvotes',
+          increment_by: 1,
+        }).then(({ error }) => {
+          // Fallback: if RPC doesn't exist, do a read-then-write
+          if (error) {
+            return supabase.from('recommendation_answers').select('upvotes').eq('id', answerId).single()
+              .then(({ data: answer }) => {
+                if (answer) {
+                  return supabase.from('recommendation_answers').update({ upvotes: (answer.upvotes || 0) + 1 }).eq('id', answerId);
+                }
+              });
+          }
+        });
         return true;
       }
     } catch {
