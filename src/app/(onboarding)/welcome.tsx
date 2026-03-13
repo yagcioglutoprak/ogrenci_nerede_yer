@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  FadeInDown,
   interpolate,
   useAnimatedScrollHandler,
   Extrapolation,
@@ -40,20 +39,20 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     id: '1',
-    title: 'Haritada Ke\u015Ffet',
-    subtitle: 'Okuluna yak\u0131n \u00F6\u011Frenci dostu mekanlar\u0131 bul',
+    title: 'Haritada Keşfet',
+    subtitle: 'Okuluna yakın öğrenci dostu mekanları bul',
     type: 'map',
   },
   {
     id: '2',
-    title: 'Payla\u015F & Puanla',
-    subtitle: 'Deneyimlerini payla\u015F, di\u011Fer \u00F6\u011Frencilere yol g\u00F6ster',
+    title: 'Paylaş & Puanla',
+    subtitle: 'Deneyimlerini paylaş, diğer öğrencilere yol göster',
     type: 'venue',
   },
   {
     id: '3',
     title: 'Birlikte Ye',
-    subtitle: 'Yemek arkada\u015F\u0131 bul, bulu\u015Fmalara kat\u0131l',
+    subtitle: 'Yemek arkadaşı bul, buluşmalara katıl',
     type: 'buddy',
   },
 ];
@@ -291,7 +290,7 @@ export default function WelcomeScreen() {
   const colors = useThemeColors();
 
   const scrollX = useSharedValue(0);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const lastIndex = React.useRef(0);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -302,12 +301,12 @@ export default function WelcomeScreen() {
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-      if (newIndex !== currentIndex) {
+      if (newIndex !== lastIndex.current) {
         haptic.light();
+        lastIndex.current = newIndex;
       }
-      setCurrentIndex(newIndex);
     },
-    [width, currentIndex],
+    [width],
   );
 
   const renderIllustration = (type: SlideType) => {
@@ -344,8 +343,6 @@ export default function WelcomeScreen() {
     </View>
   );
 
-  const isLastSlide = currentIndex === SLIDES.length - 1;
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Slides */}
@@ -370,40 +367,32 @@ export default function WelcomeScreen() {
         ))}
       </View>
 
-      {/* Auth buttons -- only on last slide */}
+      {/* Auth buttons -- always visible */}
       <View style={styles.buttonsContainer}>
-        {isLastSlide ? (
-          <Animated.View
-            entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)}
-            style={styles.buttonsInner}
-          >
-            <Button
-              title="Kay\u0131t Ol"
-              onPress={() => {
-                haptic.light();
-                router.push('/auth/register');
-              }}
-              variant="primary"
-              style={styles.registerButton}
-            />
+        <View style={styles.buttonsInner}>
+          <Button
+            title="Kayıt Ol"
+            onPress={() => {
+              haptic.light();
+              router.push('/auth/register');
+            }}
+            variant="primary"
+            style={styles.registerButton}
+          />
 
-            <TouchableOpacity
-              onPress={() => {
-                haptic.light();
-                router.push('/auth/login');
-              }}
-              style={styles.loginLink}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.loginLinkText, { color: colors.primary }]}>
-                Giri\u015F Yap
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ) : (
-          // Keep height consistent so layout doesn't jump
-          <View style={styles.buttonsPlaceholder} />
-        )}
+          <TouchableOpacity
+            onPress={() => {
+              haptic.light();
+              router.push('/auth/login');
+            }}
+            style={styles.loginLink}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.loginLinkText, { color: colors.primary }]}>
+              Giriş Yap
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -513,9 +502,6 @@ const styles = StyleSheet.create({
   buttonsInner: {
     alignItems: 'center',
     gap: Spacing.md,
-  },
-  buttonsPlaceholder: {
-    height: 90,
   },
   registerButton: {
     marginBottom: 0,
