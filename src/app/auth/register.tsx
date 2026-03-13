@@ -20,10 +20,11 @@ import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import { hasCompletedOnboarding } from '../../lib/onboarding';
+import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { signUpWithEmail, loading } = useAuthStore();
+  const { signUpWithEmail, signInWithApple, signInWithGoogle, loading } = useAuthStore();
   const colors = useThemeColors();
 
   const [username, setUsername] = useState('');
@@ -31,6 +32,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
+  const [loadingProvider, setLoadingProvider] = useState<'apple' | 'google' | null>(null);
 
   const clearError = () => {
     if (error) setError('');
@@ -81,6 +83,38 @@ export default function RegisterScreen() {
     }
   };
 
+  const handleSocialSuccess = async () => {
+    haptic.success();
+    const onboardingDone = await hasCompletedOnboarding();
+    router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+  };
+
+  const handleAppleLogin = async () => {
+    setError('');
+    setLoadingProvider('apple');
+    const result = await signInWithApple();
+    setLoadingProvider(null);
+    if (result.error) {
+      setError(result.error);
+      haptic.error();
+    } else {
+      await handleSocialSuccess();
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoadingProvider('google');
+    const result = await signInWithGoogle();
+    setLoadingProvider(null);
+    if (result.error) {
+      setError(result.error);
+      haptic.error();
+    } else {
+      await handleSocialSuccess();
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
@@ -114,9 +148,36 @@ export default function RegisterScreen() {
             <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>Yeni hesap oluştur</Text>
           </Animated.View>
 
-          {/* Form Section */}
+          {/* Social Login Buttons — PRIMARY */}
+          <SocialLoginButtons
+            onApplePress={handleAppleLogin}
+            onGooglePress={handleGoogleLogin}
+            loadingProvider={loadingProvider}
+            disabled={loading}
+            animationDelay={100}
+          />
+
+          {/* Error Message */}
+          {error ? (
+            <Animated.View
+              entering={FadeInDown.springify().damping(20).stiffness(300)}
+              style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}
+            >
+              <Ionicons name="alert-circle" size={18} color={Colors.error} />
+              <Text style={styles.errorText}>{error}</Text>
+            </Animated.View>
+          ) : null}
+
+          {/* Divider */}
+          <Animated.View entering={FadeInUp.delay(200).springify().damping(22).stiffness(340)} style={styles.divider}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </Animated.View>
+
+          {/* Email Form — SECONDARY */}
           <View style={styles.formSection}>
-            <Animated.View entering={FadeInDown.delay(100).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(250).springify().damping(22).stiffness(340)}>
               <Input
                 label="Kullanıcı Adı"
                 placeholder="ornek: yemeksever42"
@@ -131,7 +192,7 @@ export default function RegisterScreen() {
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)}>
               <Input
                 label="E-posta"
                 placeholder="ornek@universite.edu.tr"
@@ -147,7 +208,7 @@ export default function RegisterScreen() {
               />
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(300).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInDown.delay(350).springify().damping(22).stiffness(340)}>
               <Input
                 label="Şifre"
                 placeholder="En az 6 karakter"
@@ -184,19 +245,8 @@ export default function RegisterScreen() {
               />
             </Animated.View>
 
-            {/* Error */}
-            {error ? (
-              <Animated.View
-                entering={FadeInDown.springify().damping(20).stiffness(300)}
-                style={[styles.errorContainer, { backgroundColor: colors.primarySoft }]}
-              >
-                <Ionicons name="alert-circle" size={18} color={Colors.error} />
-                <Text style={styles.errorText}>{error}</Text>
-              </Animated.View>
-            ) : null}
-
             {/* Register Button */}
-            <Animated.View entering={FadeInUp.delay(500).springify().damping(22).stiffness(340)}>
+            <Animated.View entering={FadeInUp.delay(450).springify().damping(22).stiffness(340)}>
               <Button
                 title="Kayıt Ol"
                 onPress={handleRegister}
@@ -206,13 +256,6 @@ export default function RegisterScreen() {
               />
             </Animated.View>
           </View>
-
-          {/* Divider */}
-          <Animated.View entering={FadeInUp.delay(500).springify().damping(22).stiffness(340)} style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textTertiary }]}>veya</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </Animated.View>
 
           {/* Login Link */}
           <Animated.View entering={FadeInUp.delay(500).springify().damping(22).stiffness(340)} style={styles.footer}>
