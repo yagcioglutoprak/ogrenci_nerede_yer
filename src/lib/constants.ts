@@ -314,6 +314,9 @@ export const FeatureColors = {
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
 export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
 
+// Google Sign In
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+
 // Harita varsayılan değerleri (İstanbul merkez)
 export const DEFAULT_REGION = {
   latitude: 41.0082,
