@@ -21,6 +21,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { supabase } from '../../lib/supabase';
@@ -158,7 +159,19 @@ export default function MapScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const authUser = useAuthStore((s) => s.user);
+  const initialRegion = useMemo(() => {
+    if (authUser?.school_lat && authUser?.school_lng) {
+      return {
+        latitude: authUser.school_lat,
+        longitude: authUser.school_lng,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+    }
+    return DEFAULT_REGION;
+  }, [authUser?.school_lat, authUser?.school_lng]);
+  const [region, setRegion] = useState<Region>(initialRegion);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -380,7 +393,7 @@ export default function MapScreen() {
       <MapView
         ref={mapRef}
         style={styles.map}
-        initialRegion={DEFAULT_REGION}
+        initialRegion={initialRegion}
         region={region}
         onRegionChangeComplete={setRegion}
         showsUserLocation
