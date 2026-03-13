@@ -23,6 +23,7 @@ import { useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
+import { supabase } from '../../lib/supabase';
 import {
   Colors,
   DEFAULT_REGION,
@@ -150,7 +151,7 @@ export default function MapScreen() {
   const isDark = useIsDarkMode();
   const insets = useSafeAreaInsets();
 
-  const { venues, loading, error, fetchVenues, searchVenues, filters, setFilters, clearError } =
+  const { venues, loading, error, fetchVenues, filters, setFilters, clearError } =
     useVenueStore();
 
   const [userLocation, setUserLocation] = useState<{
@@ -167,6 +168,10 @@ export default function MapScreen() {
 
   // External restaurants from OpenStreetMap
   const [osmVenues, setOsmVenues] = useState<Venue[]>([]);
+
+  // Unified search results (Supabase + OSM combined)
+  const [searchResults, setSearchResults] = useState<Venue[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Filter state
   const [filterPrice, setFilterPrice] = useState<number[]>([]);
@@ -230,15 +235,64 @@ export default function MapScreen() {
       .catch(() => {}); // Silent fail — OSM venues are supplementary
   }, []);
 
-  // Debounced search effect
+  // Debounced search — queries both Supabase (app venues) and cached OSM venues
   useEffect(() => {
-    if (debouncedSearch.trim()) {
-      searchVenues(debouncedSearch);
-      setShowSearchResults(true);
-    } else {
+    if (!debouncedSearch.trim()) {
       setShowSearchResults(false);
+      setSearchResults([]);
+      return;
     }
-  }, [debouncedSearch]);
+
+    const query = debouncedSearch.trim().toLowerCase();
+
+    // 1) Instant: filter cached OSM venues client-side
+    const osmMatches = osmVenues
+      .filter(
+        (v) =>
+          v.name.toLowerCase().includes(query) ||
+          v.address.toLowerCase().includes(query),
+      )
+      .sort((a, b) => {
+        const aScore = a.name.toLowerCase().startsWith(query) ? 0 : 1;
+        const bScore = b.name.toLowerCase().startsWith(query) ? 0 : 1;
+        return aScore - bScore;
+      })
+      .slice(0, 15);
+
+    // Show OSM results immediately while Supabase loads
+    setSearchResults(osmMatches);
+    setShowSearchResults(true);
+    setSearchLoading(true);
+
+    // 2) Async: search Supabase for reviewed / user-added venues
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('venues')
+          .select('*')
+          .or(
+            `name.ilike.%${debouncedSearch.trim()}%,address.ilike.%${debouncedSearch.trim()}%`,
+          )
+          .order('overall_rating', { ascending: false })
+          .limit(10);
+
+        if (cancelled) return;
+        const appVenues = (data as Venue[]) || [];
+        const appIds = new Set(appVenues.map((v) => v.id));
+        const dedupedOsm = osmMatches.filter((v) => !appIds.has(v.id));
+        setSearchResults([...appVenues, ...dedupedOsm]);
+      } catch {
+        // Keep OSM results on Supabase failure
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, osmVenues]);
 
   const requestLocationPermission = async () => {
     try {
@@ -277,6 +331,7 @@ export default function MapScreen() {
     haptic.selection();
     setSearchQuery(venue.name);
     setShowSearchResults(false);
+    setSelectedVenue(venue);
     mapRef.current?.animateToRegion(
       {
         latitude: venue.latitude,
@@ -518,40 +573,69 @@ export default function MapScreen() {
             style={[styles.searchDropdown, { borderColor: colors.glass.border }]}
             fallbackColor={isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.92)'}
           >
-            {venues.length === 0 ? (
+            {searchResults.length === 0 && !searchLoading ? (
               <View style={styles.searchDropdownEmpty}>
                 <Text style={[styles.searchDropdownEmptyText, { color: colors.textTertiary }]}>Sonuc bulunamadi</Text>
               </View>
             ) : (
               <FlatList
-                data={venues.slice(0, MapConfig.MAX_SEARCH_RESULTS)}
+                data={searchResults.slice(0, 8)}
                 keyExtractor={(item) => item.id}
                 keyboardShouldPersistTaps="handled"
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[styles.searchDropdownItem, { borderBottomColor: colors.borderLight }]}
-                    onPress={() => handleSelectSearchResult(item)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.searchDropdownIcon, { backgroundColor: colors.primarySoft }]}>
-                      <Ionicons name="restaurant-outline" size={14} color={Colors.primary} />
+                ListHeaderComponent={
+                  searchLoading ? (
+                    <View style={styles.searchDropdownLoading}>
+                      <ActivityIndicator size="small" color={Colors.primary} />
                     </View>
-                    <View style={styles.searchDropdownInfo}>
-                      <Text style={[styles.searchDropdownName, { color: colors.text }]} numberOfLines={1}>
-                        {item.name}
-                      </Text>
-                      <Text style={[styles.searchDropdownAddr, { color: colors.textSecondary }]} numberOfLines={1}>
-                        {item.address}
-                      </Text>
-                    </View>
-                    <View style={styles.searchDropdownRating}>
-                      <Ionicons name="star" size={12} color={Colors.star} />
-                      <Text style={[styles.searchDropdownRatingText, { color: colors.text }]}>
-                        {item.overall_rating.toFixed(1)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
+                  ) : null
+                }
+                renderItem={({ item }) => {
+                  const isAppVenue = item.source !== 'google_places';
+                  return (
+                    <TouchableOpacity
+                      style={[styles.searchDropdownItem, { borderBottomColor: colors.borderLight }]}
+                      onPress={() => handleSelectSearchResult(item)}
+                      activeOpacity={0.7}
+                    >
+                      <View
+                        style={[
+                          styles.searchDropdownIcon,
+                          {
+                            backgroundColor: isAppVenue
+                              ? colors.primarySoft
+                              : isDark
+                                ? 'rgba(255,255,255,0.08)'
+                                : 'rgba(0,0,0,0.05)',
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isAppVenue ? 'restaurant-outline' : 'location-outline'}
+                          size={14}
+                          color={isAppVenue ? Colors.primary : colors.textSecondary}
+                        />
+                      </View>
+                      <View style={styles.searchDropdownInfo}>
+                        <Text style={[styles.searchDropdownName, { color: colors.text }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.searchDropdownAddr, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {item.address}
+                        </Text>
+                      </View>
+                      {isAppVenue && item.overall_rating > 0 ? (
+                        <View style={styles.searchDropdownRating}>
+                          <Ionicons name="star" size={12} color={Colors.star} />
+                          <Text style={[styles.searchDropdownRatingText, { color: colors.text }]}>
+                            {item.overall_rating.toFixed(1)}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
               />
             )}
           </GlassView>
@@ -831,6 +915,10 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.text,
+  },
+  searchDropdownLoading: {
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
   },
   searchDropdownEmpty: {
     paddingVertical: Spacing.xl,
