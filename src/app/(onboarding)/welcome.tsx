@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  FlatList as RNFlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,7 +19,8 @@ import Animated, {
   Extrapolation,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import Button from '../../components/ui/Button';
@@ -290,7 +292,8 @@ export default function WelcomeScreen() {
   const colors = useThemeColors();
 
   const scrollX = useSharedValue(0);
-  const lastIndex = React.useRef(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<RNFlatList<Slide>>(null);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -301,10 +304,20 @@ export default function WelcomeScreen() {
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-      if (newIndex !== lastIndex.current) {
+      if (newIndex !== currentIndex) {
         haptic.light();
-        lastIndex.current = newIndex;
       }
+      setCurrentIndex(newIndex);
+    },
+    [width, currentIndex],
+  );
+
+  const goToSlide = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= SLIDES.length) return;
+      flatListRef.current?.scrollToOffset({ offset: index * width, animated: true });
+      haptic.light();
+      setCurrentIndex(index);
     },
     [width],
   );
@@ -347,6 +360,7 @@ export default function WelcomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Slides */}
       <Animated.FlatList
+        ref={flatListRef as any}
         data={SLIDES}
         keyExtractor={(item) => item.id}
         renderItem={renderSlide}
@@ -360,11 +374,31 @@ export default function WelcomeScreen() {
         onMomentumScrollEnd={handleMomentumScrollEnd}
       />
 
-      {/* Dot indicators */}
-      <View style={styles.dotContainer}>
-        {SLIDES.map((_, index) => (
-          <Dot key={index} index={index} scrollX={scrollX} width={width} />
-        ))}
+      {/* Navigation: prev arrow + dots + next arrow */}
+      <View style={styles.navRow}>
+        <TouchableOpacity
+          onPress={() => goToSlide(currentIndex - 1)}
+          style={[styles.arrowButton, currentIndex === 0 && styles.arrowHidden]}
+          activeOpacity={0.7}
+          disabled={currentIndex === 0}
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <View style={styles.dotContainer}>
+          {SLIDES.map((_, index) => (
+            <Dot key={index} index={index} scrollX={scrollX} width={width} />
+          ))}
+        </View>
+
+        <TouchableOpacity
+          onPress={() => goToSlide(currentIndex + 1)}
+          style={[styles.arrowButton, currentIndex === SLIDES.length - 1 && styles.arrowHidden]}
+          activeOpacity={0.7}
+          disabled={currentIndex === SLIDES.length - 1}
+        >
+          <Ionicons name="chevron-forward" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {/* Auth buttons -- always visible */}
@@ -479,13 +513,32 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
+  // Navigation row (arrows + dots)
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.lg,
+  },
+  arrowButton: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowHidden: {
+    opacity: 0,
+  },
+
   // Dots
   dotContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: Spacing.xl,
   },
   dot: {
     height: 8,
