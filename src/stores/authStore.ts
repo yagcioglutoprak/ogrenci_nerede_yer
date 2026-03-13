@@ -5,7 +5,7 @@ import type { User } from '../types';
 import { MOCK_USERS } from '../lib/mockData';
 
 // Dev mode: auto-login with mock user when no Supabase session
-const DEV_AUTO_LOGIN = __DEV__;
+const DEV_AUTO_LOGIN = false;
 
 // Track auth listener subscription so we can clean up on re-initialization
 let authSubscription: { unsubscribe: () => void } | null = null;
