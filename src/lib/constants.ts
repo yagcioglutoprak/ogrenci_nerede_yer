@@ -391,3 +391,46 @@ export const AnimationConfig = {
   maxStaggerDelay: 250,
   fadeInDuration: 300,
 } as const;
+
+// Istanbul okulları (üniversiteler, liseler, meslek okulları)
+export const ISTANBUL_SCHOOLS = [
+  // Üniversiteler
+  { name: 'İstanbul Teknik Üniversitesi (İTÜ)', district: 'Sarıyer', lat: 41.1055, lng: 29.0250 },
+  { name: 'Boğaziçi Üniversitesi', district: 'Sarıyer', lat: 41.0843, lng: 29.0510 },
+  { name: 'İstanbul Üniversitesi', district: 'Fatih', lat: 41.0115, lng: 28.9634 },
+  { name: 'Yıldız Teknik Üniversitesi', district: 'Beşiktaş', lat: 41.0496, lng: 29.0134 },
+  { name: 'Marmara Üniversitesi', district: 'Kadıköy', lat: 40.9862, lng: 29.0606 },
+  { name: 'Yeditepe Üniversitesi', district: 'Ataşehir', lat: 40.9712, lng: 29.1520 },
+  { name: 'Bahçeşehir Üniversitesi', district: 'Beşiktaş', lat: 41.0424, lng: 29.0092 },
+  { name: 'Koç Üniversitesi', district: 'Sarıyer', lat: 41.2054, lng: 29.0728 },
+  { name: 'Sabancı Üniversitesi', district: 'Pendik', lat: 40.8904, lng: 29.3787 },
+  { name: 'Galatasaray Üniversitesi', district: 'Beşiktaş', lat: 41.0462, lng: 29.0116 },
+  { name: 'Mimar Sinan Güzel Sanatlar Üniversitesi', district: 'Beyoğlu', lat: 41.0315, lng: 28.9837 },
+  { name: 'İstanbul Medeniyet Üniversitesi', district: 'Üsküdar', lat: 41.0218, lng: 29.0539 },
+  { name: 'İstanbul Bilgi Üniversitesi', district: 'Beyoğlu', lat: 41.0526, lng: 28.9508 },
+  { name: 'Kadir Has Üniversitesi', district: 'Fatih', lat: 41.0218, lng: 28.9503 },
+  { name: 'Özyeğin Üniversitesi', district: 'Çekmeköy', lat: 41.0387, lng: 29.2469 },
+  { name: 'Medipol Üniversitesi', district: 'Beykoz', lat: 41.1092, lng: 29.0897 },
+  { name: 'İstanbul Kültür Üniversitesi', district: 'Bakırköy', lat: 40.9926, lng: 28.8598 },
+  { name: 'Maltepe Üniversitesi', district: 'Maltepe', lat: 40.9629, lng: 29.1318 },
+  { name: 'İstanbul Ticaret Üniversitesi', district: 'Üsküdar', lat: 41.0236, lng: 29.0431 },
+  { name: 'İstanbul Aydın Üniversitesi', district: 'Küçükçekmece', lat: 41.0197, lng: 28.7890 },
+  { name: 'İstanbul Gelişim Üniversitesi', district: 'Avcılar', lat: 40.9941, lng: 28.7148 },
+  { name: 'Beykent Üniversitesi', district: 'Beylikdüzü', lat: 41.0050, lng: 28.6290 },
+  { name: 'Nişantaşı Üniversitesi', district: 'Sarıyer', lat: 41.1061, lng: 29.0210 },
+  { name: 'Doğuş Üniversitesi', district: 'Kadıköy', lat: 40.9797, lng: 29.0867 },
+  { name: 'Haliç Üniversitesi', district: 'Beyoğlu', lat: 41.0381, lng: 28.9716 },
+  // Liseler
+  { name: 'Galatasaray Lisesi', district: 'Beyoğlu', lat: 41.0341, lng: 28.9749 },
+  { name: 'İstanbul Erkek Lisesi', district: 'Fatih', lat: 41.0153, lng: 28.9500 },
+  { name: 'Kabataş Erkek Lisesi', district: 'Beşiktaş', lat: 41.0420, lng: 29.0040 },
+  { name: 'Kadıköy Anadolu Lisesi', district: 'Kadıköy', lat: 40.9878, lng: 29.0268 },
+  { name: 'Haydarpaşa Lisesi', district: 'Kadıköy', lat: 40.9957, lng: 29.0191 },
+  { name: 'Vefa Lisesi', district: 'Fatih', lat: 41.0159, lng: 28.9570 },
+  { name: 'Saint-Joseph Lisesi', district: 'Beyoğlu', lat: 41.0361, lng: 28.9800 },
+  { name: 'Robert Kolej', district: 'Sarıyer', lat: 41.0850, lng: 29.0520 },
+  { name: 'Üsküdar Amerikan Lisesi', district: 'Üsküdar', lat: 41.0291, lng: 29.0267 },
+  // Meslek Okulları
+  { name: 'İstanbul Anadolu İmam Hatip Lisesi', district: 'Fatih', lat: 41.0087, lng: 28.9527 },
+  { name: 'Tuzla Meslek ve Teknik Anadolu Lisesi', district: 'Pendik', lat: 40.8674, lng: 29.3040 },
+] as const;
