@@ -5,7 +5,7 @@ import type { User } from '../types';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { GOOGLE_WEB_CLIENT_ID } from '../lib/constants';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '../lib/constants';
 import { Platform } from 'react-native';
 
 // Track auth listener subscription so we can clean up on re-initialization
@@ -13,7 +13,10 @@ let authSubscription: { unsubscribe: () => void } | null = null;
 
 let pendingAppleName: string | null = null;
 
-GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
+GoogleSignin.configure({
+  webClientId: GOOGLE_WEB_CLIENT_ID,
+  iosClientId: GOOGLE_IOS_CLIENT_ID,
+});
 
 function waitForUser(timeoutMs = 5000): Promise<void> {
   return new Promise((resolve) => {

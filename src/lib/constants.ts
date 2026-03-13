@@ -316,6 +316,7 @@ export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'y
 
 // Google Sign In
 export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+export const GOOGLE_IOS_CLIENT_ID = '212067618558-2nrcfludvac63nk77mpev0hehtdtrdt6.apps.googleusercontent.com';
 
 // Harita varsayılan değerleri (İstanbul merkez)
 export const DEFAULT_REGION = {
