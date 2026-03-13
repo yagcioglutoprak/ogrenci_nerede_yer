@@ -120,7 +120,8 @@ export default function LoginScreen() {
                 }}
                 icon="lock-closed-outline"
                 secureTextEntry
-                autoComplete="password"
+                autoComplete="off"
+                textContentType="oneTimeCode"
               />
             </Animated.View>
 

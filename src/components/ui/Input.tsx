@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     paddingVertical: 0,
     height: '100%',
+    backgroundColor: 'transparent',
   },
   inputMultiline: {
     minHeight: 86,

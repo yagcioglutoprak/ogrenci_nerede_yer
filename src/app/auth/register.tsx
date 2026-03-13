@@ -158,7 +158,8 @@ export default function RegisterScreen() {
                 }}
                 icon="lock-closed-outline"
                 secureTextEntry
-                autoComplete="new-password"
+                autoComplete="off"
+                textContentType="oneTimeCode"
               />
             </Animated.View>
 
@@ -173,7 +174,8 @@ export default function RegisterScreen() {
                 }}
                 icon="lock-closed-outline"
                 secureTextEntry
-                autoComplete="new-password"
+                autoComplete="off"
+                textContentType="oneTimeCode"
                 error={
                   passwordConfirm.length > 0 && password !== passwordConfirm
                     ? 'Şifreler eşleşmiyor'
