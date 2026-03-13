@@ -11,8 +11,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
-import { MOCK_STORIES } from '../../lib/mockData';
 import type { Story } from '../../types';
+
+// TODO: Fetch stories from Supabase
+const stories: Story[] = [];
 
 const CIRCLE_SIZE = 68;
 const BORDER_WIDTH = 2.5;
@@ -23,7 +25,7 @@ export default function StoriesBar() {
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 
   const handleStoryPress = useCallback((index: number) => {
-    const story = MOCK_STORIES[index];
+    const story = stories[index];
     setWatchedIds((prev) => new Set(prev).add(story.id));
     router.push({ pathname: '/reels', params: { index: String(index) } });
   }, [router]);
@@ -62,12 +64,12 @@ export default function StoriesBar() {
     [watchedIds, colors],
   );
 
-  if (MOCK_STORIES.length === 0) return null;
+  if (stories.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={MOCK_STORIES}
+        data={stories}
         keyExtractor={(item) => item.id}
         renderItem={renderStory}
         horizontal

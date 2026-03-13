@@ -23,7 +23,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useListStore } from '../../stores/listStore';
-import { MOCK_SOCIAL_VIDEOS, MOCK_POSTS, MOCK_USERS, MOCK_POST_IMAGES } from '../../lib/mockData';
 import { supabase } from '../../lib/supabase';
 import {
   Colors,
@@ -72,13 +71,38 @@ export default function VenueDetailScreen() {
   const [ratingFriendliness, setRatingFriendliness] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [myReview, setMyReview] = useState<Review | null>(null);
   const [venuePosts, setVenuePosts] = useState<Post[]>([]);
+
+  const isDbVenue = id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) : false;
+
+  const fetchMyReview = async (venueId: string, userId: string) => {
+    if (!isDbVenue) return; // OSM venues won't have reviews yet
+    try {
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('venue_id', venueId)
+        .eq('user_id', userId)
+        .single();
+      if (data) {
+        setMyReview(data as Review);
+        setRatingTaste(data.taste_rating);
+        setRatingValue(data.value_rating);
+        setRatingFriendliness(data.friendliness_rating);
+        setRatingComment(data.comment || '');
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (id) {
       fetchVenueById(id);
-      fetchReviews(id);
-      fetchVenuePosts(id);
+      if (isDbVenue) {
+        fetchReviews(id);
+        fetchVenuePosts(id);
+        if (user) fetchMyReview(id, user.id);
+      }
     }
   }, [id]);
 
@@ -124,27 +148,42 @@ export default function VenueDetailScreen() {
     }
 
     setSubmittingReview(true);
-    const { error } = await addReview({
-      venue_id: venue.id,
-      user_id: user.id,
-      taste_rating: ratingTaste,
-      value_rating: ratingValue,
-      friendliness_rating: ratingFriendliness,
-      comment: ratingComment.trim(),
-    });
+
+    let error: string | null = null;
+    if (myReview) {
+      // Update existing review
+      const { error: updateErr } = await supabase
+        .from('reviews')
+        .update({
+          taste_rating: ratingTaste,
+          value_rating: ratingValue,
+          friendliness_rating: ratingFriendliness,
+          comment: ratingComment.trim(),
+        })
+        .eq('id', myReview.id);
+      error = updateErr?.message || null;
+    } else {
+      // Insert new review
+      const result = await addReview({
+        venue_id: venue.id,
+        user_id: user.id,
+        taste_rating: ratingTaste,
+        value_rating: ratingValue,
+        friendliness_rating: ratingFriendliness,
+        comment: ratingComment.trim(),
+      });
+      error = result.error;
+    }
+
     setSubmittingReview(false);
 
     if (error) {
       Alert.alert('Hata', error);
     } else {
-      Alert.alert('Teşekkürler!', 'Değerlendirmeniz kaydedildi.');
       setShowRatingForm(false);
-      setRatingTaste(0);
-      setRatingValue(0);
-      setRatingFriendliness(0);
-      setRatingComment('');
       fetchVenueById(venue.id);
       fetchReviews(venue.id);
+      fetchMyReview(venue.id, user.id);
     }
   };
 
@@ -164,8 +203,8 @@ export default function VenueDetailScreen() {
         .from('posts_with_counts')
         .select(`
           *,
-          user:users(*),
-          images:post_images(*)
+          user:users!user_id(*),
+          images:post_images!post_id(*)
         `)
         .eq('venue_id', venueId)
         .order('created_at', { ascending: false })
@@ -177,16 +216,8 @@ export default function VenueDetailScreen() {
       }
     } catch {}
 
-    // Fallback: mock data
-    const mockPosts = MOCK_POSTS
-      .filter((p) => p.venue_id === venueId)
-      .map((p) => ({
-        ...p,
-        user: MOCK_USERS.find((u) => u.id === p.user_id),
-        images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id).sort((a, b) => a.order - b.order),
-      }))
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as Post[];
-    setVenuePosts(mockPosts);
+    // No data from Supabase — leave empty
+    setVenuePosts([]);
   };
 
   const getPostRelativeTime = (dateString: string): string => {
@@ -250,8 +281,8 @@ export default function VenueDetailScreen() {
 
   const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
 
-  // Social videos for this venue
-  const venueVideos = MOCK_SOCIAL_VIDEOS.filter((v) => v.venue_id === venue.id);
+  // Social videos for this venue (will be fetched from Supabase in the future)
+  const venueVideos: SocialVideo[] = [];
 
   // -- Render review item --
   const renderReviewItem = (item: Review) => {
@@ -525,22 +556,54 @@ export default function VenueDetailScreen() {
             </View>
           ))}
 
-          {/* Puan Ver button */}
-          <TouchableOpacity
-            onPress={handleToggleRatingForm}
-            activeOpacity={0.8}
-            style={{ marginTop: Spacing.md }}
-          >
-            <LinearGradient
-              colors={[Colors.primary, Colors.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.rateToggleButton}
+          {/* Puan Ver / Puanin button */}
+          {myReview ? (
+            <TouchableOpacity
+              onPress={handleToggleRatingForm}
+              activeOpacity={0.8}
+              style={{ marginTop: Spacing.md }}
             >
-              <Ionicons name="star-outline" size={20} color="#FFFFFF" />
-              <Text style={[styles.rateToggleText, { color: '#FFFFFF' }]}>Puan Ver</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <View style={[styles.myRatingCard, { backgroundColor: colors.backgroundSecondary }]}>
+                <View style={styles.myRatingHeader}>
+                  <Ionicons name="checkmark-circle" size={18} color={Colors.verified} />
+                  <Text style={[styles.myRatingTitle, { color: colors.text }]}>Senin Puanin</Text>
+                  <TouchableOpacity onPress={handleToggleRatingForm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="create-outline" size={16} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.myRatingScores}>
+                  <View style={styles.myRatingItem}>
+                    <Ionicons name="restaurant" size={14} color={Colors.primary} />
+                    <Text style={[styles.myRatingValue, { color: colors.text }]}>{myReview.taste_rating}</Text>
+                  </View>
+                  <View style={styles.myRatingItem}>
+                    <Ionicons name="pricetag" size={14} color={Colors.accent} />
+                    <Text style={[styles.myRatingValue, { color: colors.text }]}>{myReview.value_rating}</Text>
+                  </View>
+                  <View style={styles.myRatingItem}>
+                    <Ionicons name="cafe" size={14} color={Colors.verified} />
+                    <Text style={[styles.myRatingValue, { color: colors.text }]}>{myReview.friendliness_rating}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={handleToggleRatingForm}
+              activeOpacity={0.8}
+              style={{ marginTop: Spacing.md }}
+            >
+              <LinearGradient
+                colors={[Colors.primary, Colors.accent]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.rateToggleButton}
+              >
+                <Ionicons name="star-outline" size={20} color="#FFFFFF" />
+                <Text style={[styles.rateToggleText, { color: '#FFFFFF' }]}>Puan Ver</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </GlassView>
 
         {/* ============================
@@ -840,7 +903,7 @@ export default function VenueDetailScreen() {
 
                   {/* Modal Header */}
                   <View style={styles.ratingModalHeader}>
-                    <Text style={[styles.modalTitle, { color: colors.text }]}>Puan Ver</Text>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>{myReview ? 'Puanini Güncelle' : 'Puan Ver'}</Text>
                     <TouchableOpacity onPress={() => setShowRatingForm(false)} style={styles.ratingModalCloseCircle}>
                       <Ionicons name="close" size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
@@ -928,8 +991,8 @@ export default function VenueDetailScreen() {
                         <ActivityIndicator size="small" color="#FFFFFF" />
                       ) : (
                         <>
-                          <Ionicons name="send" size={16} color="#FFFFFF" />
-                          <Text style={styles.rateSubmitText}>Gönder</Text>
+                          <Ionicons name={myReview ? 'checkmark' : 'send'} size={16} color="#FFFFFF" />
+                          <Text style={styles.rateSubmitText}>{myReview ? 'Güncelle' : 'Gönder'}</Text>
                         </>
                       )}
                     </TouchableOpacity>
@@ -1544,6 +1607,36 @@ const styles = StyleSheet.create({
   communityEngagementText: {
     fontSize: FontSize.xs - 1,
     fontFamily: FontFamily.bodySemiBold,
+  },
+
+  // ---- MY RATING CARD ----
+  myRatingCard: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  myRatingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  myRatingTitle: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+  },
+  myRatingScores: {
+    flexDirection: 'row',
+    gap: Spacing.lg,
+  },
+  myRatingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  myRatingValue: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
   },
 
   // ---- PUAN VER BUTTON ----

@@ -29,79 +29,6 @@ const BUDDY_COLOR_DARK = '#0891B2';
 const AVAILABILITY_HOURS = 2;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// -- Mock Buddies for offline fallback --
-const MOCK_NEARBY_BUDDIES: MealBuddy[] = [
-  {
-    id: 'mock-b1',
-    user_id: 'u-001',
-    status: 'available',
-    latitude: 41.0095,
-    longitude: 28.9550,
-    radius_km: 3,
-    available_from: new Date().toISOString(),
-    available_until: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    note: 'Besiktas civarinda tost yiyelim',
-    created_at: new Date().toISOString(),
-    user: {
-      id: 'u-001',
-      email: 'elif@stu.edu.tr',
-      username: 'elif_yilmaz',
-      full_name: 'Elif Yilmaz',
-      avatar_url: 'https://i.pravatar.cc/150?u=elif',
-      university: 'Istanbul Universitesi',
-      bio: null,
-      xp_points: 1250,
-      created_at: '2025-09-01T10:00:00Z',
-    },
-  },
-  {
-    id: 'mock-b2',
-    user_id: 'u-002',
-    status: 'available',
-    latitude: 41.0120,
-    longitude: 28.9800,
-    radius_km: 3,
-    available_from: new Date().toISOString(),
-    available_until: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-    note: 'Kadikoy\'de lahmacun',
-    created_at: new Date().toISOString(),
-    user: {
-      id: 'u-002',
-      email: 'can@boun.edu.tr',
-      username: 'can_demir',
-      full_name: 'Can Demir',
-      avatar_url: 'https://i.pravatar.cc/150?u=can',
-      university: 'Bogazici Universitesi',
-      bio: null,
-      xp_points: 980,
-      created_at: '2025-09-01T10:00:00Z',
-    },
-  },
-  {
-    id: 'mock-b3',
-    user_id: 'u-003',
-    status: 'available',
-    latitude: 41.0050,
-    longitude: 28.9720,
-    radius_km: 3,
-    available_from: new Date().toISOString(),
-    available_until: new Date(Date.now() + 1.5 * 60 * 60 * 1000).toISOString(),
-    note: null,
-    created_at: new Date().toISOString(),
-    user: {
-      id: 'u-003',
-      email: 'zeynep@itu.edu.tr',
-      username: 'zeynep_k',
-      full_name: 'Zeynep Kaya',
-      avatar_url: 'https://i.pravatar.cc/150?u=zeynep',
-      university: 'ITU',
-      bio: null,
-      xp_points: 750,
-      created_at: '2025-09-01T10:00:00Z',
-    },
-  },
-];
-
 // -- Helper: format remaining time --
 function formatCountdown(ms: number): string {
   if (ms <= 0) return '00:00';
@@ -281,7 +208,6 @@ export default function BuddyScreen() {
   const [countdown, setCountdown] = useState<number>(0);
   const [showRating, setShowRating] = useState(false);
   const [xpAnimVisible, setXpAnimVisible] = useState(false);
-  const [useMockBuddies, setUseMockBuddies] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const xpOpacity = useSharedValue(0);
   const xpTranslateY = useSharedValue(0);
@@ -292,10 +218,8 @@ export default function BuddyScreen() {
 
   // -- Derived: effective nearby list --
   const effectiveNearbyBuddies = useMemo(() => {
-    if (nearbyBuddies.length > 0) return nearbyBuddies;
-    if (useMockBuddies) return MOCK_NEARBY_BUDDIES;
-    return [];
-  }, [nearbyBuddies, useMockBuddies]);
+    return nearbyBuddies;
+  }, [nearbyBuddies]);
 
   // -- Init: fetch user data + location --
   useEffect(() => {
@@ -319,12 +243,6 @@ export default function BuddyScreen() {
 
     const doFetch = async () => {
       await fetchNearbyBuddies(userLocation.latitude, userLocation.longitude);
-      const { nearbyBuddies: current } = useBuddyStore.getState();
-      if (current.length === 0) {
-        setUseMockBuddies(true);
-      } else {
-        setUseMockBuddies(false);
-      }
     };
 
     doFetch();
@@ -693,14 +611,6 @@ export default function BuddyScreen() {
           </View>
         )}
 
-        {/* Mock data indicator */}
-        {useMockBuddies && effectiveNearbyBuddies.length > 0 && (
-          <View style={styles.mockBadge}>
-            <Ionicons name="information-circle" size={14} color={Colors.accent} />
-            <Text style={styles.mockBadgeText}>Demo veriler gosteriliyor</Text>
-          </View>
-        )}
-
         {/* Swipe Deck */}
         {effectiveNearbyBuddies.length > 0 && (
           <SwipeDeck
@@ -955,13 +865,6 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.lg,
   },
   loadingText: { fontFamily: FontFamily.body, fontSize: FontSize.md },
-  mockBadge: {
-    alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.accentSoft, paddingHorizontal: Spacing.md, paddingVertical: 4,
-    borderRadius: BorderRadius.full, marginBottom: Spacing.xs,
-  },
-  mockBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.body, color: Colors.accent },
   noBuddyCenter: {
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md,
     paddingHorizontal: Spacing.xxxl,

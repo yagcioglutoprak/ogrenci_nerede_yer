@@ -4,7 +4,6 @@ import { uploadImage } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import { haptic } from '../lib/haptics';
 import type { Venue, Review, VenueFilters } from '../types';
-import { MOCK_VENUES, MOCK_REVIEWS, MOCK_USERS } from '../lib/mockData';
 
 const PAGE_SIZE = 30;
 
@@ -30,39 +29,6 @@ interface VenueState {
   isFavorite: (venueId: string) => boolean;
   setFilters: (filters: VenueFilters) => void;
   clearError: () => void;
-}
-
-/**
- * Apply venue filters to a list of venues (used for mock data fallback).
- */
-function applyFiltersToMockVenues(venues: Venue[], filters: VenueFilters): Venue[] {
-  let filtered = [...venues];
-
-  if (filters.minRating) {
-    filtered = filtered.filter((v) => v.overall_rating >= filters.minRating!);
-  }
-  if (filters.priceRange && filters.priceRange.length > 0) {
-    filtered = filtered.filter((v) => filters.priceRange!.includes(v.price_range));
-  }
-  if (filters.isVerified) {
-    filtered = filtered.filter((v) => v.is_verified);
-  }
-  if (filters.tags && filters.tags.length > 0) {
-    filtered = filtered.filter((v) => v.tags.some((t) => filters.tags!.includes(t)));
-  }
-  if (filters.searchQuery && filters.searchQuery.trim()) {
-    const q = filters.searchQuery.toLowerCase();
-    filtered = filtered.filter(
-      (v) =>
-        v.name.toLowerCase().includes(q) ||
-        v.address.toLowerCase().includes(q),
-    );
-  }
-
-  // Sort by rating descending (matches the Supabase query default)
-  filtered.sort((a, b) => b.overall_rating - a.overall_rating);
-
-  return filtered;
 }
 
 export const useVenueStore = create<VenueState>((set, get) => ({
@@ -116,27 +82,13 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .range(0, PAGE_SIZE - 1);
 
       if (!error && data) {
-        if (data.length > 0) {
-          set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
-        } else if (__DEV__) {
-          // Dev: show mock venues when DB is empty
-          const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
-          set({ venues: mockFiltered, hasMore: false });
-        } else {
-          set({ venues: [], hasMore: false });
-        }
+        set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
       } else if (error) {
-        if (__DEV__) {
-          const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, filters);
-          set({ venues: mockFiltered, hasMore: false });
-        } else {
-          set({ venues: [], hasMore: false, error: error.message });
-        }
+        set({ venues: [], hasMore: false, error: error.message });
       }
     } catch (err: any) {
-      const mockFiltered = applyFiltersToMockVenues(MOCK_VENUES, get().filters);
       set({
-        venues: mockFiltered,
+        venues: [],
         hasMore: false,
         error: err?.message || 'Mekanlar yuklenirken hata olustu',
       });
@@ -204,9 +156,6 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
     if (!error && data) {
       set({ selectedVenue: data as Venue });
-    } else if (__DEV__) {
-      const mockVenue = MOCK_VENUES.find((v) => v.id === id) || null;
-      set({ selectedVenue: mockVenue });
     } else {
       set({ selectedVenue: null });
     }
@@ -220,17 +169,8 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       .eq('venue_id', venueId)
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       set({ reviews: data as Review[] });
-    } else if (__DEV__) {
-      const mockReviews = MOCK_REVIEWS
-        .filter((r) => r.venue_id === venueId)
-        .map((r) => ({
-          ...r,
-          user: MOCK_USERS.find((u) => u.id === r.user_id),
-        }))
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      set({ reviews: mockReviews as Review[] });
     } else {
       set({ reviews: [] });
     }
@@ -253,35 +193,13 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .limit(20);
 
       if (!error && data) {
-        if (data.length > 0) {
-          set({ venues: data as Venue[] });
-        } else if (__DEV__) {
-          const q = query.toLowerCase();
-          const mockResults = MOCK_VENUES.filter(
-            (v) => v.name.toLowerCase().includes(q) || v.address.toLowerCase().includes(q),
-          );
-          set({ venues: mockResults });
-        } else {
-          set({ venues: [] });
-        }
-      } else if (error && __DEV__) {
-        const q = query.toLowerCase();
-        const mockResults = MOCK_VENUES.filter(
-          (v) => v.name.toLowerCase().includes(q) || v.address.toLowerCase().includes(q),
-        );
-        set({ venues: mockResults });
+        set({ venues: data as Venue[] });
       } else if (error) {
         set({ venues: [], error: error.message });
       }
     } catch (err: any) {
-      const q = query.toLowerCase();
-      const mockResults = MOCK_VENUES.filter(
-        (v) =>
-          v.name.toLowerCase().includes(q) ||
-          v.address.toLowerCase().includes(q),
-      );
       set({
-        venues: mockResults,
+        venues: [],
         error: err?.message || 'Arama sirasinda hata olustu',
       });
     }

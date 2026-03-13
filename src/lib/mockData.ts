@@ -3279,6 +3279,22 @@ export const MOCK_EVENT_ATTENDEES: EventAttendee[] = [
 export const MOCK_EVENT_MESSAGES: EventMessage[] = [
   // e-001: Kadikoy Kebap Bulusmasi
   {
+    id: 'em-sys-001',
+    event_id: 'e-001',
+    user_id: 'u-001',
+    message: 'Elif Yilmaz bulusmaya katildi',
+    message_type: 'system',
+    created_at: '2026-03-03T12:00:00Z',
+  },
+  {
+    id: 'em-sys-002',
+    event_id: 'e-001',
+    user_id: 'u-002',
+    message: 'Can Demir bulusmaya katildi',
+    message_type: 'system',
+    created_at: '2026-03-03T14:00:00Z',
+  },
+  {
     id: 'em-001',
     event_id: 'e-001',
     user_id: 'u-001',
@@ -3291,6 +3307,14 @@ export const MOCK_EVENT_MESSAGES: EventMessage[] = [
     user_id: 'u-002',
     message: 'Ben hazirim! Kadikoy vapurunu yakalarsam tam zamaninda orda olurum',
     created_at: '2026-03-04T10:15:00Z',
+  },
+  {
+    id: 'em-sys-003',
+    event_id: 'e-001',
+    user_id: 'u-005',
+    message: 'Selin Arslan bulusmaya katildi',
+    message_type: 'system',
+    created_at: '2026-03-04T08:00:00Z',
   },
   {
     id: 'em-003',
@@ -3307,6 +3331,22 @@ export const MOCK_EVENT_MESSAGES: EventMessage[] = [
     created_at: '2026-03-04T12:00:00Z',
   },
   // e-002: Ramen Deneme Gecesi
+  {
+    id: 'em-sys-004',
+    event_id: 'e-002',
+    user_id: 'u-004',
+    message: 'Ahmet Ozturk bulusmaya katildi',
+    message_type: 'system',
+    created_at: '2026-03-04T09:00:00Z',
+  },
+  {
+    id: 'em-sys-005',
+    event_id: 'e-002',
+    user_id: 'u-003',
+    message: 'Zeynep Kaya bulusmaya katildi',
+    message_type: 'system',
+    created_at: '2026-03-04T10:00:00Z',
+  },
   {
     id: 'em-005',
     event_id: 'e-002',

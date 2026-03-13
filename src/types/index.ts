@@ -189,6 +189,7 @@ export interface EventMessage {
   event_id: string;
   user_id: string;
   message: string;
+  message_type?: 'text' | 'system';
   created_at: string;
   // Joined
   user?: User;

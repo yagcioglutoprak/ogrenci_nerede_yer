@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
-function isMockId(id: string): boolean {
-  return id.startsWith('local-') || id.startsWith('mock-') || id.startsWith('u-');
-}
-
 interface BlockState {
   blockedUsers: string[];
   loading: boolean;
@@ -21,16 +17,6 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   loading: false,
 
   fetchBlockedUsers: async (userId) => {
-    if (isMockId(userId)) {
-      try {
-        const { MOCK_BLOCKED_USERS } = await import('../lib/mockData');
-        set({ blockedUsers: MOCK_BLOCKED_USERS });
-      } catch {
-        set({ blockedUsers: [] });
-      }
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('user_blocks')
@@ -47,8 +33,6 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   blockUser: async (blockerId, blockedId) => {
     // Optimistic update
     set({ blockedUsers: [...get().blockedUsers, blockedId] });
-
-    if (isMockId(blockerId)) return;
 
     try {
       // Insert block
@@ -79,8 +63,6 @@ export const useBlockStore = create<BlockState>((set, get) => ({
     // Optimistic update
     set({ blockedUsers: get().blockedUsers.filter((id) => id !== blockedId) });
 
-    if (isMockId(blockerId)) return;
-
     try {
       await supabase
         .from('user_blocks')
@@ -98,10 +80,6 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   },
 
   checkBlockedBetween: async (userA, userB) => {
-    if (isMockId(userA) || isMockId(userB)) {
-      return get().blockedUsers.includes(userB);
-    }
-
     try {
       const { data, error } = await supabase.rpc('is_blocked_between', {
         user_a: userA,

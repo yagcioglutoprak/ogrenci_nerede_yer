@@ -200,16 +200,35 @@ export default function EventRoomScreen() {
     return items;
   }, [messages]);
 
+  const renderSystemMessage = (msg: EventMessage) => (
+    <View style={styles.systemMessage}>
+      <View style={[styles.systemMessagePill, { backgroundColor: colors.backgroundSecondary }]}>
+        <Ionicons name="person-add-outline" size={12} color={MEETUP_CYAN} />
+        <Text style={[styles.systemMessageText, { color: colors.textSecondary }]}>
+          {msg.message}
+        </Text>
+      </View>
+    </View>
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: EventMessage | { type: 'separator'; date: string; id: string } }) => {
       if ('type' in item && item.type === 'separator') {
         return renderDateSeparator(item.date);
       }
+      const msg = item as EventMessage;
+      if (msg.message_type === 'system') {
+        return (
+          <Animated.View entering={FadeIn.duration(150)}>
+            {renderSystemMessage(msg)}
+          </Animated.View>
+        );
+      }
       return (
         <Animated.View entering={FadeIn.duration(150)}>
           <MessageBubble
-            message={item as EventMessage}
-            isCurrentUser={(item as EventMessage).user_id === user?.id}
+            message={msg}
+            isCurrentUser={msg.user_id === user?.id}
           />
         </Animated.View>
       );
@@ -652,6 +671,25 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   dateText: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bodySemiBold,
+  },
+
+  // System message
+  systemMessage: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  systemMessagePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+  },
+  systemMessageText: {
     fontSize: FontSize.xs,
     fontFamily: FontFamily.bodySemiBold,
   },

@@ -43,7 +43,6 @@ import { PostCardSkeleton } from '../../components/ui/Skeleton';
 import GlassView from '../../components/ui/GlassView';
 import ScreenHeader from '../../components/ui/ScreenHeader';
 import StoriesBar from '../../components/feed/StoriesBar';
-import { MOCK_RECOMMENDATION_ANSWERS } from '../../lib/mockData';
 import type { Post, FeedCategory } from '../../types';
 
 const CATEGORIES: { key: FeedCategory; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -282,7 +281,7 @@ export default function FeedScreen() {
           card = (
             <QuestionCard
               post={item}
-              topAnswers={MOCK_RECOMMENDATION_ANSWERS.filter((a) => a.post_id === item.id).slice(0, 2)}
+              topAnswers={[]}
               onAnswer={handleAnswer}
               onUserPress={handleUserPress}
               onVenuePress={handleVenuePress}

@@ -4,7 +4,6 @@ import { uploadImages } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import { sendPushNotification } from '../lib/notifications';
 import type { Post, Comment, FeedCategory, RecommendationAnswer } from '../types';
-import { MOCK_POSTS, MOCK_USERS, MOCK_VENUES, MOCK_POST_IMAGES, MOCK_COMMENTS, MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_RECOMMENDATION_ANSWERS } from '../lib/mockData';
 
 const PAGE_SIZE = 20;
 
@@ -38,54 +37,9 @@ interface FeedState {
 }
 
 /**
- * Build fully-joined mock posts (with user, venue, images data attached).
+ * Apply category-based filtering and sorting to posts client-side.
  */
-function buildMockPostsWithJoins(): Post[] {
-  return MOCK_POSTS.map((post) => {
-    const venue = post.venue_id
-      ? MOCK_VENUES.find((v) => v.id === post.venue_id)
-      : undefined;
-
-    const mockLikes = Math.floor(Math.random() * 20);
-    const mockComments = MOCK_COMMENTS.filter((c) => c.post_id === post.id).length;
-
-    // Join event data for meetup posts
-    let event = undefined;
-    if (post.post_type === 'meetup') {
-      const mockEvent = MOCK_EVENTS.find((e) => e.post_id === post.id);
-      if (mockEvent) {
-        const attendees = MOCK_EVENT_ATTENDEES
-          .filter((a) => a.event_id === mockEvent.id)
-          .map((a) => ({
-            ...a,
-            user: MOCK_USERS.find((u) => u.id === a.user_id),
-          }));
-        event = {
-          ...mockEvent,
-          creator: MOCK_USERS.find((u) => u.id === mockEvent.creator_id),
-          venue: mockEvent.venue_id ? MOCK_VENUES.find((v) => v.id === mockEvent.venue_id) : undefined,
-          attendees,
-          attendee_count: attendees.filter((a) => a.status === 'confirmed').length,
-        };
-      }
-    }
-
-    return {
-      ...post,
-      user: MOCK_USERS.find((u) => u.id === post.user_id),
-      venue: venue as Post['venue'],
-      images: MOCK_POST_IMAGES.filter((img) => img.post_id === post.id).sort((a, b) => a.order - b.order),
-      likes_count: mockLikes,
-      comments_count: mockComments,
-      event,
-    };
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-}
-
-/**
- * Apply category sorting/filtering to mock posts client-side.
- */
-function applyCategoryToMockPosts(posts: Post[], category: FeedCategory): Post[] {
+function applyCategoryFilter(posts: Post[], category: FeedCategory): Post[] {
   let filtered = [...posts];
   const now = new Date().getTime();
 
@@ -124,19 +78,6 @@ function applyCategoryToMockPosts(posts: Post[], category: FeedCategory): Post[]
 }
 
 /**
- * Build mock comments with user data joined.
- */
-function buildMockCommentsWithUser(postId: string): Comment[] {
-  return MOCK_COMMENTS
-    .filter((c) => c.post_id === postId)
-    .map((c) => ({
-      ...c,
-      user: MOCK_USERS.find((u) => u.id === c.user_id),
-    }))
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-}
-
-/**
  * Build the Supabase query with category-based ordering.
  */
 function buildCategoryQuery(category: FeedCategory) {
@@ -144,9 +85,9 @@ function buildCategoryQuery(category: FeedCategory) {
     .from('posts_with_counts')
     .select(`
       *,
-      user:users(*),
-      venue:venues(id, name, cover_image_url),
-      images:post_images(*)
+      user:users!user_id(*),
+      venue:venues!venue_id(id, name, cover_image_url),
+      images:post_images!post_id(*)
     `);
 
   const now = new Date().toISOString();
@@ -201,53 +142,55 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (!error && data && data.length > 0) {
         const { useBlockStore } = await import('./blockStore');
         const blockedUsers = useBlockStore.getState().blockedUsers;
-        const all = (data as Post[]).filter(
+        let all = (data as Post[]).filter(
           (p) => !blockedUsers.includes(p.user_id)
         );
-        const filtered = applyCategoryToMockPosts(all, category);
+
+        // Enrich meetup posts with event data from Supabase
+        const meetupPostIds = all.filter((p) => p.post_type === 'meetup').map((p) => p.id);
+        if (meetupPostIds.length > 0) {
+          const { data: eventsData } = await supabase
+            .from('events')
+            .select(`
+              *,
+              creator:users!creator_id(*),
+              venue:venues(*),
+              attendees:event_attendees(*, user:users(*))
+            `)
+            .in('post_id', meetupPostIds);
+
+          if (eventsData && eventsData.length > 0) {
+            const eventsByPostId = new Map(
+              eventsData.map((e: any) => [e.post_id, {
+                ...e,
+                attendee_count: (e.attendees as any[])?.filter((a: any) => a.status === 'confirmed').length ?? 0,
+              }])
+            );
+            all = all.map((p) => {
+              if (p.post_type === 'meetup' && eventsByPostId.has(p.id)) {
+                return { ...p, event: eventsByPostId.get(p.id) };
+              }
+              return p;
+            });
+          }
+        }
+
+        const filtered = applyCategoryFilter(all, category);
         set({
           allPosts: all,
           posts: filtered.slice(0, PAGE_SIZE),
           hasMore: filtered.length > PAGE_SIZE,
         });
       } else {
-        // Supabase empty or error — fall back to mock data in dev
-        if (__DEV__) {
-          const { useBlockStore } = await import('./blockStore');
-          const blockedUsers = useBlockStore.getState().blockedUsers;
-          const all = buildMockPostsWithJoins()
-            .filter((p) => !blockedUsers.includes(p.user_id));
-          const filtered = applyCategoryToMockPosts(all, category);
-          set({
-            allPosts: all as Post[],
-            posts: filtered.slice(0, PAGE_SIZE) as Post[],
-            hasMore: filtered.length > PAGE_SIZE,
-          });
-        } else {
-          set({ allPosts: [], posts: [], hasMore: false, error: error?.message || null });
-        }
+        set({ allPosts: [], posts: [], hasMore: false, error: error?.message || null });
       }
     } catch (err: any) {
-      if (__DEV__) {
-        const { useBlockStore } = await import('./blockStore');
-        const blockedUsers = useBlockStore.getState().blockedUsers;
-        const all = buildMockPostsWithJoins()
-          .filter((p) => !blockedUsers.includes(p.user_id));
-        const filtered = applyCategoryToMockPosts(all, get().category);
-        set({
-          allPosts: all as Post[],
-          posts: filtered.slice(0, PAGE_SIZE) as Post[],
-          hasMore: filtered.length > PAGE_SIZE,
-          error: err?.message || 'Gonderiler yuklenirken hata olustu',
-        });
-      } else {
-        set({
-          allPosts: [],
-          posts: [],
-          hasMore: false,
-          error: err?.message || 'Gonderiler yuklenirken hata olustu',
-        });
-      }
+      set({
+        allPosts: [],
+        posts: [],
+        hasMore: false,
+        error: err?.message || 'Gonderiler yuklenirken hata olustu',
+      });
     }
 
     set({ loading: false });
@@ -285,24 +228,15 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       .from('posts_with_counts')
       .select(`
         *,
-        user:users(*),
-        venue:venues(id, name, cover_image_url),
-        images:post_images(*)
+        user:users!user_id(*),
+        venue:venues!venue_id(id, name, cover_image_url),
+        images:post_images!post_id(*)
       `)
       .eq('id', id)
       .single();
 
     if (!error && data) {
       set({ selectedPost: data as Post });
-    } else if (error) {
-      // Supabase hatasi - sadece dev modda mock data goster
-      if (__DEV__) {
-        const allMock = buildMockPostsWithJoins();
-        const mockPost = allMock.find((p) => p.id === id) || null;
-        set({ selectedPost: mockPost });
-      } else {
-        set({ selectedPost: null });
-      }
     } else {
       set({ selectedPost: null });
     }
@@ -317,14 +251,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     if (!error && data) {
       set({ comments: data as Comment[] });
-    } else if (error) {
-      // Supabase hatasi - sadece dev modda mock data goster
-      if (__DEV__) {
-        const mockComments = buildMockCommentsWithUser(postId);
-        set({ comments: mockComments as Comment[] });
-      } else {
-        set({ comments: [] });
-      }
     } else {
       set({ comments: [] });
     }
@@ -397,7 +323,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
     // If Supabase fails entirely, we still update local state below
 
-    // Lokal state guncelle (works for both Supabase and mock data)
+    // Lokal state guncelle
     const posts = get().posts.map((p) => {
       if (p.id === postId) {
         const isLiked = !p.is_liked;
@@ -414,13 +340,14 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   addComment: async (postId, userId, text) => {
     // Optimistically append the comment locally for instant UI feedback
+    const currentUser = (await import('./authStore')).useAuthStore.getState().user;
     const optimisticComment: Comment = {
       id: `c-local-${Date.now()}`,
       post_id: postId,
       user_id: userId,
       text,
       created_at: new Date().toISOString(),
-      user: MOCK_USERS.find((u) => u.id === userId),
+      user: currentUser ?? undefined,
     };
     const previousComments = get().comments;
     set({ comments: [...previousComments, optimisticComment] });
@@ -456,7 +383,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       }
     } else {
       // Supabase insert failed — optimistic comment stays as local-only fallback
-      // (no rollback needed since mock mode keeps local state)
     }
 
     return { error: error?.message || null };
@@ -470,16 +396,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         .eq('post_id', postId)
         .order('upvotes', { ascending: false });
 
-      if (error || !data?.length) {
-        const mockAnswers = MOCK_RECOMMENDATION_ANSWERS
-          .filter((a: any) => a.post_id === postId)
-          .map((a: any) => ({
-            ...a,
-            user: MOCK_USERS.find((u: any) => u.id === a.user_id),
-            venue: a.venue_id ? MOCK_VENUES.find((v: any) => v.id === a.venue_id) : undefined,
-          }))
-          .sort((a: any, b: any) => (b.upvotes ?? 0) - (a.upvotes ?? 0));
-        return mockAnswers;
+      if (error || !data) {
+        return [];
       }
       return data;
     } catch {
@@ -608,7 +526,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   setCategory: (category) => {
     const { allPosts } = get();
-    const filtered = applyCategoryToMockPosts(allPosts, category);
+    const filtered = applyCategoryFilter(allPosts, category);
     set({
       category,
       posts: filtered.slice(0, PAGE_SIZE) as Post[],

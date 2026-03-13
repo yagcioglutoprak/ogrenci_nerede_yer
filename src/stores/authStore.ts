@@ -2,10 +2,6 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import type { User } from '../types';
-import { MOCK_USERS } from '../lib/mockData';
-
-// Dev mode: auto-login with mock user when no Supabase session
-const DEV_AUTO_LOGIN = false;
 
 // Track auth listener subscription so we can clean up on re-initialization
 let authSubscription: { unsubscribe: () => void } | null = null;
@@ -49,9 +45,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
 
         set({ session, user: profile, initialized: true, error: null });
-      } else if (DEV_AUTO_LOGIN) {
-        // Dev: auto-login with first mock user
-        set({ session: { user: { id: MOCK_USERS[0].id } } as any, user: MOCK_USERS[0], initialized: true, error: null });
       } else {
         set({ session: null, user: null, initialized: true, error: null });
       }
@@ -65,21 +58,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             .eq('id', session.user.id)
             .single();
           set({ session, user: profile });
-        } else if (!DEV_AUTO_LOGIN) {
-          // Don't reset mock user in dev mode
+        } else {
           set({ session: null, user: null });
         }
       });
       authSubscription = subscription;
     } catch (err: any) {
-      if (DEV_AUTO_LOGIN) {
-        set({ session: { user: { id: MOCK_USERS[0].id } } as any, user: MOCK_USERS[0], initialized: true, error: null });
-      } else {
-        set({
-          initialized: true,
-          error: err?.message || 'Oturum baslatilirken hata olustu',
-        });
-      }
+      set({
+        initialized: true,
+        error: err?.message || 'Oturum baslatilirken hata olustu',
+      });
     }
   },
 

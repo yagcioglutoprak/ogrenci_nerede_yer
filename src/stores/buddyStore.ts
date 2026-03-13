@@ -4,11 +4,6 @@ import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import { sendPushNotification } from '../lib/notifications';
 import type { MealBuddy, BuddyMatch, BuddyMessage } from '../types';
 
-// Helper: detect mock/local IDs that won't exist in Supabase
-function isMockId(id: string): boolean {
-  return id.startsWith('local-') || id.startsWith('mock-') || id.startsWith('mb-') || id.startsWith('u-');
-}
-
 interface BuddyState {
   myBuddy: MealBuddy | null;
   nearbyBuddies: MealBuddy[];
@@ -49,7 +44,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
 
   fetchMyBuddy: async (userId) => {
     try {
-      if (isMockId(userId)) return; // Keep current state for mock users
       const { data } = await supabase
         .from('meal_buddies')
         .select('*')
@@ -68,8 +62,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
     set({ loading: true });
     const radiusValue = radius_km ?? 3;
     try {
-      if (isMockId(user_id)) throw new Error('mock-user');
-
       await supabase.from('meal_buddies').update({ status: 'expired' }).eq('user_id', user_id).eq('status', 'available');
 
       const { data, error } = await supabase
@@ -83,45 +75,30 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
       set({ myBuddy: buddy, loading: false });
       return buddy;
     } catch {
-      // Fallback: create local buddy so the UI transitions to STATE B
-      const mockBuddy: MealBuddy = {
-        id: `local-buddy-${Date.now()}`,
-        user_id,
-        status: 'available',
-        latitude,
-        longitude,
-        radius_km: radiusValue,
-        available_from,
-        available_until,
-        note: note || null,
-        created_at: new Date().toISOString(),
-      };
-      set({ myBuddy: mockBuddy, loading: false });
-      return mockBuddy;
+      set({ loading: false });
+      return null;
     }
   },
 
   goUnavailable: async () => {
     const { myBuddy } = get();
     if (myBuddy) {
-      if (!isMockId(myBuddy.id)) {
-        try {
-          await supabase
-            .from('buddy_matches')
-            .update({ status: 'expired' })
-            .eq('requester_buddy_id', myBuddy.id)
-            .eq('status', 'pending');
+      try {
+        await supabase
+          .from('buddy_matches')
+          .update({ status: 'expired' })
+          .eq('requester_buddy_id', myBuddy.id)
+          .eq('status', 'pending');
 
-          await supabase
-            .from('buddy_matches')
-            .update({ status: 'declined' })
-            .eq('target_buddy_id', myBuddy.id)
-            .eq('status', 'pending');
+        await supabase
+          .from('buddy_matches')
+          .update({ status: 'declined' })
+          .eq('target_buddy_id', myBuddy.id)
+          .eq('status', 'pending');
 
-          await supabase.from('meal_buddies').update({ status: 'expired' }).eq('id', myBuddy.id);
-        } catch {
-          // Ignore Supabase errors, still clear local state
-        }
+        await supabase.from('meal_buddies').update({ status: 'expired' }).eq('id', myBuddy.id);
+      } catch {
+        // Ignore Supabase errors, still clear local state
       }
       set({ myBuddy: null, nearbyBuddies: [], pendingMatches: [] });
     }
@@ -147,120 +124,58 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
       if (error) throw error;
 
       const filtered = (data as MealBuddy[] || []).filter(b => b.id !== currentBuddy?.id);
-      if (filtered.length > 0) {
-        set({ nearbyBuddies: filtered, loading: false });
-        return;
-      }
+      set({ nearbyBuddies: filtered, loading: false });
     } catch {
-      // Fall through to mock fallback
+      set({ nearbyBuddies: [], loading: false });
     }
-
-    // Mock data fallback (triggers on Supabase error OR empty results)
-    try {
-      const { MOCK_BUDDIES } = await import('../lib/mockData');
-      if (MOCK_BUDDIES?.length) {
-        set({
-          nearbyBuddies: MOCK_BUDDIES.filter(b => b.id !== currentBuddy?.id),
-          loading: false,
-        });
-        return;
-      }
-    } catch {
-      // MOCK_BUDDIES import failed
-    }
-
-    set({ nearbyBuddies: [], loading: false });
   },
 
   sendMatchRequest: async (targetBuddyId) => {
-    const { myBuddy, nearbyBuddies } = get();
+    const { myBuddy } = get();
     if (!myBuddy) return null;
 
-    const useMock = isMockId(myBuddy.id) || isMockId(targetBuddyId);
+    try {
+      // Check for existing pending/accepted match
+      const { data: existing } = await supabase
+        .from('buddy_matches')
+        .select('id')
+        .eq('requester_buddy_id', myBuddy.id)
+        .eq('target_buddy_id', targetBuddyId)
+        .in('status', ['pending', 'accepted'])
+        .maybeSingle();
 
-    if (!useMock) {
-      try {
-        // Check for existing pending/accepted match
-        const { data: existing } = await supabase
-          .from('buddy_matches')
-          .select('id')
-          .eq('requester_buddy_id', myBuddy.id)
-          .eq('target_buddy_id', targetBuddyId)
-          .in('status', ['pending', 'accepted'])
-          .maybeSingle();
+      if (existing) return null; // Already sent
 
-        if (existing) return null; // Already sent
+      const { data, error } = await supabase
+        .from('buddy_matches')
+        .insert({ requester_buddy_id: myBuddy.id, target_buddy_id: targetBuddyId })
+        .select('*')
+        .single();
 
-        const { data, error } = await supabase
-          .from('buddy_matches')
-          .insert({ requester_buddy_id: myBuddy.id, target_buddy_id: targetBuddyId })
-          .select('*')
-          .single();
+      if (error) throw error;
 
-        if (error) throw error;
+      const { data: targetBuddy } = await supabase
+        .from('meal_buddies')
+        .select('user_id')
+        .eq('id', targetBuddyId)
+        .single();
 
-        const { data: targetBuddy } = await supabase
-          .from('meal_buddies')
-          .select('user_id')
-          .eq('id', targetBuddyId)
-          .single();
-
-        if (targetBuddy) {
-          sendPushNotification(
-            targetBuddy.user_id,
-            'Yemek Arkadasi Istegi!',
-            'Birisi seninle yemek yemek istiyor!',
-            { route: '/buddy' }
-          ).catch(() => {});
-        }
-
-        return data as BuddyMatch;
-      } catch {
-        // Fall through to mock mode
+      if (targetBuddy) {
+        sendPushNotification(
+          targetBuddy.user_id,
+          'Yemek Arkadasi Istegi!',
+          'Birisi seninle yemek yemek istiyor!',
+          { route: '/buddy' }
+        ).catch(() => {});
       }
+
+      return data as BuddyMatch;
+    } catch {
+      return null;
     }
-
-    // Mock mode: create local match with target buddy info
-    const targetBuddy = nearbyBuddies.find(b => b.id === targetBuddyId) || null;
-    const mockMatch: BuddyMatch = {
-      id: `mock-match-${Date.now()}`,
-      requester_buddy_id: myBuddy.id,
-      target_buddy_id: targetBuddyId,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      requester: myBuddy,
-      target: targetBuddy || undefined,
-    };
-
-    // Auto-accept after 3 seconds for demo experience
-    setTimeout(() => {
-      const { activeMatch } = get();
-      if (!activeMatch) {
-        set({
-          activeMatch: { ...mockMatch, status: 'accepted' },
-          pendingMatches: [],
-        });
-      }
-    }, 3000);
-
-    return mockMatch;
   },
 
   respondToMatch: async (matchId, accept) => {
-    if (isMockId(matchId)) {
-      // Mock mode: handle locally
-      const pending = get().pendingMatches.find(m => m.id === matchId);
-      if (accept && pending) {
-        set({
-          activeMatch: { ...pending, status: 'accepted' },
-          pendingMatches: get().pendingMatches.filter(m => m.id !== matchId),
-        });
-      } else {
-        set({ pendingMatches: get().pendingMatches.filter(m => m.id !== matchId) });
-      }
-      return;
-    }
-
     try {
       const newStatus = accept ? 'accepted' : 'declined';
       await supabase.from('buddy_matches').update({ status: newStatus }).eq('id', matchId);
@@ -286,8 +201,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
   },
 
   fetchMessages: async (matchId) => {
-    if (isMockId(matchId)) return; // Keep local messages for mock matches
-
     try {
       const { data } = await supabase
         .from('buddy_messages')
@@ -302,37 +215,14 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
   },
 
   sendMessage: async (matchId, senderId, content) => {
-    if (isMockId(matchId)) {
-      // Mock mode: add message locally
-      const newMessage: BuddyMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        match_id: matchId,
-        sender_id: senderId,
-        content,
-        created_at: new Date().toISOString(),
-      };
-      set({ messages: [...get().messages, newMessage] });
-      return;
-    }
-
     try {
       await supabase.from('buddy_messages').insert({ match_id: matchId, sender_id: senderId, content });
     } catch {
-      // Fallback: add message locally even if Supabase fails
-      const newMessage: BuddyMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        match_id: matchId,
-        sender_id: senderId,
-        content,
-        created_at: new Date().toISOString(),
-      };
-      set({ messages: [...get().messages, newMessage] });
+      // Message send failed silently
     }
   },
 
   subscribeToMessages: (matchId) => {
-    if (isMockId(matchId)) return null; // No realtime for mock matches
-
     try {
       const channel = supabase
         .channel(`buddy-messages-${matchId}`)
@@ -359,9 +249,7 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
 
   rateBuddy: async (matchId, raterId, thumbsUp) => {
     try {
-      if (!isMockId(matchId)) {
-        await supabase.from('buddy_ratings').insert({ match_id: matchId, rater_id: raterId, rating: thumbsUp });
-      }
+      await supabase.from('buddy_ratings').insert({ match_id: matchId, rater_id: raterId, rating: thumbsUp });
     } catch {
       // Ignore rating insert errors
     }
@@ -371,8 +259,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
 
   fetchActiveMatch: async (userId) => {
     try {
-      if (isMockId(userId)) return; // Keep current activeMatch for mock users
-
       const { data: myBuddies } = await supabase
         .from('meal_buddies')
         .select('id')
@@ -399,8 +285,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
 
   fetchPendingMatches: async (userId) => {
     try {
-      if (isMockId(userId)) return; // Keep current pendingMatches for mock users
-
       const { data: myBuddies } = await supabase
         .from('meal_buddies')
         .select('id')
@@ -424,8 +308,6 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
   },
 
   subscribeToMatchUpdates: (userId) => {
-    if (isMockId(userId)) return null;
-
     try {
       const handleMatchChange = async (payload: any) => {
           const match = payload.new as any;

@@ -45,7 +45,6 @@ import { ProfileSkeleton } from '../../components/ui/Skeleton';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import type { Venue, Post, Badge } from '../../types';
 import { supabase } from '../../lib/supabase';
-import { MOCK_BADGES, MOCK_VENUES, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
 
 const COVER_HEIGHT = 160;
 
@@ -353,45 +352,14 @@ export default function ProfileScreen() {
         .eq('user_id', user.id);
 
       const earnedIds = new Set((userBadges || []).map((ub: any) => ub.badge_id));
-      const badgeList = (allBadges || MOCK_BADGES).map((b: Badge) => ({
+      const badgeList = (allBadges || []).map((b: Badge) => ({
         badge: b,
         earned: earnedIds.has(b.id),
         earned_at: (userBadges || []).find((ub: any) => ub.badge_id === b.id)?.earned_at,
       }));
       setBadges(badgeList);
     } catch {
-      // Only set mock data if we haven't loaded any real data yet
-      if (favorites.length === 0) {
-        setFavorites(MOCK_VENUES.slice(0, 4));
-      }
-
-      if (userPosts.length === 0) {
-        const mockUserPosts = MOCK_POSTS
-          .slice(0, 4)
-          .map((p) => ({
-            ...p,
-            images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id),
-          }));
-        setUserPosts(mockUserPosts as Post[]);
-      }
-
-      if (stats.venues === 0 && stats.reviews === 0) {
-        setStats({
-          venues: 3,
-          reviews: 7,
-          followers: 12,
-          following: 5,
-        });
-      }
-
-      if (badges.length === 0) {
-        const mockBadgeList = MOCK_BADGES.map((b, i) => ({
-          badge: b,
-          earned: i < 2,
-          earned_at: i < 2 ? new Date().toISOString() : undefined,
-        }));
-        setBadges(mockBadgeList);
-      }
+      // Supabase failed — leave empty arrays as graceful fallback
     }
 
     setLoading(false);

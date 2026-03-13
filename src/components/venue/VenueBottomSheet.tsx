@@ -28,6 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   Colors,
   Spacing,
@@ -43,7 +44,6 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../lib/supabase';
-import { MOCK_SOCIAL_VIDEOS, MOCK_POSTS, MOCK_USERS, MOCK_POST_IMAGES } from '../../lib/mockData';
 import GlassView from '../ui/GlassView';
 import RatingBar from '../ui/RatingBar';
 import StarRating from '../ui/StarRating';
@@ -77,7 +77,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const snapPoints = useMemo(() => ['40%', '95%'], []);
   const prevVenueIdRef = useRef<string | null>(null);
 
-  const { reviews, fetchReviews, toggleFavorite, addReview } = useVenueStore();
+  const { reviews, fetchReviews, fetchVenueById, toggleFavorite, addReview } = useVenueStore();
   const user = useAuthStore((s) => s.user);
 
   const [sheetIndex, setSheetIndex] = useState(-1);
@@ -93,6 +93,9 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const [rateFriendliness, setRateFriendliness] = useState(0);
   const [rateComment, setRateComment] = useState('');
   const [rateSubmitting, setRateSubmitting] = useState(false);
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [showPostPrompt, setShowPostPrompt] = useState(false);
+  const router = useRouter();
 
   // Swipe-to-dismiss for rating modal (native gesture handler)
   const rateTranslateY = useSharedValue(0);
@@ -161,6 +164,8 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
         setShowDetail(false);
         setIsFavorited(false);
         setVenuePosts([]);
+        setMyReview(null);
+        setShowPostPrompt(false);
         setLoadingDetail(true);
 
         // Fetch reviews
@@ -168,6 +173,26 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
 
         // Fetch venue posts
         fetchVenuePosts(venue.id);
+
+        // Fetch user's existing review (only for DB venues with UUID ids)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(venue.id);
+        if (user && isUuid) {
+          supabase
+            .from('reviews')
+            .select('*')
+            .eq('venue_id', venue.id)
+            .eq('user_id', user.id)
+            .single()
+            .then(({ data }) => {
+              if (data) {
+                setMyReview(data as Review);
+                setRateTaste(data.taste_rating);
+                setRateValue(data.value_rating);
+                setRateFriendliness(data.friendliness_rating);
+                setRateComment(data.comment || '');
+              }
+            });
+        }
       }
       bottomSheetRef.current?.snapToIndex(0);
     } else {
@@ -183,8 +208,8 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
         .from('posts_with_counts')
         .select(`
           *,
-          user:users(*),
-          images:post_images(*)
+          user:users!user_id(*),
+          images:post_images!post_id(*)
         `)
         .eq('venue_id', venueId)
         .order('created_at', { ascending: false })
@@ -196,16 +221,8 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
       }
     } catch {}
 
-    // Fallback: mock data
-    const mockPosts = MOCK_POSTS
-      .filter((p) => p.venue_id === venueId)
-      .map((p) => ({
-        ...p,
-        user: MOCK_USERS.find((u) => u.id === p.user_id),
-        images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id).sort((a, b) => a.order - b.order),
-      }))
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) as Post[];
-    setVenuePosts(mockPosts);
+    // No data from Supabase
+    setVenuePosts([]);
   };
 
   const handleSheetChange = useCallback(
@@ -253,16 +270,18 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const handleRate = useCallback(() => {
     if (!venue) return;
     haptic.light();
-    setRateTaste(0);
-    setRateValue(0);
-    setRateFriendliness(0);
-    setRateComment('');
+    if (!myReview) {
+      setRateTaste(0);
+      setRateValue(0);
+      setRateFriendliness(0);
+      setRateComment('');
+    }
     rateTranslateY.value = 500;
     setShowRating(true);
     requestAnimationFrame(() => {
       rateTranslateY.value = withTiming(0, { duration: 300 });
     });
-  }, [venue]);
+  }, [venue, myReview]);
 
   const handleSubmitRating = useCallback(async () => {
     if (!venue || !user) return;
@@ -273,23 +292,88 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
     }
     setRateSubmitting(true);
     haptic.light();
-    const { error: err } = await addReview({
-      venue_id: venue.id,
-      user_id: user.id,
-      taste_rating: rateTaste,
-      value_rating: rateValue,
-      friendliness_rating: rateFriendliness,
-      comment: rateComment.trim(),
-    });
+
+    // If venue is not in DB (OSM/external), import it first
+    let venueId = venue.id;
+    if (!isDbVenue) {
+      const { data: inserted, error: insertErr } = await supabase
+        .from('venues')
+        .insert({
+          name: venue.name,
+          description: venue.description || null,
+          latitude: venue.latitude,
+          longitude: venue.longitude,
+          address: venue.address,
+          phone: venue.phone || null,
+          price_range: venue.price_range || 1,
+          cover_image_url: venue.cover_image_url || null,
+          tags: venue.tags || [],
+          created_by: user.id,
+        })
+        .select('id')
+        .single();
+
+      if (insertErr || !inserted) {
+        setRateSubmitting(false);
+        haptic.error();
+        Alert.alert('Hata', insertErr?.message || 'Mekan kaydedilemedi');
+        return;
+      }
+      venueId = inserted.id;
+      // Update venue reference so subsequent actions use the DB id
+      venue.id = venueId;
+    }
+
+    let err: string | null = null;
+    if (myReview) {
+      const { error: updateErr } = await supabase
+        .from('reviews')
+        .update({
+          taste_rating: rateTaste,
+          value_rating: rateValue,
+          friendliness_rating: rateFriendliness,
+          comment: rateComment.trim(),
+        })
+        .eq('id', myReview.id);
+      err = updateErr?.message || null;
+    } else {
+      const result = await addReview({
+        venue_id: venueId,
+        user_id: user.id,
+        taste_rating: rateTaste,
+        value_rating: rateValue,
+        friendliness_rating: rateFriendliness,
+        comment: rateComment.trim(),
+      });
+      err = result.error;
+    }
+
     setRateSubmitting(false);
     if (err) {
       haptic.error();
       Alert.alert('Hata', err);
     } else {
       haptic.success();
+      const wasNewReview = !myReview;
       setShowRating(false);
+      // Update myReview state
+      const updated: Review = {
+        ...(myReview || { id: '', venue_id: venueId, user_id: user.id, created_at: new Date().toISOString() }),
+        taste_rating: rateTaste,
+        value_rating: rateValue,
+        friendliness_rating: rateFriendliness,
+        comment: rateComment.trim(),
+      } as Review;
+      setMyReview(updated);
+      // Refresh venue + reviews
+      fetchVenueById(venueId);
+      fetchReviews(venueId);
+      // Show post prompt for first-time reviews
+      if (wasNewReview) {
+        setShowPostPrompt(true);
+      }
     }
-  }, [venue, user, rateTaste, rateValue, rateFriendliness, rateComment, addReview]);
+  }, [venue, user, rateTaste, rateValue, rateFriendliness, rateComment, addReview, myReview]);
 
   const handleSave = useCallback(() => {
     if (!venue || !user) return;
@@ -312,18 +396,18 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
     : '';
   const levelInfo = venue ? VenueLevels.find((l) => l.level === venue.level) : null;
 
+  const isDbVenue = venue ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(venue.id) : false;
+
   // Determine tier
-  const tier: 'google_places' | 'unreviewed' | 'reviewed' = (() => {
+  const tier: 'unreviewed' | 'reviewed' = (() => {
     if (!venue) return 'reviewed';
-    if (venue.source === 'google_places') return 'google_places';
     if (venue.total_reviews > 0) return 'reviewed';
     return 'unreviewed';
   })();
 
   // Social videos for this venue
-  const venueVideos = venue
-    ? MOCK_SOCIAL_VIDEOS.filter((v) => v.venue_id === venue.id)
-    : [];
+  // TODO: Fetch videos from Supabase
+  const venueVideos: SocialVideo[] = [];
 
   const isExpanded = sheetIndex === 1;
 
@@ -450,8 +534,6 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
               <Animated.View style={[styles.morphImageWrap, { backgroundColor: colors.backgroundSecondary }, morphImageStyle]}>
                 {venue.cover_image_url ? (
                   <Image source={{ uri: venue.cover_image_url }} style={styles.morphImage} />
-                ) : tier === 'google_places' ? (
-                  <Ionicons name="location" size={28} color="#9CA3AF" />
                 ) : (
                   <Ionicons name="restaurant" size={28} color={colors.textTertiary} />
                 )}
@@ -480,21 +562,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                 <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
                   {venue.name}
                 </Text>
-                {tier === 'google_places' ? (
-                  <>
-                    {venue.google_rating != null && (
-                      <View style={styles.googleRatingRow}>
-                        <Ionicons name="logo-google" size={14} color="#4285F4" />
-                        <Text style={[styles.googleRatingText, { color: colors.textSecondary }]}>
-                          {venue.google_rating.toFixed(1)}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={[styles.googleCtaText, { color: Colors.primary }]}>
-                      Ilk degerlendirmeyi yap!
-                    </Text>
-                  </>
-                ) : tier === 'unreviewed' ? (
+                {tier === 'unreviewed' ? (
                   <>
                     <Text style={[styles.venueAddress, { color: colors.textSecondary }]} numberOfLines={1}>
                       {venue.address}
@@ -535,10 +603,18 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
 
             {/* ---- ACTION BUTTONS (always visible, below image) ---- */}
             <View style={styles.actionsRow}>
-              <TouchableOpacity style={[styles.actionBtn, styles.actionBtnRate]} onPress={handleRate} activeOpacity={0.8}>
-                <Ionicons name="star-outline" size={16} color="#FFF" />
-                <Text style={styles.actionBtnWhiteText}>
-                  {tier === 'reviewed' ? 'Puan Ver' : 'Degerlendir'}
+              <TouchableOpacity
+                style={[styles.actionBtn, myReview ? styles.actionBtnRated : styles.actionBtnRate]}
+                onPress={handleRate}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={myReview ? 'checkmark-circle' : 'star-outline'}
+                  size={16}
+                  color={myReview ? Colors.verified : '#FFF'}
+                />
+                <Text style={myReview ? [styles.actionBtnWhiteText, { color: Colors.verified, fontSize: FontSize.lg, fontFamily: FontFamily.headingBold }] : styles.actionBtnWhiteText}>
+                  {myReview ? `${((myReview.taste_rating + myReview.value_rating + myReview.friendliness_rating) / 3).toFixed(1)}` : 'Puan Ver'}
                 </Text>
               </TouchableOpacity>
               {!isExpanded && (
@@ -547,7 +623,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                   <Text style={styles.actionBtnWhiteText}>Yol Tarifi</Text>
                 </TouchableOpacity>
               )}
-              {tier !== 'google_places' && (
+              {(
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.actionBtnSave, { borderColor: colors.border }]}
                   onPress={handleSave}
@@ -558,6 +634,34 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Post prompt after rating */}
+            {showPostPrompt && venue && (
+              <TouchableOpacity
+                style={styles.postPromptBanner}
+                activeOpacity={0.85}
+                onPress={() => {
+                  setShowPostPrompt(false);
+                  router.push({ pathname: '/(tabs)/add', params: { venueId: venue.id, venueName: venue.name } });
+                }}
+              >
+                <LinearGradient
+                  colors={[Colors.primary, '#D4483B']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.postPromptGradient}
+                >
+                  <View style={styles.postPromptContent}>
+                    <Ionicons name="camera-outline" size={22} color="#FFF" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.postPromptTitle}>Deneyimini paylas!</Text>
+                      <Text style={styles.postPromptSubtitle}>Bu mekan hakkinda gonderi olustur</Text>
+                    </View>
+                    <Ionicons name="arrow-forward-circle" size={24} color="rgba(255,255,255,0.8)" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
 
             {/* "Detaylari Gor" hint — only when collapsed */}
             {!isExpanded && (
@@ -614,7 +718,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
               )}
 
               {/* ---- 2. KULLANICI PUANI (user ratings) ---- */}
-              {tier !== 'google_places' && venue.total_reviews > 0 && (
+              {venue.total_reviews > 0 && (
                 <GlassView style={[styles.scoreCard, styles.scoreCardGlass]} fallbackColor={colors.card}>
                   {/* Header row: star + score + count */}
                   <View style={styles.scoreCardHeader}>
@@ -845,7 +949,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
           style={[styles.rateSheet, { backgroundColor: colors.background }, rateSheetAnimStyle]}
         >
           <View style={[styles.rateHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.rateTitle, { color: colors.text }]}>Puan Ver</Text>
+          <Text style={[styles.rateTitle, { color: colors.text }]}>{myReview ? 'Puanini Guncelle' : 'Puan Ver'}</Text>
           {venue && (
             <Text style={[styles.rateVenueName, { color: colors.textSecondary }]} numberOfLines={1}>
               {venue.name}
@@ -1065,6 +1169,36 @@ const styles = StyleSheet.create({
   },
   actionBtnRate: {
     backgroundColor: Colors.primary,
+  },
+  actionBtnRated: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.verified,
+  },
+  postPromptBanner: {
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+  },
+  postPromptGradient: {
+    borderRadius: BorderRadius.md,
+  },
+  postPromptContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  postPromptTitle: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFF',
+  },
+  postPromptSubtitle: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+    color: 'rgba(255,255,255,0.75)',
   },
   actionBtnDirections: {
     backgroundColor: '#06B6D4',

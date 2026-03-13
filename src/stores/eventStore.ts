@@ -2,53 +2,6 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Event, EventAttendee, EventMessage } from '../types';
-import { MOCK_EVENTS, MOCK_EVENT_ATTENDEES, MOCK_EVENT_MESSAGES, MOCK_USERS, MOCK_VENUES } from '../lib/mockData';
-
-/**
- * Build fully-joined mock events (with creator, venue, attendees data attached).
- */
-function buildMockEventsWithJoins(): Event[] {
-  return MOCK_EVENTS.map((event) => {
-    const creator = MOCK_USERS.find((u) => u.id === event.creator_id);
-    const venue = event.venue_id
-      ? MOCK_VENUES.find((v) => v.id === event.venue_id)
-      : undefined;
-    const attendees = MOCK_EVENT_ATTENDEES
-      .filter((a) => a.event_id === event.id)
-      .map((a) => ({
-        ...a,
-        user: MOCK_USERS.find((u) => u.id === a.user_id),
-      }));
-
-    return {
-      ...event,
-      creator,
-      venue: venue as Event['venue'],
-      attendees,
-      attendee_count: attendees.filter((a) => a.status === 'confirmed').length,
-    };
-  });
-}
-
-/**
- * Find a single mock event by post_id with full joins.
- */
-function findMockEventByPostId(postId: string): Event | null {
-  const allMock = buildMockEventsWithJoins();
-  return allMock.find((e) => e.post_id === postId) || null;
-}
-
-/**
- * Build mock attendees for an event with user data joined.
- */
-function buildMockAttendeesWithUser(eventId: string): EventAttendee[] {
-  return MOCK_EVENT_ATTENDEES
-    .filter((a) => a.event_id === eventId)
-    .map((a) => ({
-      ...a,
-      user: MOCK_USERS.find((u) => u.id === a.user_id),
-    }));
-}
 
 interface EventState {
   events: Event[];
@@ -117,18 +70,10 @@ export const useEventStore = create<EventState>((set, get) => ({
         set({ selectedEvent: null });
       }
     } catch (err: any) {
-      if (__DEV__) {
-        const mockEvent = findMockEventByPostId(postId);
-        set({
-          selectedEvent: mockEvent,
-          error: err?.message || 'Etkinlik yuklenirken hata olustu',
-        });
-      } else {
-        set({
-          selectedEvent: null,
-          error: err?.message || 'Etkinlik yuklenirken hata olustu',
-        });
-      }
+      set({
+        selectedEvent: null,
+        error: err?.message || 'Etkinlik yuklenirken hata olustu',
+      });
     }
 
     set({ loading: false });
@@ -160,13 +105,10 @@ export const useEventStore = create<EventState>((set, get) => ({
         set({ selectedEvent: null });
       }
     } catch (err: any) {
-      if (__DEV__) {
-        const allMock = buildMockEventsWithJoins();
-        const mockEvent = allMock.find((e) => e.id === eventId) || null;
-        set({ selectedEvent: mockEvent, error: err?.message });
-      } else {
-        set({ selectedEvent: null, error: err?.message || 'Etkinlik yuklenirken hata olustu' });
-      }
+      set({
+        selectedEvent: null,
+        error: err?.message || 'Etkinlik yuklenirken hata olustu',
+      });
     }
 
     set({ loading: false });
@@ -201,22 +143,10 @@ export const useEventStore = create<EventState>((set, get) => ({
         set({ events: [] });
       }
     } catch (err: any) {
-      if (__DEV__) {
-        const allMock = buildMockEventsWithJoins();
-        const upcoming = allMock
-          .filter((e) => e.status === 'upcoming' && new Date(e.event_date) > new Date())
-          .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
-          .slice(0, 20);
-        set({
-          events: upcoming,
-          error: err?.message || 'Etkinlikler yuklenirken hata olustu',
-        });
-      } else {
-        set({
-          events: [],
-          error: err?.message || 'Etkinlikler yuklenirken hata olustu',
-        });
-      }
+      set({
+        events: [],
+        error: err?.message || 'Etkinlikler yuklenirken hata olustu',
+      });
     }
 
     set({ loading: false });
@@ -331,29 +261,7 @@ export const useEventStore = create<EventState>((set, get) => ({
       });
 
       if (error) {
-        // Mock data fallback: lokal state guncelle
-        const mockAttendee: EventAttendee = {
-          event_id: eventId,
-          user_id: userId,
-          status: 'confirmed',
-          joined_at: new Date().toISOString(),
-          user: MOCK_USERS.find((u) => u.id === userId),
-        };
-        const currentAttendees = get().attendees;
-        set({ attendees: [...currentAttendees, mockAttendee] });
-
-        // selectedEvent varsa attendee_count guncelle
-        if (selectedEvent && selectedEvent.id === eventId) {
-          set({
-            selectedEvent: {
-              ...selectedEvent,
-              attendees: [...(selectedEvent.attendees || []), mockAttendee],
-              attendee_count: (selectedEvent.attendee_count ?? 0) + 1,
-            },
-          });
-        }
-
-        return { error: null };
+        return { error: error.message };
       }
 
       // Basarili Supabase insert - state guncelle
@@ -361,6 +269,21 @@ export const useEventStore = create<EventState>((set, get) => ({
       if (selectedEvent && selectedEvent.id === eventId) {
         await get().fetchEventByPostId(selectedEvent.post_id);
       }
+
+      // Insert system message into Supabase
+      const { data: userData } = await supabase
+        .from('users')
+        .select('full_name, username')
+        .eq('id', userId)
+        .single();
+      const displayName = userData?.full_name || userData?.username || 'Birisi';
+      await supabase.from('event_messages').insert({
+        event_id: eventId,
+        user_id: userId,
+        message: `${displayName} bulusmaya katildi`,
+        message_type: 'system',
+      });
+      await get().fetchMessages(eventId);
 
       // Badge check and XP (fire-and-forget)
       checkAndAwardBadges(userId);
@@ -381,7 +304,7 @@ export const useEventStore = create<EventState>((set, get) => ({
         .eq('user_id', userId);
 
       if (error) {
-        // Mock data fallback: lokal state guncelle
+        // Supabase failed — optimistically update local state
         const currentAttendees = get().attendees.filter(
           (a) => !(a.event_id === eventId && a.user_id === userId)
         );
@@ -405,7 +328,7 @@ export const useEventStore = create<EventState>((set, get) => ({
         });
       }
     } catch {
-      // Fallback: lokal state guncelle
+      // Optimistic local update on network failure
       const currentAttendees = get().attendees.filter(
         (a) => !(a.event_id === eventId && a.user_id === userId)
       );
@@ -427,12 +350,7 @@ export const useEventStore = create<EventState>((set, get) => ({
         set({ attendees: [] });
       }
     } catch {
-      if (__DEV__) {
-        const mockAttendees = buildMockAttendeesWithUser(eventId);
-        set({ attendees: mockAttendees });
-      } else {
-        set({ attendees: [] });
-      }
+      set({ attendees: [] });
     }
   },
 
@@ -450,17 +368,7 @@ export const useEventStore = create<EventState>((set, get) => ({
         set({ messages: [] });
       }
     } catch {
-      if (__DEV__) {
-        const mockMessages = MOCK_EVENT_MESSAGES
-          .filter((m) => m.event_id === eventId)
-          .map((m) => ({
-            ...m,
-            user: MOCK_USERS.find((u) => u.id === m.user_id),
-          }));
-        set({ messages: mockMessages });
-      } else {
-        set({ messages: [] });
-      }
+      set({ messages: [] });
     }
   },
 
@@ -475,27 +383,27 @@ export const useEventStore = create<EventState>((set, get) => ({
       if (!error) {
         await get().fetchMessages(eventId);
       } else {
-        // Fallback: mesaji lokal state'e ekle
+        // Optimistic: add message to local state
         const newMessage: EventMessage = {
           id: `em-local-${Date.now()}`,
           event_id: eventId,
           user_id: userId,
           message: text,
           created_at: new Date().toISOString(),
-          user: MOCK_USERS.find((u) => u.id === userId),
+          user: undefined,
         };
         const currentMessages = get().messages;
         set({ messages: [...currentMessages, newMessage] });
       }
     } catch {
-      // Fallback: mesaji lokal state'e ekle
+      // Optimistic: add message to local state
       const newMessage: EventMessage = {
         id: `em-local-${Date.now()}`,
         event_id: eventId,
         user_id: userId,
         message: text,
         created_at: new Date().toISOString(),
-        user: MOCK_USERS.find((u) => u.id === userId),
+        user: undefined,
       };
       const currentMessages = get().messages;
       set({ messages: [...currentMessages, newMessage] });
@@ -503,8 +411,6 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   subscribeToMessages: (eventId: string) => {
-    if (eventId.startsWith('e-') || eventId.startsWith('mock-') || eventId.startsWith('local-')) return null;
-
     const channel = supabase
       .channel(`event-messages-${eventId}`)
       .on('postgres_changes', {

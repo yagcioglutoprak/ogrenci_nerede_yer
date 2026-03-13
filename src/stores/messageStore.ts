@@ -3,10 +3,6 @@ import { supabase } from '../lib/supabase';
 import { sendPushNotification } from '../lib/notifications';
 import type { Conversation, DirectMessage, DirectMessageType, DirectMessageMetadata, MessageStatus, User } from '../types';
 
-function isMockId(id: string): boolean {
-  return id.startsWith('local-') || id.startsWith('mock-') || id.startsWith('conv-') || id.startsWith('u-') || id.startsWith('dm-');
-}
-
 interface MessageState {
   conversations: Conversation[];
   messages: DirectMessage[];
@@ -42,8 +38,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   fetchConversations: async (userId) => {
     set({ loading: true });
     try {
-      if (isMockId(userId)) throw new Error('mock-user');
-
       const { data, error } = await supabase
         .from('conversations')
         .select('*, user1:users!conversations_participant_1_fkey(*), user2:users!conversations_participant_2_fkey(*)')
@@ -86,68 +80,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       const totalUnread = mapped.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
       set({ conversations: mapped, totalUnreadCount: totalUnread, loading: false });
-      return;
-    } catch {
-      // Fall through to mock
-    }
-
-    try {
-      const { MOCK_CONVERSATIONS } = await import('../lib/mockData');
-      const filtered = MOCK_CONVERSATIONS.filter(
-        (c) => (c.participant_1 === userId || c.participant_2 === userId)
-          && (c.status === 'accepted' || !c.status),
-      );
-      const totalUnread = filtered.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
-      set({ conversations: filtered, totalUnreadCount: totalUnread, loading: false });
     } catch {
       set({ conversations: [], loading: false });
     }
   },
 
   fetchOrCreateConversation: async (myId, otherId) => {
-    if (isMockId(myId) || isMockId(otherId)) {
-      const { conversations } = get();
-      const existing = conversations.find(
-        (c) =>
-          (c.participant_1 === myId && c.participant_2 === otherId) ||
-          (c.participant_1 === otherId && c.participant_2 === myId),
-      );
-      if (existing) return existing.id;
-
-      try {
-        const { MOCK_CONVERSATIONS, MOCK_USERS } = await import('../lib/mockData');
-        const mockExisting = MOCK_CONVERSATIONS.find(
-          (c) =>
-            (c.participant_1 === myId && c.participant_2 === otherId) ||
-            (c.participant_1 === otherId && c.participant_2 === myId),
-        );
-        if (mockExisting) {
-          if (!conversations.find((c) => c.id === mockExisting.id)) {
-            set({ conversations: [mockExisting, ...conversations] });
-          }
-          return mockExisting.id;
-        }
-
-        const otherUser = MOCK_USERS.find((u) => u.id === otherId);
-        const [p1, p2] = myId < otherId ? [myId, otherId] : [otherId, myId];
-        const newConv: Conversation = {
-          id: `conv-local-${Date.now()}`,
-          participant_1: p1,
-          participant_2: p2,
-          last_message_text: null,
-          last_message_at: new Date().toISOString(),
-          last_message_sender_id: null,
-          created_at: new Date().toISOString(),
-          other_user: otherUser,
-          unread_count: 0,
-        };
-        set({ conversations: [newConv, ...get().conversations] });
-        return newConv.id;
-      } catch {
-        return null;
-      }
-    }
-
     try {
       const { data, error } = await supabase.rpc('get_or_create_conversation', {
         user_a: myId,
@@ -166,16 +104,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   fetchMessages: async (conversationId) => {
-    if (isMockId(conversationId)) {
-      try {
-        const { MOCK_DIRECT_MESSAGES } = await import('../lib/mockData');
-        set({ messages: MOCK_DIRECT_MESSAGES.filter((m) => m.conversation_id === conversationId) });
-      } catch {
-        set({ messages: [] });
-      }
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('direct_messages')
@@ -216,8 +144,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         : c,
     );
     set({ conversations: updatedConversations });
-
-    if (isMockId(convId)) return;
 
     try {
       const { data: persisted, error } = await supabase
@@ -282,8 +208,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       set({ conversations: updated, totalUnreadCount: updated.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) });
     }
 
-    if (isMockId(convId)) return;
-
     try {
       await supabase
         .from('direct_messages')
@@ -297,8 +221,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   subscribeToMessages: (convId) => {
-    if (isMockId(convId)) return null;
-
     try {
       const channel = supabase
         .channel(`dm-messages-${convId}`)
@@ -350,8 +272,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   subscribeToConversations: (userId) => {
-    if (isMockId(userId)) return null;
-
     try {
       // Subscribe to updates on conversations where this user is a participant
       // We use two channels since Supabase filters don't support OR on server side
@@ -385,19 +305,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   fetchUnreadCount: async (userId) => {
-    if (isMockId(userId)) {
-      try {
-        const { MOCK_CONVERSATIONS } = await import('../lib/mockData');
-        const total = MOCK_CONVERSATIONS
-          .filter((c) => c.participant_1 === userId || c.participant_2 === userId)
-          .reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
-        set({ totalUnreadCount: total });
-      } catch {
-        // Non-critical
-      }
-      return;
-    }
-
     try {
       const { data: userConversations } = await supabase
         .from('conversations')
@@ -427,25 +334,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) return [];
 
-    if (isMockId(currentUserId)) {
-      try {
-        const { MOCK_USERS } = await import('../lib/mockData');
-        const { useBlockStore } = await import('./blockStore');
-        const blockedUsers = useBlockStore.getState().blockedUsers;
-        return MOCK_USERS
-          .filter((u) =>
-            u.id !== currentUserId &&
-            !blockedUsers.includes(u.id) && (
-              u.full_name.toLowerCase().includes(trimmed) ||
-              u.username.toLowerCase().includes(trimmed)
-            ),
-          )
-          .map((u) => ({ ...u, mutual_followers: Math.floor(Math.random() * 8) }));
-      } catch {
-        return [];
-      }
-    }
-
     try {
       const { data, error } = await supabase
         .from('users')
@@ -467,20 +355,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   fetchMessageRequests: async (userId) => {
-    if (isMockId(userId)) {
-      try {
-        const { MOCK_MESSAGE_REQUESTS } = await import('../lib/mockData');
-        const requests = MOCK_MESSAGE_REQUESTS.filter(
-          (c) => c.initiated_by !== userId &&
-            (c.participant_1 === userId || c.participant_2 === userId)
-        );
-        set({ messageRequests: requests, requestCount: requests.length });
-      } catch {
-        set({ messageRequests: [], requestCount: 0 });
-      }
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('conversations')
@@ -526,8 +400,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       });
     }
 
-    if (isMockId(convId)) return;
-
     try {
       await supabase
         .from('conversations')
@@ -552,8 +424,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       messageRequests: messageRequests.filter((r) => r.id !== convId),
       requestCount: Math.max(0, get().requestCount - 1),
     });
-
-    if (isMockId(convId)) return;
 
     try {
       await supabase

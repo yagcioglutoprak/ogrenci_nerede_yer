@@ -394,22 +394,22 @@ export default function MapScreen() {
 
           const isSelected = selectedVenue?.id === venue.id;
 
-          // ── Tier 1: Google Places — tiny grey dot ──
+          // ── Tier 1: Unreviewed external venue — restaurant icon pin ──
           if (tier === 'google_places') {
+            const pinContent = (
+              <View style={isSelected ? styles.osmPinSelected : styles.osmPin}>
+                <Ionicons name="restaurant" size={14} color={isSelected ? '#FFF' : 'rgba(255,255,255,0.85)'} />
+              </View>
+            );
             return (
               <Marker
                 key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
                 tracksViewChanges={true}
                 onPress={() => handleMarkerPress(venue)}
+                anchor={{ x: 0.5, y: 0.5 }}
               >
-                {isSelected ? (
-                  <SelectedPop>
-                    <View style={styles.greyDotSelected} />
-                  </SelectedPop>
-                ) : (
-                  <View style={styles.greyDot} />
-                )}
+                {isSelected ? <SelectedPop>{pinContent}</SelectedPop> : pinContent}
               </Marker>
             );
           }
@@ -905,27 +905,31 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.primary,
     marginTop: -1,
   },
-  // Tier 1: Grey dot (Google Places)
-  greyDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'rgba(160,165,175,0.45)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.55)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  greyDotSelected: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(226,55,68,0.55)',
+  // Tier 1: OSM restaurant pin
+  osmPin: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(100,110,125,0.7)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  osmPinSelected: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.primary,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,

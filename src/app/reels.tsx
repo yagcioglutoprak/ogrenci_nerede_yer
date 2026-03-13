@@ -31,13 +31,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../lib/constants';
 import { haptic } from '../lib/haptics';
-import { MOCK_STORIES, MOCK_VENUES } from '../lib/mockData';
 import type { Story } from '../types';
-
-function getVenueName(venueId?: string): string | null {
-  if (!venueId) return null;
-  return MOCK_VENUES.find((v) => v.id === venueId)?.name || null;
-}
 
 // ---------------------------------------------------------------------------
 // Bouncing arrow hint
@@ -179,18 +173,20 @@ export default function ReelsScreen() {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const initialIndex = Math.min(
-    parseInt(initialIndexParam || '0', 10),
-    MOCK_STORIES.length - 1,
-  );
+  // Stories will come from Supabase in the future — empty for now
+  const stories: Story[] = [];
+
+  const initialIndex = stories.length > 0
+    ? Math.min(parseInt(initialIndexParam || '0', 10), stories.length - 1)
+    : 0;
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-  const story = MOCK_STORIES[currentIndex];
-  const venueName = getVenueName(story.venue_id);
+  const story = stories[currentIndex] ?? null;
+  const venueName = story?.venue_id ? null : null; // venue name lookup will come from Supabase
 
   // Refs for stable closures inside worklets / runOnJS
   const currentIndexRef = useRef(currentIndex);
-  const storyRef = useRef(story);
+  const storyRef = useRef<Story | null>(story);
   useEffect(() => {
     currentIndexRef.current = currentIndex;
     storyRef.current = story;
@@ -205,9 +201,9 @@ export default function ReelsScreen() {
 
   // ---- Navigation (called from worklet via runOnJS) ----
   const doGoNext = useCallback(() => {
-    setCurrentIndex((i) => (i < MOCK_STORIES.length - 1 ? i + 1 : i));
+    setCurrentIndex((i) => (i < stories.length - 1 ? i + 1 : i));
     reelFade.value = withTiming(1, { duration: 200 });
-  }, []);
+  }, [stories.length]);
 
   const doGoPrev = useCallback(() => {
     setCurrentIndex((i) => (i > 0 ? i - 1 : i));
@@ -216,7 +212,7 @@ export default function ReelsScreen() {
 
   // ---- Animated navigation (with crossfade) ----
   const goNextAnimated = useCallback(() => {
-    if (currentIndexRef.current >= MOCK_STORIES.length - 1) return;
+    if (currentIndexRef.current >= stories.length - 1) return;
     haptic.selection();
     reelFade.value = withTiming(0, { duration: 100 }, (finished) => {
       if (finished) runOnJS(doGoNext)();
@@ -236,14 +232,14 @@ export default function ReelsScreen() {
   }, []);
 
   const handleVenuePress = useCallback(() => {
-    if (storyRef.current.venue_id) {
+    if (storyRef.current?.venue_id) {
       router.push(`/venue/${storyRef.current.venue_id}`);
     }
   }, []);
 
   const openVideoUrl = useCallback(() => {
     const s = storyRef.current;
-    const url = s.external_url || s.video_url;
+    const url = s?.external_url || s?.video_url;
     if (url) Linking.openURL(url);
   }, []);
 
@@ -334,6 +330,22 @@ export default function ReelsScreen() {
 
   const TAP_ZONE = width * 0.3;
 
+  // Empty state when there are no stories
+  if (!story) {
+    return (
+      <View style={styles.outerContainer}>
+        <StatusBar style="light" />
+        <View style={styles.emptyContainer}>
+          <Ionicons name="videocam-off-outline" size={48} color="rgba(255,255,255,0.5)" />
+          <Text style={styles.emptyText}>Henuz icerik yok</Text>
+          <Pressable style={styles.emptyBackButton} onPress={() => router.back()}>
+            <Text style={styles.emptyBackButtonText}>Geri Don</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar style="light" />
@@ -356,7 +368,7 @@ export default function ReelsScreen() {
 
           {/* Progress bars */}
           <ProgressBars
-            count={MOCK_STORIES.length}
+            count={stories.length}
             activeIndex={currentIndex}
             top={insets.top}
           />
@@ -541,5 +553,31 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 0.5,
+  },
+
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.lg,
+    paddingBottom: 60,
+  },
+  emptyText: {
+    fontSize: FontSize.xl,
+    fontFamily: FontFamily.headingBold,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  emptyBackButton: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginTop: Spacing.md,
+  },
+  emptyBackButtonText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
   },
 });

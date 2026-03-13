@@ -17,7 +17,6 @@ import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring, wit
 import { useAuthStore } from '../../stores/authStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { supabase } from '../../lib/supabase';
-import { MOCK_USERS, MOCK_POSTS, MOCK_POST_IMAGES } from '../../lib/mockData';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useBlockStore } from '../../stores/blockStore';
 import Avatar from '../../components/ui/Avatar';
@@ -68,9 +67,7 @@ export default function UserProfileScreen() {
       if (userData) {
         setProfileUser(userData as User);
       } else {
-        // Mock fallback
-        const mockUser = MOCK_USERS.find((u) => u.id === userId) || null;
-        setProfileUser(mockUser);
+        setProfileUser(null);
       }
 
       // Fetch user posts
@@ -83,14 +80,7 @@ export default function UserProfileScreen() {
       if (postsData && postsData.length > 0) {
         setUserPosts(postsData as Post[]);
       } else {
-        // Mock fallback
-        const mockPosts = MOCK_POSTS
-          .filter((p) => p.user_id === userId)
-          .map((p) => ({
-            ...p,
-            images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id),
-          }));
-        setUserPosts(mockPosts as Post[]);
+        setUserPosts([]);
       }
 
       // Fetch stats
@@ -122,16 +112,9 @@ export default function UserProfileScreen() {
         setIsBlockedBetween(blocked);
       }
     } catch {
-      // Mock fallback
-      const mockUser = MOCK_USERS.find((u) => u.id === userId) || null;
-      setProfileUser(mockUser);
-      const mockPosts = MOCK_POSTS
-        .filter((p) => p.user_id === userId)
-        .map((p) => ({
-          ...p,
-          images: MOCK_POST_IMAGES.filter((img) => img.post_id === p.id),
-        }));
-      setUserPosts(mockPosts as Post[]);
+      // Supabase failed — show empty state
+      setProfileUser(null);
+      setUserPosts([]);
     }
 
     setLoading(false);
