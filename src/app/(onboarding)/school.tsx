@@ -139,7 +139,7 @@ export default function SchoolPickerScreen() {
           Okulun Hangisi?
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Sana yakin mekanlari bulalim
+          Sana yakın mekanları bulalım
         </Text>
       </View>
 

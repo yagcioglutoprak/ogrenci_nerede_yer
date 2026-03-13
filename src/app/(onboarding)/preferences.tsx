@@ -57,7 +57,7 @@ export default function PreferencesScreen() {
     try {
       const { error } = await useAuthStore
         .getState()
-        .updateProfile({ food_preferences: selectedTags } as any);
+        .updateProfile({ food_preferences: selectedTags });
       if (error) {
         Alert.alert('Hata', 'Tercihler kaydedilemedi');
       }
