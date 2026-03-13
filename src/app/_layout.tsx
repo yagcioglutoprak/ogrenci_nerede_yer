@@ -75,6 +75,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen
         name="venue/[id]"
         options={{ animation: 'slide_from_bottom' }}
