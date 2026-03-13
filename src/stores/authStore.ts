@@ -95,10 +95,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const fullName = pendingAppleName || metadata.full_name || metadata.name || email.split('@')[0];
             pendingAppleName = null;
 
-            const baseUsername = (fullName || email.split('@')[0])
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '')
-              .substring(0, 20) || 'user';
+            // Use explicit username from email signup metadata, otherwise derive from name
+            const baseUsername = metadata.username
+              || (fullName || email.split('@')[0])
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '')
+                .substring(0, 20)
+              || 'user';
 
             let username = baseUsername;
 
@@ -152,7 +155,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      const errorMessage = error?.message || null;
+      let errorMessage = error?.message || null;
+      if (errorMessage) {
+        if (errorMessage.toLowerCase().includes('invalid login credentials')) {
+          errorMessage = 'E-posta veya şifre hatalı.';
+        } else if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('invalid')) {
+          errorMessage = 'Geçersiz e-posta adresi.';
+        }
+      }
       set({ loading: false, error: errorMessage });
       return { error: errorMessage };
     } catch (err: any) {
@@ -165,27 +175,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUpWithEmail: async (email, password, username) => {
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Pass username in metadata so onAuthStateChange can create the profile
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username, full_name: username },
+        },
+      });
 
       if (error) {
-        set({ loading: false, error: error.message });
-        return { error: error.message };
+        let message = error.message;
+        if (error.message.toLowerCase().includes('email') && error.message.toLowerCase().includes('invalid')) {
+          message = 'Geçersiz e-posta adresi. Lütfen geçerli bir e-posta girin.';
+        } else if (error.message.toLowerCase().includes('already registered')) {
+          message = 'Bu e-posta adresi zaten kayıtlı.';
+        } else if (error.message.toLowerCase().includes('password')) {
+          message = 'Şifre en az 6 karakter olmalıdır.';
+        }
+        set({ loading: false, error: message });
+        return { error: message };
       }
 
-      if (data.user) {
-        // Kullanıcı profili oluştur
-        const { error: profileError } = await supabase.from('users').insert({
-          id: data.user.id,
-          email,
-          username,
-          full_name: username,
-          xp_points: 0,
-        });
-
-        if (profileError) {
-          set({ loading: false, error: profileError.message });
-          return { error: profileError.message };
-        }
+      // If session is returned (no email confirmation required), wait for
+      // onAuthStateChange to create the profile row automatically.
+      if (data.session) {
+        await waitForUser();
       }
 
       set({ loading: false, error: null });
