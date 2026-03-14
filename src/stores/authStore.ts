@@ -137,6 +137,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
           }
 
+          if (!profile) {
+            // Profile creation failed — sign out so user can retry cleanly
+            console.error('[auth] Profile creation failed for', session.user.id);
+            await supabase.auth.signOut();
+            set({ session: null, user: null });
+            return;
+          }
+
           set({ session, user: profile });
         } else {
           set({ session: null, user: null });

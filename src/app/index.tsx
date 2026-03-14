@@ -12,7 +12,9 @@ export default function Index() {
   useEffect(() => {
     if (!initialized) return;
 
+    let cancelled = false;
     hasCompletedOnboarding().then((completed) => {
+      if (cancelled) return;
       if (!completed && user?.university) {
         // Re-install case: user has profile data, skip onboarding
         setOnboardingCompleted();
@@ -22,7 +24,8 @@ export default function Index() {
       }
       setChecking(false);
     });
-  }, [initialized]);
+    return () => { cancelled = true; };
+  }, [initialized, user]);
 
   if (checking) return null;
 
