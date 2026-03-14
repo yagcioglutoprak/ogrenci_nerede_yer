@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -21,7 +21,7 @@ interface BadgeCardProps {
 
 const SPRING_CONFIG = { damping: 6, stiffness: 400 };
 
-export default function BadgeCard({ badge, earned = false, earnedAt, onPress, index = 0 }: BadgeCardProps) {
+function BadgeCard({ badge, earned = false, earnedAt, onPress, index = 0 }: BadgeCardProps) {
   const colors = useThemeColors();
   const scale = useSharedValue(1);
 
@@ -67,8 +67,14 @@ export default function BadgeCard({ badge, earned = false, earnedAt, onPress, in
     </>
   );
 
-  const containerBgColor = earned ? badge.color + '15' : colors.backgroundSecondary;
-  const containerBorderColor = earned ? badge.color + '40' : colors.border;
+  const containerBgColor = useMemo(
+    () => earned ? badge.color + '15' : colors.backgroundSecondary,
+    [earned, badge.color, colors.backgroundSecondary],
+  );
+  const containerBorderColor = useMemo(
+    () => earned ? badge.color + '40' : colors.border,
+    [earned, badge.color, colors.border],
+  );
 
   return (
     <Animated.View
@@ -100,6 +106,8 @@ export default function BadgeCard({ badge, earned = false, earnedAt, onPress, in
     </Animated.View>
   );
 }
+
+export default React.memo(BadgeCard);
 
 const styles = StyleSheet.create({
   container: {

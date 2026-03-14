@@ -6,6 +6,8 @@ import { Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import GlassView from './GlassView';
 
+const ACTION_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
+
 interface ActionButton {
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
@@ -21,7 +23,7 @@ interface ScreenHeaderProps {
   compact?: boolean;
 }
 
-function ActionButtonView({ action, colors }: { action: ActionButton; colors: ReturnType<typeof useThemeColors> }) {
+const ActionButtonView = React.memo(function ActionButtonView({ action, colors }: { action: ActionButton; colors: ReturnType<typeof useThemeColors> }) {
   const content = (
     <Ionicons name={action.icon} size={20} color={action.color ?? colors.textTertiary} />
   );
@@ -31,7 +33,7 @@ function ActionButtonView({ action, colors }: { action: ActionButton; colors: Re
       <TouchableOpacity
         onPress={action.onPress}
         activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={ACTION_HIT_SLOP}
       >
         <GlassView style={styles.actionButton} interactive>
           {content}
@@ -45,12 +47,12 @@ function ActionButtonView({ action, colors }: { action: ActionButton; colors: Re
       style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary }]}
       onPress={action.onPress}
       activeOpacity={0.7}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      hitSlop={ACTION_HIT_SLOP}
     >
       {content}
     </TouchableOpacity>
   );
-}
+});
 
 export default function ScreenHeader({ title, subtitle, leftAction, rightAction, compact = false }: ScreenHeaderProps) {
   const colors = useThemeColors();

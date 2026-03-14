@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -52,17 +52,15 @@ export default function EventRoomScreen() {
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const user = useAuthStore((s) => s.user);
-  const {
-    selectedEvent: event,
-    attendees,
-    messages,
-    loading,
-    fetchAttendees,
-    fetchMessages,
-    sendMessage,
-    joinEvent,
-    leaveEvent,
-  } = useEventStore();
+  const event = useEventStore((s) => s.selectedEvent);
+  const attendees = useEventStore((s) => s.attendees);
+  const messages = useEventStore((s) => s.messages);
+  const loading = useEventStore((s) => s.loading);
+  const fetchAttendees = useEventStore((s) => s.fetchAttendees);
+  const fetchMessages = useEventStore((s) => s.fetchMessages);
+  const sendMessage = useEventStore((s) => s.sendMessage);
+  const joinEvent = useEventStore((s) => s.joinEvent);
+  const leaveEvent = useEventStore((s) => s.leaveEvent);
 
   const [messageText, setMessageText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -181,7 +179,7 @@ export default function EventRoomScreen() {
   );
 
   // Group messages by date for separators
-  const messagesWithSeparators = useCallback(() => {
+  const messagesWithSeparators = useMemo(() => {
     const items: (EventMessage | { type: 'separator'; date: string; id: string })[] = [];
     let lastDate = '';
 
@@ -365,7 +363,7 @@ export default function EventRoomScreen() {
     </View>
   );
 
-  const data = messagesWithSeparators();
+  const data = messagesWithSeparators;
 
   const inputBarContent = (
     <>

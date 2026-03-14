@@ -30,7 +30,8 @@ function normalizeTurkish(text: string): string {
 
 export default function ProfileEditScreen() {
   const router = useRouter();
-  const { user, updateProfile } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
   const colors = useThemeColors();
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [username, setUsername] = useState(user?.username || '');

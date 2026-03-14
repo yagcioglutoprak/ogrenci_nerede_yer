@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -20,7 +20,7 @@ interface CirclePickerProps {
   size?: number;
 }
 
-function AnimatedCircle({
+const AnimatedCircle = React.memo(function AnimatedCircle({
   step,
   icon,
   filled,
@@ -62,7 +62,7 @@ function AnimatedCircle({
       scale.value = withSpring(1, { damping: 6, stiffness: 400 });
     });
     onPress(step);
-  }, [step, onPress, scale]);
+  }, [step, onPress]);
 
   return (
     <Pressable onPress={handlePress}>
@@ -88,7 +88,7 @@ function AnimatedCircle({
       </Animated.View>
     </Pressable>
   );
-}
+});
 
 export default function CirclePicker({
   value,
@@ -98,6 +98,12 @@ export default function CirclePicker({
   size = 42,
 }: CirclePickerProps) {
   const colors = useThemeColors();
+
+  const circleTheme = useMemo(() => ({
+    backgroundColor: colors.backgroundSecondary,
+    borderColor: colors.border,
+    textColor: colors.textTertiary,
+  }), [colors.backgroundSecondary, colors.border, colors.textTertiary]);
 
   const handlePress = useCallback(
     (step: number) => {
@@ -120,9 +126,9 @@ export default function CirclePicker({
             filled={filled}
             color={color}
             size={size}
-            backgroundColor={colors.backgroundSecondary}
-            borderColor={colors.border}
-            textColor={colors.textTertiary}
+            backgroundColor={circleTheme.backgroundColor}
+            borderColor={circleTheme.borderColor}
+            textColor={circleTheme.textColor}
             onPress={handlePress}
           />
         );

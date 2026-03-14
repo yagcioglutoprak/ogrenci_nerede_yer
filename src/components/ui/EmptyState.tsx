@@ -110,16 +110,18 @@ function ReviewsIllustration() {
   );
 }
 
-export default function EmptyState({ variant = 'generic', title, subtitle, actionLabel, onAction }: EmptyStateProps) {
+const ILLUSTRATION_MAP: Record<EmptyStateVariant, React.FC> = {
+  feed: FeedIllustration,
+  favorites: FavoritesIllustration,
+  posts: PostsIllustration,
+  reviews: ReviewsIllustration,
+  generic: FeedIllustration,
+};
+
+function EmptyState({ variant = 'generic', title, subtitle, actionLabel, onAction }: EmptyStateProps) {
   const colors = useThemeColors();
 
-  const Illustration = {
-    feed: FeedIllustration,
-    favorites: FavoritesIllustration,
-    posts: PostsIllustration,
-    reviews: ReviewsIllustration,
-    generic: FeedIllustration,
-  }[variant];
+  const Illustration = ILLUSTRATION_MAP[variant];
 
   return (
     <View style={styles.container}>
@@ -150,6 +152,8 @@ export default function EmptyState({ variant = 'generic', title, subtitle, actio
     </View>
   );
 }
+
+export default React.memo(EmptyState);
 
 const styles = StyleSheet.create({
   container: {

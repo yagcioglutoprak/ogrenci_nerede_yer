@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,15 +24,31 @@ interface VenueCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
+function VenueCard({ venue, onPress, style }: VenueCardProps) {
   const colors = useThemeColors();
-  const priceLabel = PriceRanges.find((p) => p.value === venue.price_range)?.label ?? '₺';
-  const levelInfo = VenueLevels.find((l) => l.level === venue.level);
+  const priceLabel = useMemo(() => PriceRanges.find((p) => p.value === venue.price_range)?.label ?? '₺', [venue.price_range]);
+  const levelInfo = useMemo(() => VenueLevels.find((l) => l.level === venue.level), [venue.level]);
+  const handlePress = useCallback(() => onPress(venue), [onPress, venue]);
+  const displayedTags = useMemo(() => {
+    if (!venue.tags || venue.tags.length === 0) return null;
+    return (
+      <View style={styles.tagsRow}>
+        {venue.tags.slice(0, 3).map((tag) => (
+          <View key={tag} style={[styles.tagChip, { backgroundColor: colors.accentSoft }]}>
+            <Text style={[styles.tagText, { color: Colors.accent }]}>{tag}</Text>
+          </View>
+        ))}
+        {venue.tags.length > 3 && (
+          <Text style={[styles.moreTagsText, { color: colors.textTertiary }]}>+{venue.tags.length - 3}</Text>
+        )}
+      </View>
+    );
+  }, [venue.tags, colors.accentSoft, colors.textTertiary]);
 
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.card }, style]}
-      onPress={() => onPress(venue)}
+      onPress={handlePress}
       activeOpacity={0.88}
     >
       {/* Cover Image with 16:10 ratio */}
@@ -110,22 +126,13 @@ export default function VenueCard({ venue, onPress, style }: VenueCardProps) {
         </View>
 
         {/* Tags */}
-        {venue.tags && venue.tags.length > 0 && (
-          <View style={styles.tagsRow}>
-            {venue.tags.slice(0, 3).map((tag) => (
-              <View key={tag} style={[styles.tagChip, { backgroundColor: colors.accentSoft }]}>
-                <Text style={[styles.tagText, { color: Colors.accent }]}>{tag}</Text>
-              </View>
-            ))}
-            {venue.tags.length > 3 && (
-              <Text style={[styles.moreTagsText, { color: colors.textTertiary }]}>+{venue.tags.length - 3}</Text>
-            )}
-          </View>
-        )}
+        {displayedTags}
       </View>
     </TouchableOpacity>
   );
 }
+
+export default React.memo(VenueCard);
 
 const styles = StyleSheet.create({
   card: {

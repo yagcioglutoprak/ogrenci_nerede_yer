@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -88,13 +88,13 @@ function PostCard({
 
   const images = post.images ?? [];
   const hasMultipleImages = images.length > 1;
-  const timeSince = getRelativeTime(post.created_at);
+  const timeSince = useMemo(() => getRelativeTime(post.created_at), [post.created_at]);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / IMAGE_WIDTH);
     setActiveImageIndex(index);
-  };
+  }, []);
 
   const handleLike = useCallback(() => {
     haptic.light();
@@ -149,12 +149,35 @@ function PostCard({
     );
   }, [post.id, onLike]);
 
-  const doubleTapGesture = Gesture.Tap()
-    .numberOfTaps(2)
-    .onEnd(() => {
-      'worklet';
-      runOnJS(triggerDoubleTapHeart)();
-    });
+  const doubleTapGesture = useMemo(
+    () => Gesture.Tap()
+      .numberOfTaps(2)
+      .onEnd(() => {
+        'worklet';
+        runOnJS(triggerDoubleTapHeart)();
+      }),
+    [triggerDoubleTapHeart],
+  );
+
+  const renderImage = useCallback(
+    ({ item }: { item: PostImage }) => (
+      <Image
+        source={{ uri: item.image_url }}
+        style={styles.postImage}
+        resizeMode="cover"
+      />
+    ),
+    [],
+  );
+
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<PostImage> | null | undefined, index: number) => ({
+      length: IMAGE_WIDTH,
+      offset: IMAGE_WIDTH * index,
+      index,
+    }),
+    [],
+  );
 
   return (
     <View
@@ -218,13 +241,8 @@ function PostCard({
                   scrollEventThrottle={16}
                   snapToInterval={IMAGE_WIDTH}
                   decelerationRate="fast"
-                  renderItem={({ item }) => (
-                    <Image
-                      source={{ uri: item.image_url }}
-                      style={styles.postImage}
-                      resizeMode="cover"
-                    />
-                  )}
+                  renderItem={renderImage}
+                  getItemLayout={getItemLayout}
                 />
 
                 {/* Venue tag — glass pill overlaid on image bottom */}

@@ -197,7 +197,7 @@ function GlassTabItem({ tab, isFocused, onPress, onLongPress, color, badge, onTa
 // Custom floating glass tab bar (iOS) — sliding liquid pill
 // ---------------------------------------------------------------------------
 
-function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
+const FloatingGlassTabBar = React.memo(function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
@@ -373,7 +373,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     opacity: pillOpacity.value,
   }));
 
-  const handleTabLayout = (tabName: string) => (e: LayoutChangeEvent) => {
+  const handleTabLayout = React.useCallback((tabName: string) => (e: LayoutChangeEvent) => {
     const { x, width } = e.nativeEvent.layout;
     tabLayouts.current[tabName] = { x, width };
 
@@ -382,9 +382,9 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       pillX.value = x + (width - PILL_WIDTH) / 2;
       initialised.current = true;
     }
-  };
+  }, [state.index]);
 
-  const handlePress = (name: string) => {
+  const handlePress = React.useCallback((name: string) => {
     haptic.light();
     const idx = findRouteIndex(name);
     const route = state.routes[idx];
@@ -396,17 +396,17 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
     if (state.index !== idx && !event.defaultPrevented) {
       navigation.navigate(route.name, route.params);
     }
-  };
+  }, [state.routes, state.index, navigation]);
 
-  const handleLongPress = (name: string) => {
+  const handleLongPress = React.useCallback((name: string) => {
     const idx = findRouteIndex(name);
     navigation.emit({
       type: 'tabLongPress',
       target: state.routes[idx].key,
     });
-  };
+  }, [state.routes, navigation]);
 
-  const renderTab = (tab: TabDef) => {
+  const renderTab = React.useCallback((tab: TabDef) => {
     const idx = findRouteIndex(tab.name);
     const isFocused = state.index === idx;
     const color = isFocused ? colors.primary : colors.textTertiary;
@@ -423,7 +423,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
         onTabLayout={handleTabLayout(tab.name)}
       />
     );
-  };
+  }, [state.index, colors, totalUnreadCount, handleTabLayout]);
 
   return (
     <View
@@ -468,13 +468,13 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: any) {
       </GestureDetector>
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main layout
 // ---------------------------------------------------------------------------
 
-function AndroidUnreadBadge() {
+const AndroidUnreadBadge = React.memo(function AndroidUnreadBadge() {
   const count = useMessageStore((s) => s.totalUnreadCount);
   const authUser = useAuthStore((s) => s.user);
   const fetchUnreadCount = useMessageStore((s) => s.fetchUnreadCount);
@@ -490,7 +490,7 @@ function AndroidUnreadBadge() {
       <Text style={iosStyles.badgeText}>{count > 9 ? '9+' : count}</Text>
     </View>
   );
-}
+});
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Image, Text, Platform, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -11,7 +11,7 @@ interface AvatarProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function Avatar({
+function Avatar({
   uri,
   name,
   size = 40,
@@ -20,19 +20,21 @@ export default function Avatar({
   const colors = useThemeColors();
   const [hasError, setHasError] = useState(false);
 
-  const initials = getInitials(name);
-  const backgroundColor = getWarmColorFromName(name);
-  const fontSize = Math.round(size * 0.36);
-  const borderRadius = size / 2;
-  const borderWidth = Math.max(1.5, size * 0.05);
+  const { initials, backgroundColor, fontSize, borderRadius, borderWidth } = useMemo(() => ({
+    initials: getInitials(name),
+    backgroundColor: getWarmColorFromName(name),
+    fontSize: Math.round(size * 0.36),
+    borderRadius: size / 2,
+    borderWidth: Math.max(1.5, size * 0.05),
+  }), [name, size]);
 
-  const containerStyle: ViewStyle = {
+  const containerStyle = useMemo<ViewStyle>(() => ({
     width: size,
     height: size,
     borderRadius,
     borderWidth,
     borderColor: colors.background,
-  };
+  }), [size, borderRadius, borderWidth, colors.background]);
 
   const isIOS = Platform.OS === 'ios';
 
@@ -94,6 +96,8 @@ export default function Avatar({
   );
   return wrapWithGlassRing(fallbackAvatar);
 }
+
+export default React.memo(Avatar);
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);

@@ -1,23 +1,25 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
+const isNative = Platform.OS !== 'web';
+
 export const haptic = {
   light: () => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   },
   medium: () => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   },
   heavy: () => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (isNative) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   },
   success: () => {
-    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (isNative) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
   error: () => {
-    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    if (isNative) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   },
   selection: () => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    if (isNative) Haptics.selectionAsync();
   },
 };

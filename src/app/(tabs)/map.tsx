@@ -151,10 +151,17 @@ export default function MapScreen() {
   const isDark = useIsDarkMode();
   const insets = useSafeAreaInsets();
 
-  const {
-    venues, loading, error, fetchVenues, filters, setFilters, clearError,
-    nearbyScrapedVenues, nearbyScrapedCount, fetchNearbyScraped, countNearbyScraped,
-  } = useVenueStore();
+  const venues = useVenueStore((s) => s.venues);
+  const loading = useVenueStore((s) => s.loading);
+  const error = useVenueStore((s) => s.error);
+  const fetchVenues = useVenueStore((s) => s.fetchVenues);
+  const filters = useVenueStore((s) => s.filters);
+  const setFilters = useVenueStore((s) => s.setFilters);
+  const clearError = useVenueStore((s) => s.clearError);
+  const nearbyScrapedVenues = useVenueStore((s) => s.nearbyScrapedVenues);
+  const nearbyScrapedCount = useVenueStore((s) => s.nearbyScrapedCount);
+  const fetchNearbyScraped = useVenueStore((s) => s.fetchNearbyScraped);
+  const countNearbyScraped = useVenueStore((s) => s.countNearbyScraped);
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -251,7 +258,7 @@ export default function MapScreen() {
 
   useEffect(() => {
     requestLocationPermission();
-    fetchVenues();
+    if (venues.length === 0) fetchVenues();
   }, []);
 
   // Load nearby scraped venues when zoomed in enough, fully debounced

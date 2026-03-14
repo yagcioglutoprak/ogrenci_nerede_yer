@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { haptic } from '../../lib/haptics';
 import GlassView from './GlassView';
 
 const FOCUS_SPRING = { damping: 22, stiffness: 340 };
+const SECURE_HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -36,7 +37,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function Input({
+function Input({
   label,
   placeholder,
   value,
@@ -67,6 +68,10 @@ export default function Input({
     setIsFocused(false);
     focusProgress.value = withSpring(0, FOCUS_SPRING);
   }, [focusProgress]);
+
+  const handleToggleSecure = useCallback(() => {
+    setIsSecureVisible(v => !v);
+  }, []);
 
   const animatedBorderStyle = useAnimatedStyle(() => {
     if (hasError) {
@@ -140,8 +145,8 @@ export default function Input({
 
       {showSecureToggle && (
         <TouchableOpacity
-          onPress={() => setIsSecureVisible(!isSecureVisible)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={handleToggleSecure}
+          hitSlop={SECURE_HIT_SLOP}
           style={styles.secureToggle}
         >
           <Ionicons
@@ -154,10 +159,10 @@ export default function Input({
     </>
   );
 
-  const wrapperBaseStyles: StyleProp<ViewStyle>[] = [
+  const wrapperBaseStyles = useMemo<StyleProp<ViewStyle>[]>(() => [
     styles.inputWrapper,
     multiline && styles.inputWrapperMultiline,
-  ];
+  ], [multiline]);
 
   return (
     <View style={[styles.container, style]}>
@@ -199,6 +204,8 @@ export default function Input({
     </View>
   );
 }
+
+export default React.memo(Input);
 
 const styles = StyleSheet.create({
   container: {

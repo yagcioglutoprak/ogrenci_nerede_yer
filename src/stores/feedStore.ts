@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { uploadImages } from '../lib/imageUpload';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import { sendPushNotification } from '../lib/notifications';
+import { useBlockStore } from './blockStore';
+import { useAuthStore } from './authStore';
 import type { Post, Comment, FeedCategory, RecommendationAnswer } from '../types';
 
 const PAGE_SIZE = 20;
@@ -38,30 +40,25 @@ interface FeedState {
 
 /**
  * Apply category-based filtering and sorting to posts client-side.
+ * Pre-computes timestamps before sorting to avoid repeated Date allocations.
  */
 function applyCategoryFilter(posts: Post[], category: FeedCategory): Post[] {
   let filtered = [...posts];
-  const now = new Date().getTime();
+  const now = Date.now();
 
   switch (category) {
     case 'meetups':
       filtered = filtered.filter((p) => p.post_type === 'meetup');
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
     case 'questions':
       filtered = filtered.filter((p) => p.post_type === 'question');
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
     case 'moments':
       filtered = filtered.filter((p) => p.post_type === 'moment' && (!p.expires_at || new Date(p.expires_at).getTime() > now));
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
     case 'top':
       filtered.sort((a, b) => (b.likes_count ?? 0) - (a.likes_count ?? 0));
-      break;
-    case 'new':
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      break;
+      return filtered;
     case 'all':
     default:
       // Exclude expired moments from "all" feed
@@ -71,10 +68,16 @@ function applyCategoryFilter(posts: Post[], category: FeedCategory): Post[] {
         }
         return true;
       });
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       break;
   }
-  return filtered;
+
+  // Pre-compute timestamps for sorting to avoid new Date() inside comparator
+  const withTimestamps = filtered.map((p) => ({
+    post: p,
+    ts: new Date(p.created_at).getTime(),
+  }));
+  withTimestamps.sort((a, b) => b.ts - a.ts);
+  return withTimestamps.map((item) => item.post);
 }
 
 /**
@@ -140,7 +143,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         .range(0, PAGE_SIZE * 3 - 1);
 
       if (!error && data && data.length > 0) {
-        const { useBlockStore } = await import('./blockStore');
         const blockedUsers = useBlockStore.getState().blockedUsers;
         let all = (data as Post[]).filter(
           (p) => !blockedUsers.includes(p.user_id)
@@ -180,9 +182,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           allPosts: all,
           posts: filtered.slice(0, PAGE_SIZE),
           hasMore: filtered.length > PAGE_SIZE,
+          loading: false,
         });
       } else {
-        set({ allPosts: [], posts: [], hasMore: false, error: error?.message || null });
+        set({ allPosts: [], posts: [], hasMore: false, error: error?.message || null, loading: false });
       }
     } catch (err: any) {
       set({
@@ -190,10 +193,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         posts: [],
         hasMore: false,
         error: err?.message || 'Gonderiler yuklenirken hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   fetchMorePosts: async () => {
@@ -212,15 +214,14 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         set({
           posts: [...posts, ...(data as Post[])],
           hasMore: data.length >= PAGE_SIZE,
+          loadingMore: false,
         });
       } else {
-        set({ hasMore: false });
+        set({ hasMore: false, loadingMore: false });
       }
     } catch {
-      set({ hasMore: false });
+      set({ hasMore: false, loadingMore: false });
     }
-
-    set({ loadingMore: false });
   },
 
   fetchPostById: async (id) => {
@@ -323,8 +324,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
     // If Supabase fails entirely, we still update local state below
 
-    // Lokal state guncelle
-    const posts = get().posts.map((p) => {
+    // Lokal state guncelle — update both posts and allPosts
+    const updateLike = (p: Post) => {
       if (p.id === postId) {
         const isLiked = !p.is_liked;
         return {
@@ -334,13 +335,16 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         };
       }
       return p;
+    };
+    set({
+      posts: get().posts.map(updateLike),
+      allPosts: get().allPosts.map(updateLike),
     });
-    set({ posts });
   },
 
   addComment: async (postId, userId, text) => {
     // Optimistically append the comment locally for instant UI feedback
-    const currentUser = (await import('./authStore')).useAuthStore.getState().user;
+    const currentUser = useAuthStore.getState().user;
     const optimisticComment: Comment = {
       id: `c-local-${Date.now()}`,
       post_id: postId,
@@ -350,16 +354,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       user: currentUser ?? undefined,
     };
     const previousComments = get().comments;
-    set({ comments: [...previousComments, optimisticComment] });
 
-    // Update local post comments_count immediately
-    const posts = get().posts.map((p) => {
-      if (p.id === postId) {
-        return { ...p, comments_count: (p.comments_count || 0) + 1 };
-      }
-      return p;
+    // Batch comments + posts update into a single set() call
+    set({
+      comments: [...previousComments, optimisticComment],
+      posts: get().posts.map((p) => {
+        if (p.id === postId) {
+          return { ...p, comments_count: (p.comments_count || 0) + 1 };
+        }
+        return p;
+      }),
     });
-    set({ posts });
 
     const { error } = await supabase.from('comments').insert({
       post_id: postId,

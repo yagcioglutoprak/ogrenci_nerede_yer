@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Spacing, BorderRadius, FontFamily } from '../../lib/constants';
@@ -17,7 +17,7 @@ interface BadgeProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function Badge({
+function Badge({
   label,
   color = Colors.primary,
   icon,
@@ -28,6 +28,7 @@ export default function Badge({
   const colors = useThemeColors();
   const isSmall = size === 'sm';
   const isVerified = variant === 'verified';
+  const colorRgba = useMemo(() => hexToRgba(color, 0.12), [color]);
 
   if (isVerified) {
     return (
@@ -57,10 +58,10 @@ export default function Badge({
       style={[
         styles.container,
         isSmall ? styles.containerSm : styles.containerMd,
-        Platform.OS !== 'ios' && { backgroundColor: hexToRgba(color, 0.12) },
+        Platform.OS !== 'ios' && { backgroundColor: colorRgba },
         style,
       ]}
-      fallbackColor={hexToRgba(color, 0.12)}
+      fallbackColor={colorRgba}
     >
       {icon && (
         <Ionicons
@@ -83,6 +84,8 @@ export default function Badge({
     </GlassView>
   );
 }
+
+export default React.memo(Badge);
 
 function hexToRgba(hex: string, alpha: number): string {
   const cleanHex = hex.replace('#', '');

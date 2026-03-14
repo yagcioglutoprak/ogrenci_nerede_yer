@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +13,7 @@ interface ImageBubbleProps {
   status?: MessageStatus;
 }
 
-function StatusIcon({ status }: { status: MessageStatus }) {
+const StatusIcon = React.memo(function StatusIcon({ status }: { status: MessageStatus }) {
   switch (status) {
     case 'sending':
       return <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.7)" style={{ marginLeft: 3 }} />;
@@ -22,20 +22,22 @@ function StatusIcon({ status }: { status: MessageStatus }) {
     case 'seen':
       return <Ionicons name="checkmark-done" size={13} color={Colors.accent} style={{ marginLeft: 3 }} />;
   }
-}
+});
 
-export default function ImageBubble({ imageUrl, isOwn, time, status }: ImageBubbleProps) {
+function ImageBubble({ imageUrl, isOwn, time, status }: ImageBubbleProps) {
   const colors = useThemeColors();
+
+  const imageWrapperStyle = useMemo(() => [
+    styles.imageWrapper,
+    { shadowColor: colors.shadow },
+    isOwn ? styles.ownImageWrapper : styles.otherImageWrapper,
+  ], [colors.shadow, isOwn]);
 
   return (
     <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
       <TouchableOpacity
         activeOpacity={0.9}
-        style={[
-          styles.imageWrapper,
-          { shadowColor: colors.shadow },
-          isOwn ? styles.ownImageWrapper : styles.otherImageWrapper,
-        ]}
+        style={imageWrapperStyle}
       >
         <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
         <LinearGradient
@@ -51,6 +53,8 @@ export default function ImageBubble({ imageUrl, isOwn, time, status }: ImageBubb
     </View>
   );
 }
+
+export default React.memo(ImageBubble);
 
 const styles = StyleSheet.create({
   container: {

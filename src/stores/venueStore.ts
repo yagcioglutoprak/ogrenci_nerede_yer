@@ -7,6 +7,45 @@ import type { Venue, Review, VenueFilters } from '../types';
 
 const PAGE_SIZE = 30;
 
+let filterFetchTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Build a Supabase query for venues with the given filters and optional geo bounding box.
+ */
+function buildVenueQuery(filters: VenueFilters, region?: { lat: number; lng: number; radius: number }) {
+  let query = supabase.from('venues').select('*');
+
+  if (filters.minRating) {
+    query = query.gte('overall_rating', filters.minRating);
+  }
+  if (filters.priceRange && filters.priceRange.length > 0) {
+    query = query.in('price_range', filters.priceRange);
+  }
+  if (filters.isVerified) {
+    query = query.eq('is_verified', true);
+  }
+  if (filters.tags && filters.tags.length > 0) {
+    query = query.contains('tags', filters.tags);
+  }
+  if (filters.searchQuery && filters.searchQuery.trim()) {
+    query = query.or(
+      `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
+    );
+  }
+
+  // Geo-bounding box filter
+  if (region) {
+    const delta = region.radius / 111; // ~111 km per degree
+    query = query
+      .gte('latitude', region.lat - delta)
+      .lte('latitude', region.lat + delta)
+      .gte('longitude', region.lng - delta)
+      .lte('longitude', region.lng + delta);
+  }
+
+  return query;
+}
+
 interface VenueState {
   venues: Venue[];
   nearbyScrapedVenues: Venue[];
@@ -27,6 +66,7 @@ interface VenueState {
   searchVenues: (query: string) => Promise<void>;
   fetchNearbyScraped: (lat: number, lng: number, latDelta: number, lngDelta: number) => Promise<void>;
   countNearbyScraped: (lat: number, lng: number, latDelta: number, lngDelta: number) => Promise<void>;
+  fetchNearbyScrapedWithCount: (lat: number, lng: number, latDelta: number, lngDelta: number) => Promise<void>;
   addVenue: (venue: Omit<Venue, 'id' | 'created_at' | 'avg_taste_rating' | 'avg_value_rating' | 'avg_friendliness_rating' | 'overall_rating' | 'total_reviews' | 'level'>) => Promise<{ data: Venue | null; error: string | null }>;
   addReview: (review: Omit<Review, 'id' | 'created_at'>) => Promise<{ error: string | null }>;
   toggleFavorite: (venueId: string, userId: string) => Promise<void>;
@@ -52,55 +92,26 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      let query = supabase.from('venues').select('*');
       const filters = get().filters;
-
-      if (filters.minRating) {
-        query = query.gte('overall_rating', filters.minRating);
-      }
-      if (filters.priceRange && filters.priceRange.length > 0) {
-        query = query.in('price_range', filters.priceRange);
-      }
-      if (filters.isVerified) {
-        query = query.eq('is_verified', true);
-      }
-      if (filters.tags && filters.tags.length > 0) {
-        query = query.contains('tags', filters.tags);
-      }
-      if (filters.searchQuery && filters.searchQuery.trim()) {
-        query = query.or(
-          `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
-        );
-      }
-
-      // Geo-bounding box filter
-      if (region) {
-        const delta = region.radius / 111; // ~111 km per degree
-        query = query
-          .gte('latitude', region.lat - delta)
-          .lte('latitude', region.lat + delta)
-          .gte('longitude', region.lng - delta)
-          .lte('longitude', region.lng + delta);
-      }
-
-      const { data, error } = await query
+      const { data, error } = await buildVenueQuery(filters, region)
         .order('overall_rating', { ascending: false })
         .range(0, PAGE_SIZE - 1);
 
       if (!error && data) {
-        set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE });
+        set({ venues: data as Venue[], hasMore: data.length >= PAGE_SIZE, loading: false });
       } else if (error) {
-        set({ venues: [], hasMore: false, error: error.message });
+        set({ venues: [], hasMore: false, error: error.message, loading: false });
+      } else {
+        set({ loading: false });
       }
     } catch (err: any) {
       set({
         venues: [],
         hasMore: false,
         error: err?.message || 'Mekanlar yuklenirken hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   fetchMoreVenues: async () => {
@@ -112,28 +123,8 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     const to = from + PAGE_SIZE - 1;
 
     try {
-      let query = supabase.from('venues').select('*');
       const filters = get().filters;
-
-      if (filters.minRating) {
-        query = query.gte('overall_rating', filters.minRating);
-      }
-      if (filters.priceRange && filters.priceRange.length > 0) {
-        query = query.in('price_range', filters.priceRange);
-      }
-      if (filters.isVerified) {
-        query = query.eq('is_verified', true);
-      }
-      if (filters.tags && filters.tags.length > 0) {
-        query = query.contains('tags', filters.tags);
-      }
-      if (filters.searchQuery && filters.searchQuery.trim()) {
-        query = query.or(
-          `name.ilike.%${filters.searchQuery}%,address.ilike.%${filters.searchQuery}%`,
-        );
-      }
-
-      const { data, error } = await query
+      const { data, error } = await buildVenueQuery(filters)
         .order('overall_rating', { ascending: false })
         .range(from, to);
 
@@ -141,15 +132,14 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         set({
           venues: [...venues, ...(data as Venue[])],
           hasMore: data.length >= PAGE_SIZE,
+          loadingMore: false,
         });
       } else {
-        set({ hasMore: false });
+        set({ hasMore: false, loadingMore: false });
       }
     } catch {
-      set({ hasMore: false });
+      set({ hasMore: false, loadingMore: false });
     }
-
-    set({ loadingMore: false });
   },
 
   fetchVenueById: async (id) => {
@@ -161,11 +151,10 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       .single();
 
     if (!error && data) {
-      set({ selectedVenue: data as Venue });
+      set({ selectedVenue: data as Venue, loading: false });
     } else {
-      set({ selectedVenue: null });
+      set({ selectedVenue: null, loading: false });
     }
-    set({ loading: false });
   },
 
   fetchReviews: async (venueId) => {
@@ -199,18 +188,19 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .limit(20);
 
       if (!error && data) {
-        set({ venues: data as Venue[] });
+        set({ venues: data as Venue[], loading: false });
       } else if (error) {
-        set({ venues: [], error: error.message });
+        set({ venues: [], error: error.message, loading: false });
+      } else {
+        set({ loading: false });
       }
     } catch (err: any) {
       set({
         venues: [],
         error: err?.message || 'Arama sirasinda hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   addVenue: async (venue) => {
@@ -254,36 +244,8 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     const { error } = await supabase.from('reviews').insert(review);
 
     if (!error) {
-      // Mekan ortalamalarini guncelle — use aggregate query to avoid race conditions
-      const { data: avgData } = await supabase
-        .from('reviews')
-        .select('taste_rating.avg(), value_rating.avg(), friendliness_rating.avg(), venue_id.count()')
-        .eq('venue_id', review.venue_id)
-        .single();
-
-      if (avgData) {
-        const avgTaste = avgData.avg_taste_rating ?? avgData.avg ?? 0;
-        const avgValue = avgData.avg_value_rating ?? avgData.avg ?? 0;
-        const avgFriendliness = avgData.avg_friendliness_rating ?? avgData.avg ?? 0;
-        const reviewCount = avgData.count ?? 0;
-        const overall = (avgTaste + avgValue + avgFriendliness) / 3;
-
-        // Level hesapla
-        let level = 1;
-        if (reviewCount >= 50) level = 4;
-        else if (reviewCount >= 15) level = 3;
-        else if (reviewCount >= 5) level = 2;
-
-        await supabase.from('venues').update({
-          avg_taste_rating: Math.round(avgTaste * 10) / 10,
-          avg_value_rating: Math.round(avgValue * 10) / 10,
-          avg_friendliness_rating: Math.round(avgFriendliness * 10) / 10,
-          overall_rating: Math.round(overall * 10) / 10,
-          total_reviews: reviewCount,
-          level,
-        }).eq('id', review.venue_id);
-      } else {
-        // Fallback: fetch all reviews and compute client-side
+      // Mekan ortalamalarini guncelle — fetch all reviews and compute client-side
+      {
         const { data: reviews } = await supabase
           .from('reviews')
           .select('taste_rating, value_rating, friendliness_rating')
@@ -354,14 +316,14 @@ export const useVenueStore = create<VenueState>((set, get) => ({
     return get().favoriteVenueIds.has(venueId);
   },
 
-  fetchNearbyScraped: async (lat, lng, latDelta, lngDelta) => {
+  fetchNearbyScrapedWithCount: async (lat, lng, latDelta, lngDelta) => {
     const halfLat = latDelta / 2;
     const halfLng = lngDelta / 2;
 
     try {
-      const { data } = await supabase
+      const { data, count } = await supabase
         .from('venues')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('source', 'scraped')
         .gte('latitude', lat - halfLat)
         .lte('latitude', lat + halfLat)
@@ -369,35 +331,31 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .lte('longitude', lng + halfLng)
         .limit(200);
 
-      set({ nearbyScrapedVenues: (data as Venue[]) || [] });
+      set({
+        nearbyScrapedVenues: (data as Venue[]) || [],
+        nearbyScrapedCount: count ?? 0,
+      });
     } catch {
       // Silent fail — scraped venues are supplementary
     }
   },
 
+  fetchNearbyScraped: async (lat, lng, latDelta, lngDelta) => {
+    await get().fetchNearbyScrapedWithCount(lat, lng, latDelta, lngDelta);
+  },
+
   countNearbyScraped: async (lat, lng, latDelta, lngDelta) => {
-    const halfLat = latDelta / 2;
-    const halfLng = lngDelta / 2;
-
-    try {
-      const { count } = await supabase
-        .from('venues')
-        .select('*', { count: 'exact', head: true })
-        .eq('source', 'scraped')
-        .gte('latitude', lat - halfLat)
-        .lte('latitude', lat + halfLat)
-        .gte('longitude', lng - halfLng)
-        .lte('longitude', lng + halfLng);
-
-      set({ nearbyScrapedCount: count ?? 0 });
-    } catch {
-      // Silent fail
-    }
+    await get().fetchNearbyScrapedWithCount(lat, lng, latDelta, lngDelta);
   },
 
   setFilters: (filters) => {
     set({ filters });
-    get().fetchVenues();
+    if (filterFetchTimer) {
+      clearTimeout(filterFetchTimer);
+    }
+    filterFetchTimer = setTimeout(() => {
+      get().fetchVenues();
+    }, 400);
   },
 
   clearError: () => set({ error: null }),

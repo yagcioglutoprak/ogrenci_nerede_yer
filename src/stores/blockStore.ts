@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 
 interface BlockState {
   blockedUsers: string[];
+  blockedUserSet: Set<string>;
   loading: boolean;
 
   fetchBlockedUsers: (userId: string) => Promise<void>;
@@ -14,6 +15,7 @@ interface BlockState {
 
 export const useBlockStore = create<BlockState>((set, get) => ({
   blockedUsers: [],
+  blockedUserSet: new Set<string>(),
   loading: false,
 
   fetchBlockedUsers: async (userId) => {
@@ -24,15 +26,18 @@ export const useBlockStore = create<BlockState>((set, get) => ({
         .eq('blocker_id', userId);
 
       if (error) throw error;
-      set({ blockedUsers: (data || []).map((b) => b.blocked_id) });
+      const ids = (data || []).map((b) => b.blocked_id);
+      set({ blockedUsers: ids, blockedUserSet: new Set(ids) });
     } catch {
-      set({ blockedUsers: [] });
+      set({ blockedUsers: [], blockedUserSet: new Set() });
     }
   },
 
   blockUser: async (blockerId, blockedId) => {
     // Optimistic update
-    set({ blockedUsers: [...get().blockedUsers, blockedId] });
+    const prevUsers = get().blockedUsers;
+    const newUsers = [...prevUsers, blockedId];
+    set({ blockedUsers: newUsers, blockedUserSet: new Set(newUsers) });
 
     try {
       // Insert block
@@ -55,13 +60,15 @@ export const useBlockStore = create<BlockState>((set, get) => ({
         .eq('participant_2', p2);
     } catch {
       // Rollback optimistic update
-      set({ blockedUsers: get().blockedUsers.filter((id) => id !== blockedId) });
+      set({ blockedUsers: prevUsers, blockedUserSet: new Set(prevUsers) });
     }
   },
 
   unblockUser: async (blockerId, blockedId) => {
     // Optimistic update
-    set({ blockedUsers: get().blockedUsers.filter((id) => id !== blockedId) });
+    const prevUsers = get().blockedUsers;
+    const newUsers = prevUsers.filter((id) => id !== blockedId);
+    set({ blockedUsers: newUsers, blockedUserSet: new Set(newUsers) });
 
     try {
       await supabase
@@ -71,12 +78,12 @@ export const useBlockStore = create<BlockState>((set, get) => ({
         .eq('blocked_id', blockedId);
     } catch {
       // Rollback
-      set({ blockedUsers: [...get().blockedUsers, blockedId] });
+      set({ blockedUsers: prevUsers, blockedUserSet: new Set(prevUsers) });
     }
   },
 
   isBlocked: (userId) => {
-    return get().blockedUsers.includes(userId);
+    return get().blockedUserSet.has(userId);
   },
 
   checkBlockedBetween: async (userA, userB) => {

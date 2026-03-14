@@ -31,6 +31,23 @@ export function useLocation() {
       }
 
       try {
+        // Try last known position first for instant display
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown) {
+          setState({
+            location: lastKnown,
+            region: {
+              latitude: lastKnown.coords.latitude,
+              longitude: lastKnown.coords.longitude,
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            },
+            errorMsg: null,
+            loading: false,
+          });
+        }
+
+        // Then get fresh position for accuracy
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });

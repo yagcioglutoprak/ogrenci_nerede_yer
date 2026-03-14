@@ -86,7 +86,7 @@ export default function MessagesScreen() {
     [conversations]
   );
 
-  const renderActiveRow = () => {
+  const renderActiveRow = useCallback(() => {
     if (recentActive.length === 0) return null;
     return (
       <Animated.View entering={FadeIn.delay(100).duration(500)} exiting={FadeOut.duration(150)}>
@@ -137,9 +137,9 @@ export default function MessagesScreen() {
         </ScrollView>
       </Animated.View>
     );
-  };
+  }, [recentActive, colors]);
 
-  const renderBuddyMatch = () => {
+  const renderBuddyMatch = useCallback(() => {
     if (!activeMatch || !user) return null;
     const otherBuddy = activeMatch.requester?.user_id === user.id ? activeMatch.target : activeMatch.requester;
     const otherUser = otherBuddy?.user;
@@ -198,7 +198,7 @@ export default function MessagesScreen() {
         </TouchableOpacity>
       </Animated.View>
     );
-  };
+  }, [activeMatch, user, isDark, colors]);
 
   const renderConversation = useCallback(({ item, index }: { item: Conversation; index: number }) => {
     const hasUnread = (item.unread_count ?? 0) > 0;
@@ -210,14 +210,12 @@ export default function MessagesScreen() {
         : item.last_message_text
       : 'Henüz mesaj yok';
 
-    const staggerDelay = Math.min(index * AnimationConfig.staggerInterval, AnimationConfig.maxStaggerDelay);
-
     const cardBg = hasUnread ? colors.messageUnreadBg : colors.background;
 
     const cardBorder = hasUnread ? colors.messageUnreadBorder : colors.borderLight;
 
     return (
-      <Animated.View entering={FadeInDown.delay(staggerDelay).springify().damping(16).stiffness(120)} exiting={FadeOut.duration(150)}>
+      <View>
         <TouchableOpacity
           style={[
             styles.conversationCard,
@@ -302,7 +300,7 @@ export default function MessagesScreen() {
             </View>
           </View>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     );
   }, [user?.id, colors]);
 
@@ -427,7 +425,7 @@ export default function MessagesScreen() {
           data={filteredConversations}
           keyExtractor={(item) => item.id}
           renderItem={renderConversation}
-          ListHeaderComponent={!searchQuery ? () => (
+          ListHeaderComponent={!searchQuery ? (
             <>
               {renderBuddyMatch()}
               {renderActiveRow()}

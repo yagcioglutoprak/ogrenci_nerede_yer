@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Platform, StyleProp, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import {
@@ -25,7 +25,7 @@ interface GlassViewProps {
  * 2. iOS < 26 → BlurView from expo-blur
  * 3. Android → plain View with semi-transparent background
  */
-export default function GlassView({
+function GlassView({
   children,
   style,
   fallbackColor,
@@ -34,8 +34,10 @@ export default function GlassView({
   effect = 'regular',
 }: GlassViewProps) {
   const isDark = useIsDarkMode();
-  const resolvedFallback =
-    fallbackColor ?? (isDark ? DarkColors.glass.background : Colors.glass.background);
+  const resolvedFallback = useMemo(
+    () => fallbackColor ?? (isDark ? DarkColors.glass.background : Colors.glass.background),
+    [fallbackColor, isDark],
+  );
 
   // Android — plain View with semi-transparent background
   if (Platform.OS !== 'ios') {
@@ -71,3 +73,5 @@ export default function GlassView({
     </BlurView>
   );
 }
+
+export default React.memo(GlassView);

@@ -115,7 +115,7 @@ export default function AddScreen() {
     );
   }
 
-  const renderSegmentControl = () => {
+  const renderSegmentControl = useCallback(() => {
     const inner = (
       <View style={styles.segmentInner}>
         <ScrollView
@@ -173,9 +173,9 @@ export default function AddScreen() {
         {inner}
       </View>
     );
-  };
+  }, [activeTab, colors, indicatorStyle, handleTabLayout, handleTabPress]);
 
-  const renderActiveForm = () => {
+  const renderActiveForm = useCallback(() => {
     const formContent =
       activeTab === 'venue' ? (
         <VenueForm user={user} />
@@ -198,7 +198,7 @@ export default function AddScreen() {
         {formContent}
       </Animated.View>
     );
-  };
+  }, [activeTab, user]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>

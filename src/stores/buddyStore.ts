@@ -4,6 +4,9 @@ import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import { sendPushNotification } from '../lib/notifications';
 import type { MealBuddy, BuddyMatch, BuddyMessage } from '../types';
 
+// Sender profile cache to avoid re-fetching the same user on every incoming message
+const buddySenderProfileCache = new Map<string, any>();
+
 interface BuddyState {
   myBuddy: MealBuddy | null;
   nearbyBuddies: MealBuddy[];
@@ -233,8 +236,18 @@ export const useBuddyStore = create<BuddyState>((set, get) => ({
           filter: `match_id=eq.${matchId}`,
         }, async (payload) => {
           const newMsg = payload.new as any;
-          const { data: userData } = await supabase.from('users').select('*').eq('id', newMsg.sender_id).single();
-          const message: BuddyMessage = { ...newMsg, user: userData || undefined };
+
+          // Use sender profile cache to avoid re-fetching the same user repeatedly
+          let userData = buddySenderProfileCache.get(newMsg.sender_id);
+          if (!userData) {
+            const { data } = await supabase.from('users').select('*').eq('id', newMsg.sender_id).single();
+            userData = data || undefined;
+            if (userData) {
+              buddySenderProfileCache.set(newMsg.sender_id, userData);
+            }
+          }
+
+          const message: BuddyMessage = { ...newMsg, user: userData };
           const { messages } = get();
           if (!messages.find(m => m.id === message.id)) {
             set({ messages: [...messages, message] });

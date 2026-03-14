@@ -28,6 +28,7 @@ import Animated, {
   Extrapolation,
   runOnJS,
   Easing,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../lib/constants';
 import { haptic } from '../lib/haptics';
@@ -49,6 +50,9 @@ function SwipeUpHint() {
       -1,
       false,
     );
+    return () => {
+      cancelAnimation(ty);
+    };
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({

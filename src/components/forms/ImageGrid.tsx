@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Image,
@@ -16,6 +16,7 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ITEM_SIZE = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.md * 2) / 3;
 
 interface ImageGridProps {
   images: string[];
@@ -31,7 +32,7 @@ export default function ImageGrid({
   layout = 'grid',
 }: ImageGridProps) {
   const colors = useThemeColors();
-  const pickImages = async () => {
+  const pickImages = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Izin Gerekli', 'Fotograf secmek icin galeri erisimi gereklidir.');
@@ -49,9 +50,9 @@ export default function ImageGrid({
       const uris = result.assets.map((a) => a.uri);
       onImagesChange([...images, ...uris].slice(0, maxImages));
     }
-  };
+  }, [images, maxImages, onImagesChange]);
 
-  const takePhoto = async () => {
+  const takePhoto = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Izin Gerekli', 'Kamera erisimi gereklidir.');
@@ -67,11 +68,11 @@ export default function ImageGrid({
       const uri = result.assets[0].uri;
       onImagesChange([...images, uri].slice(0, maxImages));
     }
-  };
+  }, [images, maxImages, onImagesChange]);
 
-  const removeImage = (uri: string) => {
+  const removeImage = useCallback((uri: string) => {
     onImagesChange(images.filter((u) => u !== uri));
-  };
+  }, [images, onImagesChange]);
 
   if (layout === 'horizontal') {
     return (
@@ -111,8 +112,6 @@ export default function ImageGrid({
   }
 
   // Grid layout
-  const ITEM_SIZE = (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.md * 2) / 3;
-
   return (
     <Animated.View style={styles.grid} layout={Layout.springify()}>
       {images.map((uri) => (

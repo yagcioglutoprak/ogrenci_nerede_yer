@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Pressable,
   Text,
@@ -37,7 +37,7 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function Button({
+function Button({
   title,
   onPress,
   variant = 'primary',
@@ -58,18 +58,18 @@ export default function Button({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     scale.value = withSpring(0.96, MICRO_BOUNCE);
-  };
+  }, [scale]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     scale.value = withSpring(1, MICRO_BOUNCE);
-  };
+  }, [scale]);
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     haptic.light();
     onPress();
-  };
+  }, [onPress]);
 
   const buttonContent = loading ? (
     <ActivityIndicator size="small" color={textColor} />
@@ -105,7 +105,7 @@ export default function Button({
 
   const isPill = variant === 'primary' || variant === 'secondary';
 
-  const containerStyles: StyleProp<ViewStyle>[] = [
+  const containerStyles = useMemo<StyleProp<ViewStyle>[]>(() => [
     styles.base,
     isPill && styles.pillShape,
     variantStyles[variant],
@@ -115,7 +115,7 @@ export default function Button({
     variant === 'secondary' && !isDisabled && styles.secondaryShadow,
     fullWidth && styles.fullWidth,
     style,
-  ];
+  ], [isPill, variant, colors.background, isDisabled, fullWidth, style]);
 
   return (
     <Animated.View style={[animatedStyle, fullWidth && styles.fullWidth]}>
@@ -131,6 +131,8 @@ export default function Button({
     </Animated.View>
   );
 }
+
+export default React.memo(Button);
 
 function getTextColor(variant: ButtonVariant, isDisabled: boolean, colors: ThemeColors): string {
   if (isDisabled) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -45,12 +45,12 @@ export default function PreferencesScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const toggleTag = (key: string) => {
+  const toggleTag = useCallback((key: string) => {
     haptic.light();
     setSelectedTags((prev) =>
       prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key]
     );
-  };
+  }, []);
 
   const handleContinue = async () => {
     setLoading(true);

@@ -16,8 +16,10 @@ import Avatar from '../components/ui/Avatar';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuthStore();
-  const { mode, setMode } = useThemeStore();
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
+  const mode = useThemeStore((s) => s.mode);
+  const setMode = useThemeStore((s) => s.setMode);
   const colors = useThemeColors();
 
   const [notifPrefs, setNotifPrefs] = useState({
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
       supabase.from('notification_preferences').select('*').eq('user_id', user.id).single()
         .then(({ data }) => { if (data) setNotifPrefs(data as any); });
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Load dm_privacy
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function SettingsScreen() {
           if (data?.dm_privacy) setDmPrivacy(data.dm_privacy);
         });
     }
-  }, [user]);
+  }, [user?.id]);
 
   const updateDmPrivacy = async (value: 'followers_only' | 'everyone') => {
     setDmPrivacy(value);

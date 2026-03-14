@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Pressable,
   Platform,
@@ -60,11 +60,15 @@ const IconButton = React.memo(function IconButton({
     scale.value = withSpring(1, SPRING_CONFIG);
   }, [scale]);
 
-  const containerSize = {
+  const containerSize = useMemo(() => ({
     width: size,
     height: size,
     borderRadius: size / 2,
-  };
+  }), [size]);
+
+  const hitSlopRect = useMemo(() => ({
+    top: hitSlop, right: hitSlop, bottom: hitSlop, left: hitSlop,
+  }), [hitSlop]);
 
   const iconContent = (
     <Ionicons name={icon} size={iconSize} color={resolvedColor} />
@@ -79,7 +83,7 @@ const IconButton = React.memo(function IconButton({
       onPressOut={handlePressOut}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      hitSlop={{ top: hitSlop, right: hitSlop, bottom: hitSlop, left: hitSlop }}
+      hitSlop={hitSlopRect}
     >
       <Animated.View style={[animatedStyle, style]}>
         {isIOS ? (

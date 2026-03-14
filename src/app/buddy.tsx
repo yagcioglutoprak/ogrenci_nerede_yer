@@ -189,16 +189,50 @@ export default function BuddyScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
-  const { user } = useAuthStore();
-  const {
-    myBuddy, nearbyBuddies, activeMatch, messages, pendingMatches,
-    ratingDone, loading,
-    fetchMyBuddy, goAvailable, goUnavailable, fetchNearbyBuddies,
-    sendMatchRequest, respondToMatch, fetchMessages, sendMessage,
-    subscribeToMessages, rateBuddy, fetchActiveMatch, fetchPendingMatches,
-    subscribeToMatchUpdates, unsubscribeChannel, setRatingDone,
-    clearActiveSession,
-  } = useBuddyStore();
+  const user = useAuthStore((s) => s.user);
+  const myBuddy = useBuddyStore((s) => s.myBuddy);
+  const nearbyBuddies = useBuddyStore((s) => s.nearbyBuddies);
+  const activeMatch = useBuddyStore((s) => s.activeMatch);
+  const messages = useBuddyStore((s) => s.messages);
+  const pendingMatches = useBuddyStore((s) => s.pendingMatches);
+  const ratingDone = useBuddyStore((s) => s.ratingDone);
+  const loading = useBuddyStore((s) => s.loading);
+  const fetchMyBuddy = useBuddyStore((s) => s.fetchMyBuddy);
+  const goAvailable = useBuddyStore((s) => s.goAvailable);
+  const goUnavailable = useBuddyStore((s) => s.goUnavailable);
+  const fetchNearbyBuddies = useBuddyStore((s) => s.fetchNearbyBuddies);
+  const sendMatchRequest = useBuddyStore((s) => s.sendMatchRequest);
+  const respondToMatch = useBuddyStore((s) => s.respondToMatch);
+  const fetchMessages = useBuddyStore((s) => s.fetchMessages);
+  const sendMessage = useBuddyStore((s) => s.sendMessage);
+  const subscribeToMessages = useBuddyStore((s) => s.subscribeToMessages);
+  const rateBuddy = useBuddyStore((s) => s.rateBuddy);
+  const fetchActiveMatch = useBuddyStore((s) => s.fetchActiveMatch);
+  const fetchPendingMatches = useBuddyStore((s) => s.fetchPendingMatches);
+  const subscribeToMatchUpdates = useBuddyStore((s) => s.subscribeToMatchUpdates);
+  const unsubscribeChannel = useBuddyStore((s) => s.unsubscribeChannel);
+  const setRatingDone = useBuddyStore((s) => s.setRatingDone);
+  const clearActiveSession = useBuddyStore((s) => s.clearActiveSession);
+
+  const renderBuddyChatItem = useCallback(({ item }: { item: any }) => {
+    const isMe = item.sender_id === user?.id;
+    return (
+      <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.theirMessage,
+        { backgroundColor: isMe ? BUDDY_COLOR : isDark ? colors.surface : colors.backgroundSecondary }]}>
+        {!isMe && item.user?.full_name && (
+          <Text style={[styles.messageSender, { color: BUDDY_COLOR }]}>
+            {item.user.full_name}
+          </Text>
+        )}
+        <Text style={[styles.messageText, { color: isMe ? '#FFF' : colors.text }]}>
+          {item.content}
+        </Text>
+        <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.6)' : colors.textTertiary }]}>
+          {new Date(item.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </View>
+    );
+  }, [user?.id, isDark, colors]);
 
   // -- Local state --
   const [note, setNote] = useState('');
@@ -216,11 +250,6 @@ export default function BuddyScreen() {
     transform: [{ translateY: xpTranslateY.value }],
   }));
 
-  // -- Derived: effective nearby list --
-  const effectiveNearbyBuddies = useMemo(() => {
-    return nearbyBuddies;
-  }, [nearbyBuddies]);
-
   // -- Init: fetch user data + location --
   useEffect(() => {
     if (!user) return;
@@ -235,7 +264,7 @@ export default function BuddyScreen() {
         setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
       }
     })();
-  }, [user]);
+  }, [user?.id]);
 
   // -- Fetch nearby buddies when available --
   useEffect(() => {
@@ -255,7 +284,7 @@ export default function BuddyScreen() {
     if (!user) return;
     const channel = subscribeToMatchUpdates(user.id);
     return () => { if (channel) unsubscribeChannel(channel); };
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!activeMatch) return;
@@ -504,25 +533,7 @@ export default function BuddyScreen() {
                 </Text>
               </View>
             }
-            renderItem={({ item }) => {
-              const isMe = item.sender_id === user.id;
-              return (
-                <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.theirMessage,
-                  { backgroundColor: isMe ? BUDDY_COLOR : isDark ? colors.surface : colors.backgroundSecondary }]}>
-                  {!isMe && item.user?.full_name && (
-                    <Text style={[styles.messageSender, { color: BUDDY_COLOR }]}>
-                      {item.user.full_name}
-                    </Text>
-                  )}
-                  <Text style={[styles.messageText, { color: isMe ? '#FFF' : colors.text }]}>
-                    {item.content}
-                  </Text>
-                  <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.6)' : colors.textTertiary }]}>
-                    {new Date(item.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-              );
-            }}
+            renderItem={renderBuddyChatItem}
           />
           <View style={[styles.inputBar, { borderColor: colors.border, backgroundColor: colors.background }]}>
             <TextInput
@@ -602,7 +613,7 @@ export default function BuddyScreen() {
         )}
 
         {/* Loading */}
-        {loading && effectiveNearbyBuddies.length === 0 && (
+        {loading && nearbyBuddies.length === 0 && (
           <View style={styles.loadingCenter}>
             <ActivityIndicator color={BUDDY_COLOR} size="large" />
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
@@ -612,9 +623,9 @@ export default function BuddyScreen() {
         )}
 
         {/* Swipe Deck */}
-        {effectiveNearbyBuddies.length > 0 && (
+        {nearbyBuddies.length > 0 && (
           <SwipeDeck
-            buddies={effectiveNearbyBuddies}
+            buddies={nearbyBuddies}
             onSwipeRight={handleSwipeRight}
             onSwipeLeft={handleSwipeLeft}
             userLocation={userLocation}
@@ -622,7 +633,7 @@ export default function BuddyScreen() {
         )}
 
         {/* No buddies */}
-        {effectiveNearbyBuddies.length === 0 && !loading && (
+        {nearbyBuddies.length === 0 && !loading && (
           <View style={styles.noBuddyCenter}>
             <View style={[styles.noBuddyIcon, { backgroundColor: isDark ? colors.surface : 'rgba(6,182,212,0.08)' }]}>
               <Ionicons name="search-outline" size={40} color={BUDDY_COLOR} />

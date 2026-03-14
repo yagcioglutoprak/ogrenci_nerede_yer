@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Avatar from '../ui/Avatar';
@@ -12,8 +12,9 @@ interface MessageBubbleProps {
   isCurrentUser: boolean;
 }
 
-export default function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
+function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
   const colors = useThemeColors();
+  const timeLabel = useMemo(() => getRelativeTime(message.created_at), [message.created_at]);
 
   if (isCurrentUser) {
     return (
@@ -25,7 +26,7 @@ export default function MessageBubble({ message, isCurrentUser }: MessageBubbleP
           style={styles.bubbleRight}
         >
           <Text style={styles.textRight}>{message.message}</Text>
-          <Text style={styles.timeRight}>{getRelativeTime(message.created_at)}</Text>
+          <Text style={styles.timeRight}>{timeLabel}</Text>
         </LinearGradient>
       </View>
     );
@@ -45,13 +46,15 @@ export default function MessageBubble({ message, isCurrentUser }: MessageBubbleP
         <View style={[styles.bubbleLeft, { backgroundColor: colors.backgroundSecondary }]}>
           <Text style={[styles.textLeft, { color: colors.text }]}>{message.message}</Text>
           <Text style={[styles.timeLeft, { color: colors.textTertiary }]}>
-            {getRelativeTime(message.created_at)}
+            {timeLabel}
           </Text>
         </View>
       </View>
     </View>
   );
 }
+
+export default React.memo(MessageBubble);
 
 const styles = StyleSheet.create({
   rowLeft: {

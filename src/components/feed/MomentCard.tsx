@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -50,7 +50,7 @@ function getTimeRemaining(expiresAt: string | null): string | null {
   return `${minutes}dk kaldi`;
 }
 
-function LiveDot() {
+const LiveDot = React.memo(function LiveDot() {
   const pulseScale = useSharedValue(1);
 
   React.useEffect(() => {
@@ -71,7 +71,7 @@ function LiveDot() {
   return (
     <Animated.View style={[styles.liveDot, animatedStyle]} />
   );
-}
+});
 
 function MomentCard({
   post,
@@ -82,7 +82,7 @@ function MomentCard({
   onPress,
 }: MomentCardProps) {
   const colors = useThemeColors();
-  const timeSince = getRelativeTime(post.created_at);
+  const timeSince = useMemo(() => getRelativeTime(post.created_at), [post.created_at]);
   const timeRemaining = getTimeRemaining(post.expires_at);
 
   const images = post.images ?? [];

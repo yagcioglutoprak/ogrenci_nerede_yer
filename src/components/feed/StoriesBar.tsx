@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ const stories: Story[] = [];
 
 const CIRCLE_SIZE = 68;
 const BORDER_WIDTH = 2.5;
+const STORY_ITEM_WIDTH = CIRCLE_SIZE + 8;
+const GRADIENT_COLORS: [string, string] = [Colors.primary, Colors.accent];
 
 export default function StoriesBar() {
   const colors = useThemeColors();
@@ -43,7 +45,7 @@ export default function StoriesBar() {
           accessibilityLabel={`${item.title} hikayesini izle`}
         >
           <LinearGradient
-            colors={[Colors.primary, Colors.accent]}
+            colors={GRADIENT_COLORS}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.gradientBorder, isWatched && { opacity: 0.4 }]}
@@ -64,6 +66,15 @@ export default function StoriesBar() {
     [watchedIds, colors],
   );
 
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<Story> | null | undefined, index: number) => ({
+      length: STORY_ITEM_WIDTH,
+      offset: STORY_ITEM_WIDTH * index,
+      index,
+    }),
+    [],
+  );
+
   if (stories.length === 0) return null;
 
   return (
@@ -75,6 +86,7 @@ export default function StoriesBar() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        getItemLayout={getItemLayout}
       />
     </View>
   );

@@ -3,20 +3,26 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
-try {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
-} catch {
-  // Notifications not available in Expo Go simulator
-}
+let notificationHandlerSet = false;
 
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
+  // Set notification handler lazily on first registration
+  if (!notificationHandlerSet) {
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        }),
+      });
+      notificationHandlerSet = true;
+    } catch {
+      // Notifications not available in Expo Go simulator
+    }
+  }
+
   if (!Device.isDevice) {
     console.log('Push notifications require a physical device');
     return null;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,39 +26,23 @@ import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
+import { getRelativeTime } from '../../lib/utils';
 import type { Comment, PostImage, RecommendationAnswer } from '../../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const QUESTION_COLOR = '#8B5CF6';
-
-function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMinutes < 1) return 'simdi';
-  if (diffMinutes < 60) return `${diffMinutes}dk once`;
-  if (diffHours < 24) return `${diffHours}sa once`;
-  if (diffDays < 7) return `${diffDays}g once`;
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-}
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
   const user = useAuthStore((s) => s.user);
-  const {
-    selectedPost: post,
-    comments,
-    fetchPostById,
-    fetchComments,
-    toggleLike,
-    addComment,
-  } = useFeedStore();
+  const post = useFeedStore((s) => s.selectedPost);
+  const comments = useFeedStore((s) => s.comments);
+  const fetchPostById = useFeedStore((s) => s.fetchPostById);
+  const fetchComments = useFeedStore((s) => s.fetchComments);
+  const toggleLike = useFeedStore((s) => s.toggleLike);
+  const addComment = useFeedStore((s) => s.addComment);
 
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +63,7 @@ export default function PostDetailScreen() {
     if (post && user) {
       useFeedStore.getState().checkBookmark(post.id, user.id).then(setIsBookmarked);
     }
-  }, [post, user]);
+  }, [post?.id, user?.id]);
 
   useEffect(() => {
     if (post?.post_type === 'question') {
@@ -359,7 +343,7 @@ export default function PostDetailScreen() {
   // ── Regular post detail (existing code below) ──
   const images = post.images ?? [];
 
-  const renderComment = ({ item, index }: { item: Comment; index: number }) => (
+  const renderComment = useCallback(({ item, index }: { item: Comment; index: number }) => (
     <Animated.View
       entering={FadeInDown.delay(index * 60).springify().damping(20).stiffness(300)}
       style={styles.commentItem}
@@ -379,9 +363,9 @@ export default function PostDetailScreen() {
         <Text style={[styles.commentTime, { color: colors.textTertiary }]}>{getRelativeTime(item.created_at)}</Text>
       </View>
     </Animated.View>
-  );
+  ), [colors]);
 
-  const renderHeader = () => (
+  const renderHeader = useMemo(() => () => (
     <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
       {/* Image Carousel */}
       {images.length > 0 && (
@@ -477,7 +461,7 @@ export default function PostDetailScreen() {
         </Text>
       </View>
     </Animated.View>
-  );
+  ), [post, images, activeImageIndex, colors, isBookmarked, user, comments.length]);
 
   const regularInputContent = (
     <>

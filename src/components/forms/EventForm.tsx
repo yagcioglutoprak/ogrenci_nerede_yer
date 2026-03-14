@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -42,11 +42,11 @@ export default function EventForm({ user }: EventFormProps) {
   const [isPublic, setIsPublic] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const filteredVenues = venues.filter((v) =>
+  const filteredVenues = useMemo(() => venues.filter((v) =>
     v.name.toLowerCase().includes(venueSearchQuery.toLowerCase()),
-  );
+  ), [venues, venueSearchQuery]);
 
-  const selectedVenue = venues.find((v) => v.id === venueId);
+  const selectedVenue = useMemo(() => venues.find((v) => v.id === venueId), [venues, venueId]);
 
   const resetForm = () => {
     setTitle('');
@@ -60,17 +60,30 @@ export default function EventForm({ user }: EventFormProps) {
     setIsPublic(true);
   };
 
-  const handleVenueSearch = (query: string) => {
+  const handleVenueSearch = useCallback((query: string) => {
     setVenueSearchQuery(query);
     if (query.length > 1) {
       searchVenues(query);
     }
-  };
+  }, [searchVenues]);
 
-  const handleTogglePublic = (value: boolean) => {
+  const handleTogglePublic = useCallback((value: boolean) => {
     haptic.light();
     setIsPublic(value);
-  };
+  }, []);
+
+  const handleDateChange = useCallback((_: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setEventDate(date);
+      setShowTimePicker(true);
+    }
+  }, []);
+
+  const handleTimeChange = useCallback((_: any, date?: Date) => {
+    setShowTimePicker(false);
+    if (date) setEventDate(date);
+  }, []);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -103,7 +116,7 @@ export default function EventForm({ user }: EventFormProps) {
     }
   };
 
-  const renderSectionCard = (children: React.ReactNode) => {
+  const renderSectionCard = useCallback((children: React.ReactNode) => {
     if (Platform.OS === 'ios') {
       return (
         <GlassView style={styles.sectionCardGlass}>
@@ -116,7 +129,7 @@ export default function EventForm({ user }: EventFormProps) {
         {children}
       </View>
     );
-  };
+  }, [colors.background]);
 
   return (
     <View style={styles.formContainer}>
@@ -243,23 +256,14 @@ export default function EventForm({ user }: EventFormProps) {
               value={eventDate}
               mode="date"
               minimumDate={new Date()}
-              onChange={(_, date) => {
-                setShowDatePicker(false);
-                if (date) {
-                  setEventDate(date);
-                  setShowTimePicker(true);
-                }
-              }}
+              onChange={handleDateChange}
             />
           )}
           {showTimePicker && (
             <DateTimePicker
               value={eventDate}
               mode="time"
-              onChange={(_, date) => {
-                setShowTimePicker(false);
-                if (date) setEventDate(date);
-              }}
+              onChange={handleTimeChange}
             />
           )}
         </>

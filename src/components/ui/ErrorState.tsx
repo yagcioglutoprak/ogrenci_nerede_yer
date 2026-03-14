@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -11,16 +11,16 @@ interface ErrorStateProps {
   onRetry?: () => void;
 }
 
-export default function ErrorState({
+function ErrorState({
   message = 'Bir hata olustu. Lutfen tekrar deneyin.',
   onRetry,
 }: ErrorStateProps) {
   const colors = useThemeColors();
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     haptic.light();
     onRetry?.();
-  };
+  }, [onRetry]);
 
   return (
     <Animated.View
@@ -56,6 +56,8 @@ export default function ErrorState({
     </Animated.View>
   );
 }
+
+export default React.memo(ErrorState);
 
 const styles = StyleSheet.create({
   container: {

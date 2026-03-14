@@ -76,6 +76,7 @@ export default function ChatScreen() {
   const [venuePickerVisible, setVenuePickerVisible] = useState(false);
   const flatListRef = useRef<FlatList<DirectMessage>>(null);
   const isNearBottom = useRef(true);
+  const hasLoadedRef = useRef(false);
 
   // Look up in both accepted conversations AND pending requests
   const conversation = conversations.find((c) => c.id === conversationId)
@@ -278,7 +279,7 @@ export default function ChatScreen() {
         </View>
       </Animated.View>
     );
-  }, [user?.id, messages, colors, isDark, isSameSenderAsPrev]);
+  }, [user?.id, colors, isDark]);
 
   if (!user) {
     return (
@@ -385,8 +386,14 @@ export default function ChatScreen() {
           renderItem={renderMessage}
           contentContainerStyle={[styles.messageList, { paddingBottom: Spacing.md }]}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={scrollToBottom}
-          onLayout={scrollToBottom}
+          onContentSizeChange={() => {
+            if (!hasLoadedRef.current) {
+              hasLoadedRef.current = true;
+              flatListRef.current?.scrollToEnd({ animated: false });
+            } else {
+              scrollToBottom();
+            }
+          }}
           onScroll={handleScroll}
           scrollEventThrottle={100}
           ListEmptyComponent={

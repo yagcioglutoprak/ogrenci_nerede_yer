@@ -49,12 +49,27 @@ import RatingBar from '../ui/RatingBar';
 import StarRating from '../ui/StarRating';
 import Avatar from '../ui/Avatar';
 import { haptic } from '../../lib/haptics';
+import { getRelativeTime } from '../../lib/utils';
 import { enrichVenue, fetchPlacePhoto } from '../../lib/venueEnrichment';
 import type { Venue, Review, Post, SocialVideo } from '../../types';
 
 const ONY_LOGO = require('../../../assets/logo-icon-hires.png');
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 200;
+
+// Rating bar width helper (moved to module scope to avoid recreation per render)
+const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
+
+const getPlatformInfo = (platform: SocialVideo['platform']) => {
+  switch (platform) {
+    case 'youtube':
+      return { icon: 'logo-youtube' as const, color: '#FF0000', label: 'YouTube' };
+    case 'instagram':
+      return { icon: 'logo-instagram' as const, color: '#E4405F', label: 'Instagram' };
+    case 'tiktok':
+      return { icon: 'musical-notes' as const, color: '#000000', label: 'TikTok' };
+  }
+};
 
 interface VenueBottomSheetProps {
   venue: Venue | null;
@@ -71,6 +86,60 @@ function GlassBackground({ style }: { style?: any }) {
     />
   );
 }
+
+// Extracted review item as a memoized component to avoid re-renders of the entire list
+const ReviewItem = React.memo(function ReviewItem({ item, colors }: { item: Review; colors: ReturnType<typeof useThemeColors> }) {
+  const avg = (
+    (item.taste_rating + item.value_rating + item.friendliness_rating) / 3
+  ).toFixed(1);
+
+  const ratingPills = [
+    { icon: 'restaurant' as keyof typeof Ionicons.glyphMap, value: item.taste_rating, color: Colors.primary },
+    { icon: 'pricetag' as keyof typeof Ionicons.glyphMap, value: item.value_rating, color: Colors.accent },
+    { icon: 'cafe' as keyof typeof Ionicons.glyphMap, value: item.friendliness_rating, color: Colors.verified },
+  ];
+
+  return (
+    <GlassView key={item.id} style={[styles.reviewCard, styles.reviewCardGlass]} fallbackColor={colors.card}>
+      <View style={styles.reviewHeader}>
+        <Avatar
+          uri={item.user?.avatar_url}
+          name={item.user?.full_name ?? item.user?.username ?? '?'}
+          size={36}
+        />
+        <View style={styles.reviewHeaderText}>
+          <Text style={[styles.reviewUsername, { color: colors.text }]}>
+            {item.user?.username ?? 'Anonim'}
+          </Text>
+          <Text style={[styles.reviewDate, { color: colors.textTertiary }]}>
+            {new Date(item.created_at).toLocaleDateString('tr-TR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Text>
+        </View>
+        <View style={[styles.reviewAvgBadge, { backgroundColor: colors.accentSoft }]}>
+          <Ionicons name="star" size={12} color={Colors.accent} />
+          <Text style={[styles.reviewAvgText, { color: colors.text }]}>{avg}</Text>
+        </View>
+      </View>
+
+      {item.comment ? (
+        <Text style={[styles.reviewComment, { color: colors.text }]}>{item.comment}</Text>
+      ) : null}
+
+      <View style={styles.reviewRatingPills}>
+        {ratingPills.map((pill) => (
+          <View key={pill.icon} style={[styles.reviewPill, { backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name={pill.icon} size={12} color={pill.color} />
+            <Text style={[styles.reviewPillText, { color: colors.textSecondary }]}>{pill.value.toFixed(1)}</Text>
+          </View>
+        ))}
+      </View>
+    </GlassView>
+  );
+});
 
 export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: VenueBottomSheetProps) {
   const colors = useThemeColors();
@@ -301,6 +370,18 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
     });
   }, [venue, myReview]);
 
+  // Derived values (memoized together to avoid repeated lookups)
+  const { priceLabel, priceDesc, levelInfo, isDbVenue, tier } = useMemo(() => {
+    const priceRange = venue ? PriceRanges.find((p) => p.value === venue.price_range) : null;
+    return {
+      priceLabel: priceRange?.label ?? '',
+      priceDesc: priceRange?.description ?? '',
+      levelInfo: venue ? VenueLevels.find((l) => l.level === venue.level) ?? null : null,
+      isDbVenue: venue ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(venue.id) : false,
+      tier: (!venue || venue.total_reviews > 0 ? 'reviewed' : 'unreviewed') as 'unreviewed' | 'reviewed',
+    };
+  }, [venue]);
+
   const handleSubmitRating = useCallback(async () => {
     if (!venue || !user) return;
     if (rateTaste === 0 || rateValue === 0 || rateFriendliness === 0) {
@@ -391,7 +472,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
         setShowPostPrompt(true);
       }
     }
-  }, [venue, user, rateTaste, rateValue, rateFriendliness, rateComment, addReview, myReview]);
+  }, [venue, user, rateTaste, rateValue, rateFriendliness, rateComment, addReview, myReview, isDbVenue]);
 
   const handleSave = useCallback(() => {
     if (!venue || !user) return;
@@ -405,112 +486,20 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
     bottomSheetRef.current?.snapToIndex(1);
   }, []);
 
-  // Derived values
-  const priceLabel = venue
-    ? PriceRanges.find((p) => p.value === venue.price_range)?.label ?? ''
-    : '';
-  const priceDesc = venue
-    ? PriceRanges.find((p) => p.value === venue.price_range)?.description ?? ''
-    : '';
-  const levelInfo = venue ? VenueLevels.find((l) => l.level === venue.level) : null;
-
-  const isDbVenue = venue ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(venue.id) : false;
-
-  // Determine tier
-  const tier: 'unreviewed' | 'reviewed' = (() => {
-    if (!venue) return 'reviewed';
-    if (venue.total_reviews > 0) return 'reviewed';
-    return 'unreviewed';
-  })();
-
   // Social videos for this venue
   // TODO: Fetch videos from Supabase
   const venueVideos: SocialVideo[] = [];
 
   const isExpanded = sheetIndex === 1;
 
-  // Relative time helper
-  const getRelativeTime = (dateString: string): string => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMinutes = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMinutes < 1) return 'simdi';
-    if (diffMinutes < 60) return `${diffMinutes}dk`;
-    if (diffHours < 24) return `${diffHours}sa`;
-    if (diffDays < 7) return `${diffDays}g`;
-    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-  };
+  // Memoize hero image URI to avoid recomputing on every render
+  const heroImageUri = useMemo(() => {
+    if (displayVenue?.cover_image_url) return displayVenue.cover_image_url;
+    if (displayVenue?.google_photos?.[0]) return fetchPlacePhoto(displayVenue.google_photos[0], 800);
+    return null;
+  }, [displayVenue?.cover_image_url, displayVenue?.google_photos]);
 
-  // Rating bar width helper
-  const ratingBarWidth = (rating: number) => `${(rating / 5) * 100}%`;
 
-  const getPlatformInfo = (platform: SocialVideo['platform']) => {
-    switch (platform) {
-      case 'youtube':
-        return { icon: 'logo-youtube' as const, color: '#FF0000', label: 'YouTube' };
-      case 'instagram':
-        return { icon: 'logo-instagram' as const, color: '#E4405F', label: 'Instagram' };
-      case 'tiktok':
-        return { icon: 'musical-notes' as const, color: '#000000', label: 'TikTok' };
-    }
-  };
-
-  // Render a single review card
-  const renderReviewItem = (item: Review) => {
-    const avg = (
-      (item.taste_rating + item.value_rating + item.friendliness_rating) / 3
-    ).toFixed(1);
-
-    const ratingPills = [
-      { icon: 'restaurant' as keyof typeof Ionicons.glyphMap, value: item.taste_rating, color: Colors.primary },
-      { icon: 'pricetag' as keyof typeof Ionicons.glyphMap, value: item.value_rating, color: Colors.accent },
-      { icon: 'cafe' as keyof typeof Ionicons.glyphMap, value: item.friendliness_rating, color: Colors.verified },
-    ];
-
-    return (
-      <GlassView key={item.id} style={[styles.reviewCard, styles.reviewCardGlass]} fallbackColor={colors.card}>
-        <View style={styles.reviewHeader}>
-          <Avatar
-            uri={item.user?.avatar_url}
-            name={item.user?.full_name ?? item.user?.username ?? '?'}
-            size={36}
-          />
-          <View style={styles.reviewHeaderText}>
-            <Text style={[styles.reviewUsername, { color: colors.text }]}>
-              {item.user?.username ?? 'Anonim'}
-            </Text>
-            <Text style={[styles.reviewDate, { color: colors.textTertiary }]}>
-              {new Date(item.created_at).toLocaleDateString('tr-TR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </Text>
-          </View>
-          <View style={[styles.reviewAvgBadge, { backgroundColor: colors.accentSoft }]}>
-            <Ionicons name="star" size={12} color={Colors.accent} />
-            <Text style={[styles.reviewAvgText, { color: colors.text }]}>{avg}</Text>
-          </View>
-        </View>
-
-        {item.comment ? (
-          <Text style={[styles.reviewComment, { color: colors.text }]}>{item.comment}</Text>
-        ) : null}
-
-        <View style={styles.reviewRatingPills}>
-          {ratingPills.map((pill) => (
-            <View key={pill.icon} style={[styles.reviewPill, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name={pill.icon} size={12} color={pill.color} />
-              <Text style={[styles.reviewPillText, { color: colors.textSecondary }]}>{pill.value.toFixed(1)}</Text>
-            </View>
-          ))}
-        </View>
-      </GlassView>
-    );
-  };
 
   return (
     <>
@@ -550,9 +539,9 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
             {/* ---- MORPHING IMAGE: thumbnail → hero ---- */}
             <View style={styles.venueRow}>
               <Animated.View style={[styles.morphImageWrap, { backgroundColor: colors.backgroundSecondary }, morphImageStyle]}>
-                {(displayVenue?.cover_image_url || (displayVenue?.google_photos?.[0])) ? (
+                {heroImageUri ? (
                   <Image
-                    source={{ uri: displayVenue.cover_image_url || fetchPlacePhoto(displayVenue.google_photos![0], 800) }}
+                    source={{ uri: heroImageUri }}
                     style={styles.morphImage}
                   />
                 ) : enriching ? (
@@ -992,7 +981,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                     </Text>
                   </View>
                 ) : (
-                  reviews.map((review) => renderReviewItem(review))
+                  reviews.map((review) => <ReviewItem key={review.id} item={review} colors={colors} />)
                 )}
               </View>
 

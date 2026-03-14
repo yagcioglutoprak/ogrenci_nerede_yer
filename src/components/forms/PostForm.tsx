@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -34,11 +34,11 @@ export default function PostForm({ user }: PostFormProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const filteredVenues = venues.filter((v) =>
+  const filteredVenues = useMemo(() => venues.filter((v) =>
     v.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  ), [venues, searchQuery]);
 
-  const selectedVenue = venues.find((v) => v.id === venueId);
+  const selectedVenue = useMemo(() => venues.find((v) => v.id === venueId), [venues, venueId]);
 
   const resetForm = () => {
     setCaption('');
@@ -71,7 +71,7 @@ export default function PostForm({ user }: PostFormProps) {
     }
   };
 
-  const renderSectionCard = (children: React.ReactNode) => {
+  const renderSectionCard = useCallback((children: React.ReactNode) => {
     if (Platform.OS === 'ios') {
       return (
         <GlassView style={styles.sectionCardGlass}>
@@ -84,7 +84,7 @@ export default function PostForm({ user }: PostFormProps) {
         {children}
       </View>
     );
-  };
+  }, [colors.background]);
 
   return (
     <View style={styles.formContainer}>

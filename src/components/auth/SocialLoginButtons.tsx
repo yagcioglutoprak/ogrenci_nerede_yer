@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,7 @@ interface SocialLoginButtonsProps {
   animationDelay?: number;
 }
 
-export default function SocialLoginButtons({
+function SocialLoginButtons({
   onApplePress,
   onGooglePress,
   loadingProvider,
@@ -42,15 +42,15 @@ export default function SocialLoginButtons({
     }
   }, []);
 
-  const handleApple = () => {
+  const handleApple = useCallback(() => {
     haptic.light();
     onApplePress();
-  };
+  }, [onApplePress]);
 
-  const handleGoogle = () => {
+  const handleGoogle = useCallback(() => {
     haptic.light();
     onGooglePress();
-  };
+  }, [onGooglePress]);
 
   return (
     <View style={styles.container}>
@@ -114,13 +114,15 @@ export default function SocialLoginButtons({
   );
 }
 
-function GoogleIcon() {
+export default React.memo(SocialLoginButtons);
+
+const GoogleIcon = React.memo(function GoogleIcon() {
   return (
     <View style={styles.googleIconContainer}>
       <Text style={styles.googleG}>G</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

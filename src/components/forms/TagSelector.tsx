@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,19 +13,21 @@ interface TagSelectorProps {
 
 export default function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
   const colors = useThemeColors();
-  const toggleTag = (tag: string) => {
+  const selectedTagSet = useMemo(() => new Set(selectedTags), [selectedTags]);
+
+  const toggleTag = useCallback((tag: string) => {
     haptic.selection();
     if (selectedTags.includes(tag)) {
       onTagsChange(selectedTags.filter((t) => t !== tag));
     } else {
       onTagsChange([...selectedTags, tag]);
     }
-  };
+  }, [selectedTags, onTagsChange]);
 
   return (
     <Animated.View style={styles.grid} layout={Layout.springify()}>
       {VENUE_TAGS.map((tag) => {
-        const isActive = selectedTags.includes(tag.key);
+        const isActive = selectedTagSet.has(tag.key);
         return (
           <Animated.View key={tag.key} layout={Layout.springify()}>
             <TouchableOpacity

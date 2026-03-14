@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -42,11 +42,11 @@ export default function MomentCapture({ user }: MomentCaptureProps) {
     clearImages();
   };
 
-  const handleCaptionChange = (text: string) => {
+  const handleCaptionChange = useCallback((text: string) => {
     if (text.length <= MAX_CAPTION_LENGTH) {
       setCaption(text);
     }
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (!selectedImage) {
@@ -74,7 +74,7 @@ export default function MomentCapture({ user }: MomentCaptureProps) {
     }
   };
 
-  const renderSectionCard = (children: React.ReactNode) => {
+  const renderSectionCard = useCallback((children: React.ReactNode) => {
     if (Platform.OS === 'ios') {
       return (
         <GlassView style={styles.sectionCardGlass}>
@@ -87,7 +87,7 @@ export default function MomentCapture({ user }: MomentCaptureProps) {
         {children}
       </View>
     );
-  };
+  }, [colors.background]);
 
   return (
     <View style={styles.formContainer}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -47,7 +47,7 @@ export default function VenueForm({ user }: VenueFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setName('');
     setDescription('');
     setAddress('');
@@ -55,9 +55,9 @@ export default function VenueForm({ user }: VenueFormProps) {
     setLocation(null);
     setTags([]);
     setImages([]);
-  };
+  }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!name.trim()) {
       Alert.alert('Hata', 'Mekan adi gereklidir.');
       return;
@@ -110,14 +110,14 @@ export default function VenueForm({ user }: VenueFormProps) {
       Alert.alert('Basarili', 'Mekan basariyla eklendi!');
       resetForm();
     }
-  };
+  }, [name, address, location, images, description, priceRange, tags, user.id, addVenue, resetForm]);
 
   const handlePriceSelect = (value: 1 | 2 | 3 | 4) => {
     haptic.light();
     setPriceRange(value);
   };
 
-  const renderSectionCard = (children: React.ReactNode) => {
+  const renderSectionCard = useCallback((children: React.ReactNode) => {
     if (Platform.OS === 'ios') {
       return (
         <GlassView style={styles.sectionCardGlass}>
@@ -130,7 +130,31 @@ export default function VenueForm({ user }: VenueFormProps) {
         {children}
       </View>
     );
-  };
+  }, [colors.background]);
+
+  const priceRangeButtons = useMemo(() => (
+    <Animated.View style={styles.priceRow} layout={Layout.springify()}>
+      {PriceRanges.map((price) => {
+        const isActive = priceRange === price.value;
+        return (
+          <Animated.View key={price.value} layout={Layout.springify()} style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={[styles.pricePill, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, isActive && styles.pricePillActive]}
+              onPress={() => handlePriceSelect(price.value as 1 | 2 | 3 | 4)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.pricePillLabel, !isActive && { color: colors.text }, isActive && styles.pricePillLabelActive]}>
+                {price.label}
+              </Text>
+              <Text style={[styles.pricePillDesc, !isActive && { color: colors.textSecondary }, isActive && styles.pricePillDescActive]}>
+                {price.description}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+    </Animated.View>
+  ), [priceRange, colors.backgroundSecondary, colors.border, colors.text, colors.textSecondary]);
 
   return (
     <View style={styles.formContainer}>
@@ -201,27 +225,7 @@ export default function VenueForm({ user }: VenueFormProps) {
       {renderSectionCard(
         <>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Fiyat Araligi</Text>
-          <Animated.View style={styles.priceRow} layout={Layout.springify()}>
-            {PriceRanges.map((price) => {
-              const isActive = priceRange === price.value;
-              return (
-                <Animated.View key={price.value} layout={Layout.springify()} style={{ flex: 1 }}>
-                  <TouchableOpacity
-                    style={[styles.pricePill, !isActive && { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, isActive && styles.pricePillActive]}
-                    onPress={() => handlePriceSelect(price.value as 1 | 2 | 3 | 4)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.pricePillLabel, !isActive && { color: colors.text }, isActive && styles.pricePillLabelActive]}>
-                      {price.label}
-                    </Text>
-                    <Text style={[styles.pricePillDesc, !isActive && { color: colors.textSecondary }, isActive && styles.pricePillDescActive]}>
-                      {price.description}
-                    </Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              );
-            })}
-          </Animated.View>
+          {priceRangeButtons}
         </>
       )}
 

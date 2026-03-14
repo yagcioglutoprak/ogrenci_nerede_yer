@@ -31,6 +31,24 @@ interface VenuePickerModalProps {
 
 const DEBOUNCE_MS = 300;
 
+const PRICE_LABEL_MAP: Record<number, string> = PriceRanges.reduce((acc, p) => {
+  acc[p.value] = p.label;
+  return acc;
+}, {} as Record<number, string>);
+
+const VENUE_ROW_HEIGHT = Spacing.md * 2 + 48; // paddingVertical * 2 + thumb height
+
+const ListEmptyState = React.memo(function ListEmptyState({ textColor, iconColor }: { textColor: string; iconColor: string }) {
+  return (
+    <View style={styles.emptyState}>
+      <Ionicons name="restaurant-outline" size={40} color={iconColor} />
+      <Text style={[styles.emptyText, { color: textColor }]}>
+        Mekan bulunamadi
+      </Text>
+    </View>
+  );
+});
+
 export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePickerModalProps) {
   const colors = useThemeColors();
   const venues = useVenueStore((s) => s.venues);
@@ -44,7 +62,7 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
     if (visible && venues.length === 0) {
       fetchVenues();
     }
-  }, [visible]);
+  }, [visible, fetchVenues]);
 
   const handleSearch = useCallback((text: string) => {
     setQuery(text);
@@ -57,7 +75,7 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
         fetchVenues();
       }
     }, DEBOUNCE_MS);
-  }, []);
+  }, [searchVenues, fetchVenues]);
 
   const handleSelect = useCallback((venue: Venue) => {
     onSelect({
@@ -71,8 +89,18 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
     setQuery('');
   }, [onSelect, onClose]);
 
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: VENUE_ROW_HEIGHT,
+    offset: VENUE_ROW_HEIGHT * index,
+    index,
+  }), []);
+
+  const renderEmptyComponent = useCallback(() => (
+    <ListEmptyState textColor={colors.textSecondary} iconColor={colors.textTertiary} />
+  ), [colors.textSecondary, colors.textTertiary]);
+
   const renderVenueRow = useCallback(({ item, index }: { item: Venue; index: number }) => {
-    const priceLabel = PriceRanges.find((p) => p.value === item.price_range)?.label ?? '\u20ba';
+    const priceLabel = PRICE_LABEL_MAP[item.price_range] ?? '\u20ba';
 
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 150)).springify().damping(22).stiffness(340)}>
@@ -156,14 +184,8 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="restaurant-outline" size={40} color={colors.textTertiary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                Mekan bulunamadi
-              </Text>
-            </View>
-          }
+          getItemLayout={getItemLayout}
+          ListEmptyComponent={renderEmptyComponent}
         />
       </SafeAreaView>
     </Modal>

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -29,7 +29,7 @@ interface StarRatingProps {
   gap?: number;
 }
 
-function AnimatedStar({
+const AnimatedStar = React.memo(function AnimatedStar({
   index,
   rating,
   starSize,
@@ -73,23 +73,27 @@ function AnimatedStar({
 
   const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
 
+  const hitSlopRect = useMemo(() => ({
+    top: touchPadding,
+    bottom: touchPadding,
+    left: touchPadding / 2,
+    right: touchPadding / 2,
+  }), [touchPadding]);
+
+  const padStyle = useMemo(() => ({ paddingHorizontal: gap }), [gap]);
+
   return (
     <Pressable
       onPress={handlePress}
-      hitSlop={{
-        top: touchPadding,
-        bottom: touchPadding,
-        left: touchPadding / 2,
-        right: touchPadding / 2,
-      }}
-      style={{ paddingHorizontal: gap }}
+      hitSlop={hitSlopRect}
+      style={padStyle}
     >
       <Animated.View style={animatedStyle}>
         <Ionicons name={iconName} size={starSize} color={starColor} />
       </Animated.View>
     </Pressable>
   );
-}
+});
 
 export default function StarRating({
   rating,
@@ -106,6 +110,7 @@ export default function StarRating({
   const resolvedEmptyColor = emptyColor ?? colors.starEmpty;
   const starSize = typeof size === 'number' ? size : STAR_SIZES[size];
   const touchPadding = Math.max(4, Math.round(starSize * 0.3));
+  const starPadStyle = useMemo(() => ({ paddingHorizontal: gap / 2 }), [gap]);
 
   const handlePress = useCallback(
     (starIndex: number) => {
@@ -145,7 +150,7 @@ export default function StarRating({
     const starColor = filled || halfFilled ? resolvedColor : resolvedEmptyColor;
 
     return (
-      <View key={index} style={{ paddingHorizontal: gap / 2 }}>
+      <View key={index} style={starPadStyle}>
         <Ionicons name={iconName} size={starSize} color={starColor} />
       </View>
     );

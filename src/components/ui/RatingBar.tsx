@@ -42,7 +42,7 @@ interface RatingBarProps {
   barWidth?: number;
 }
 
-export default function RatingBar({
+function RatingBar({
   rating,
   maxRating = 5,
   size = 'md',
@@ -86,9 +86,9 @@ export default function RatingBar({
 
   const animatedFillStyle = useAnimatedStyle(() => ({
     width: `${fillProgress.value}%` as any,
-    backgroundColor: resolvedColor,
-    height: barHeight,
   }));
+
+  const fillStaticStyle = { backgroundColor: resolvedColor, height: barHeight };
 
   return (
     <View style={styles.container}>
@@ -113,6 +113,7 @@ export default function RatingBar({
         <Animated.View
           style={[
             styles.fill,
+            fillStaticStyle,
             animatedFillStyle,
           ]}
         />
@@ -125,6 +126,8 @@ export default function RatingBar({
     </View>
   );
 }
+
+export default React.memo(RatingBar);
 
 const styles = StyleSheet.create({
   container: {

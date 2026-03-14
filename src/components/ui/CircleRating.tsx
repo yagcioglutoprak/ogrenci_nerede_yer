@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, BorderRadius, getRatingColor } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -20,7 +20,7 @@ interface CircleRatingProps {
   autoColor?: boolean;
 }
 
-export default function CircleRating({
+function CircleRating({
   score,
   maxScore = 10,
   size = 'md',
@@ -35,18 +35,20 @@ export default function CircleRating({
   const progress = Math.min(score / maxScore, 1);
   const bgOpacity = 0.08 + progress * 0.12; // 8-20%
 
+  const circleStyle = useMemo(() => ({
+    width: dims.outer,
+    height: dims.outer,
+    borderRadius: dims.outer / 2,
+    borderWidth: dims.border,
+    borderColor: resolvedColor,
+    backgroundColor: `${resolvedColor}${Math.round(bgOpacity * 255).toString(16).padStart(2, '0')}`,
+  }), [dims, resolvedColor, bgOpacity]);
+
   return (
     <View
       style={[
         styles.circle,
-        {
-          width: dims.outer,
-          height: dims.outer,
-          borderRadius: dims.outer / 2,
-          borderWidth: dims.border,
-          borderColor: resolvedColor,
-          backgroundColor: `${resolvedColor}${Math.round(bgOpacity * 255).toString(16).padStart(2, '0')}`,
-        },
+        circleStyle,
       ]}
     >
       <Text style={[styles.score, { fontSize: dims.font, color: resolvedColor }]}>
@@ -55,6 +57,8 @@ export default function CircleRating({
     </View>
   );
 }
+
+export default React.memo(CircleRating);
 
 const styles = StyleSheet.create({
   circle: {

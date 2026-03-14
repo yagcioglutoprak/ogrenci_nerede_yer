@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
@@ -19,6 +19,13 @@ const ShareCard = forwardRef<View, ShareCardProps>(({ venue, post, event, type }
   // - venue: venue photo background with gradient, name, rating, price, branding
   // - post: post image with caption and venue link
   // - event: event details with date, attendees, venue
+
+  const eventDateLabel = useMemo(() => {
+    if (type !== 'event' || !event) return '';
+    return new Date(event.event_date).toLocaleDateString('tr-TR', {
+      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+    });
+  }, [type, event?.event_date]);
 
   return (
     <View ref={ref} style={styles.card} collapsable={false}>
@@ -81,9 +88,7 @@ const ShareCard = forwardRef<View, ShareCardProps>(({ venue, post, event, type }
               <View style={styles.dateRow}>
                 <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
                 <Text style={styles.dateText}>
-                  {new Date(event.event_date).toLocaleDateString('tr-TR', {
-                    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-                  })}
+                  {eventDateLabel}
                 </Text>
               </View>
               {event.description && (
@@ -105,7 +110,7 @@ const ShareCard = forwardRef<View, ShareCardProps>(({ venue, post, event, type }
 });
 
 ShareCard.displayName = 'ShareCard';
-export default ShareCard;
+export default React.memo(ShareCard);
 
 const styles = StyleSheet.create({
   card: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -58,23 +58,21 @@ export default function FeedScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const {
-    posts,
-    loading,
-    refreshing,
-    loadingMore,
-    error,
-    category,
-    hasMore,
-    fetchPosts,
-    fetchMorePosts,
-    refreshFeed,
-    toggleLike,
-    setCategory,
-    clearError,
-  } = useFeedStore();
-  const { toggleFavorite } = useVenueStore();
-  const { joinEvent } = useEventStore();
+  const posts = useFeedStore((s) => s.posts);
+  const loading = useFeedStore((s) => s.loading);
+  const refreshing = useFeedStore((s) => s.refreshing);
+  const loadingMore = useFeedStore((s) => s.loadingMore);
+  const error = useFeedStore((s) => s.error);
+  const category = useFeedStore((s) => s.category);
+  const hasMore = useFeedStore((s) => s.hasMore);
+  const fetchPosts = useFeedStore((s) => s.fetchPosts);
+  const fetchMorePosts = useFeedStore((s) => s.fetchMorePosts);
+  const refreshFeed = useFeedStore((s) => s.refreshFeed);
+  const toggleLike = useFeedStore((s) => s.toggleLike);
+  const setCategory = useFeedStore((s) => s.setCategory);
+  const clearError = useFeedStore((s) => s.clearError);
+  const toggleFavorite = useVenueStore((s) => s.toggleFavorite);
+  const joinEvent = useEventStore((s) => s.joinEvent);
   const user = useAuthStore((s) => s.user);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +96,7 @@ export default function FeedScreen() {
   }));
 
   useEffect(() => {
-    fetchPosts();
+    if (posts.length === 0) fetchPosts();
   }, []);
 
   const animateIndicatorTo = useCallback((key: string) => {
@@ -136,7 +134,7 @@ export default function FeedScreen() {
         router.push('/auth/login');
       }
     },
-    [user],
+    [user?.id, toggleLike, router],
   );
 
   const handleComment = useCallback((postId: string) => {
@@ -233,7 +231,7 @@ export default function FeedScreen() {
   }, [loadingMore, hasMore]);
 
   // Client-side filter: filter posts by search query
-  const filteredPosts = searchQuery.trim().length > 0
+  const filteredPosts = useMemo(() => searchQuery.trim().length > 0
     ? posts.filter((p) => {
         const q = searchQuery.toLowerCase();
         const captionMatch = p.caption?.toLowerCase().includes(q);
@@ -241,12 +239,10 @@ export default function FeedScreen() {
         const usernameMatch = p.user?.username?.toLowerCase().includes(q);
         return captionMatch || venueMatch || usernameMatch;
       })
-    : posts;
+    : posts, [posts, searchQuery]);
 
   const renderPost = useCallback(
     ({ item, index }: { item: Post; index: number }) => {
-      const animDelay = Math.min(index * 80, 400);
-
       let card;
       switch (item.post_type) {
         case 'meetup':
@@ -316,9 +312,9 @@ export default function FeedScreen() {
       }
 
       return (
-        <Animated.View entering={FadeInDown.delay(animDelay).springify().damping(22).stiffness(340)}>
+        <View>
           {card}
-        </Animated.View>
+        </View>
       );
     },
     [handleLike, handleComment, handleBookmark, handleVenuePress, handleUserPress, handleJoinEvent, handleAnswer, handleJoinMoment, handleMessage, user?.id],

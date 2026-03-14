@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, Alert, ActivityIndicator,
 } from 'react-native';
@@ -12,22 +12,30 @@ import { useListStore } from '../../stores/listStore';
 import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { useDebounce } from '../../hooks/useDebounce';
 import { haptic } from '../../lib/haptics';
 import type { Venue } from '../../types';
 
 export default function ListCreateScreen() {
   const router = useRouter();
   const colors = useThemeColors();
-  const { user } = useAuthStore();
-  const { createList, addVenueToList } = useListStore();
-  const { searchVenues, venues: searchResults } = useVenueStore();
+  const user = useAuthStore((s) => s.user);
+  const createList = useListStore((s) => s.createList);
+  const addVenueToList = useListStore((s) => s.addVenueToList);
+  const searchVenues = useVenueStore((s) => s.searchVenues);
+  const searchResults = useVenueStore((s) => s.venues);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [venueQuery, setVenueQuery] = useState('');
+  const debouncedVenueQuery = useDebounce(venueQuery, 300);
   const [selectedVenues, setSelectedVenues] = useState<Venue[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (debouncedVenueQuery.length > 1) searchVenues(debouncedVenueQuery);
+  }, [debouncedVenueQuery]);
 
   const handlePickCover = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -43,7 +51,6 @@ export default function ListCreateScreen() {
 
   const handleVenueSearch = (query: string) => {
     setVenueQuery(query);
-    if (query.length > 1) searchVenues(query);
   };
 
   const addVenue = (venue: Venue) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 
 interface UseImagePickerOptions {
@@ -12,7 +12,7 @@ export function useImagePicker(options: UseImagePickerOptions = {}) {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const pickFromGallery = async () => {
+  const pickFromGallery = useCallback(async () => {
     if (images.length >= maxImages) return;
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -32,9 +32,9 @@ export function useImagePicker(options: UseImagePickerOptions = {}) {
       setImages((prev) => [...prev, ...newUris].slice(0, maxImages));
     }
     setLoading(false);
-  };
+  }, [images.length, maxImages, allowsEditing, quality]);
 
-  const takePhoto = async () => {
+  const takePhoto = useCallback(async () => {
     if (images.length >= maxImages) return;
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -50,13 +50,13 @@ export function useImagePicker(options: UseImagePickerOptions = {}) {
       setImages((prev) => [...prev, result.assets[0].uri].slice(0, maxImages));
     }
     setLoading(false);
-  };
+  }, [images.length, maxImages, quality, allowsEditing]);
 
-  const removeImage = (index: number) => {
+  const removeImage = useCallback((index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const clearImages = () => setImages([]);
+  const clearImages = useCallback(() => setImages([]), []);
 
   return {
     images,

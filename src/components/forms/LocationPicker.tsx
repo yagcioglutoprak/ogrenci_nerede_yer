@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Marker, MapPressEvent } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,15 +10,15 @@ interface LocationPickerProps {
   onLocationChange: (location: { latitude: number; longitude: number }) => void;
 }
 
-export default function LocationPicker({ location, onLocationChange }: LocationPickerProps) {
+function LocationPicker({ location, onLocationChange }: LocationPickerProps) {
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const mapRef = useRef<MapView>(null);
 
-  const handleMapPress = (e: MapPressEvent) => {
+  const handleMapPress = useCallback((e: MapPressEvent) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     onLocationChange({ latitude, longitude });
-  };
+  }, [onLocationChange]);
 
   return (
     <View>
@@ -49,6 +49,8 @@ export default function LocationPicker({ location, onLocationChange }: LocationP
     </View>
   );
 }
+
+export default React.memo(LocationPicker);
 
 const styles = StyleSheet.create({
   mapContainer: {

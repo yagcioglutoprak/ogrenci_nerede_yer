@@ -3,6 +3,35 @@ import { supabase } from '../lib/supabase';
 import { checkAndAwardBadges, addXP } from '../lib/badgeChecker';
 import type { Event, EventAttendee, EventMessage } from '../types';
 
+// Sender profile cache to avoid re-fetching the same user on every incoming message
+const eventSenderProfileCache = new Map<string, any>();
+
+/**
+ * Helper to fetch an event by a specific column (deduplicates fetchEventByPostId / fetchEventById).
+ */
+async function fetchEventByColumn(col: 'post_id' | 'id', value: string) {
+  const { data, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      creator:users!creator_id(*),
+      venue:venues(*),
+      attendees:event_attendees(*, user:users(*))
+    `)
+    .eq(col, value)
+    .single();
+
+  if (!error && data) {
+    const event = {
+      ...data,
+      attendee_count: (data.attendees as EventAttendee[])
+        ?.filter((a) => a.status === 'confirmed').length ?? 0,
+    } as Event;
+    return { event, error: null };
+  }
+  return { event: null, error: error?.message || null };
+}
+
 interface EventState {
   events: Event[];
   selectedEvent: Event | null;
@@ -48,70 +77,38 @@ export const useEventStore = create<EventState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          creator:users!creator_id(*),
-          venue:venues(*),
-          attendees:event_attendees(*, user:users(*))
-        `)
-        .eq('post_id', postId)
-        .single();
-
-      if (!error && data) {
-        const event = {
-          ...data,
-          attendee_count: (data.attendees as EventAttendee[])
-            ?.filter((a) => a.status === 'confirmed').length ?? 0,
-        } as Event;
-        set({ selectedEvent: event });
+      const result = await fetchEventByColumn('post_id', postId);
+      if (result.event) {
+        set({ selectedEvent: result.event, loading: false });
       } else {
-        set({ selectedEvent: null });
+        set({ selectedEvent: null, loading: false });
       }
     } catch (err: any) {
       set({
         selectedEvent: null,
         error: err?.message || 'Etkinlik yuklenirken hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   fetchEventById: async (eventId) => {
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          creator:users!creator_id(*),
-          venue:venues(*),
-          attendees:event_attendees(*, user:users(*))
-        `)
-        .eq('id', eventId)
-        .single();
-
-      if (!error && data) {
-        const event = {
-          ...data,
-          attendee_count: (data.attendees as EventAttendee[])
-            ?.filter((a) => a.status === 'confirmed').length ?? 0,
-        } as Event;
-        set({ selectedEvent: event });
+      const result = await fetchEventByColumn('id', eventId);
+      if (result.event) {
+        set({ selectedEvent: result.event, loading: false });
       } else {
-        set({ selectedEvent: null });
+        set({ selectedEvent: null, loading: false });
       }
     } catch (err: any) {
       set({
         selectedEvent: null,
         error: err?.message || 'Etkinlik yuklenirken hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   fetchUpcomingEvents: async () => {
@@ -138,18 +135,17 @@ export const useEventStore = create<EventState>((set, get) => ({
           attendee_count: (e.attendees as EventAttendee[])
             ?.filter((a) => a.status === 'confirmed').length ?? 0,
         })) as Event[];
-        set({ events });
+        set({ events, loading: false });
       } else {
-        set({ events: [] });
+        set({ events: [], loading: false });
       }
     } catch (err: any) {
       set({
         events: [],
         error: err?.message || 'Etkinlikler yuklenirken hata olustu',
+        loading: false,
       });
     }
-
-    set({ loading: false });
   },
 
   createEvent: async (data) => {
@@ -373,72 +369,80 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   sendMessage: async (eventId, userId, text) => {
-    try {
-      const { error } = await supabase.from('event_messages').insert({
-        event_id: eventId,
-        user_id: userId,
-        message: text,
-      });
+    // Optimistic: add message to local state immediately
+    const optimisticMessage: EventMessage = {
+      id: `em-local-${Date.now()}`,
+      event_id: eventId,
+      user_id: userId,
+      message: text,
+      created_at: new Date().toISOString(),
+      user: undefined,
+    };
+    set({ messages: [...get().messages, optimisticMessage] });
 
-      if (!error) {
-        await get().fetchMessages(eventId);
-      } else {
-        // Optimistic: add message to local state
-        const newMessage: EventMessage = {
-          id: `em-local-${Date.now()}`,
-          event_id: eventId,
-          user_id: userId,
-          message: text,
-          created_at: new Date().toISOString(),
-          user: undefined,
-        };
-        const currentMessages = get().messages;
-        set({ messages: [...currentMessages, newMessage] });
-      }
-    } catch {
-      // Optimistic: add message to local state
-      const newMessage: EventMessage = {
-        id: `em-local-${Date.now()}`,
+    try {
+      const { data: persisted, error } = await supabase.from('event_messages').insert({
         event_id: eventId,
         user_id: userId,
         message: text,
-        created_at: new Date().toISOString(),
-        user: undefined,
-      };
-      const currentMessages = get().messages;
-      set({ messages: [...currentMessages, newMessage] });
+      }).select('*, user:users(*)').single();
+
+      if (!error && persisted) {
+        // Replace optimistic message with server response
+        set({
+          messages: get().messages.map((m) =>
+            m.id === optimisticMessage.id ? (persisted as EventMessage) : m
+          ),
+        });
+      }
+      // If insert fails, optimistic message stays in place
+    } catch {
+      // Optimistic message stays in place on network failure
     }
   },
 
   subscribeToMessages: (eventId: string) => {
-    const channel = supabase
-      .channel(`event-messages-${eventId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'event_messages',
-        filter: `event_id=eq.${eventId}`,
-      }, async (payload) => {
-        const newMsg = payload.new as any;
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', newMsg.user_id)
-          .single();
+    try {
+      const channel = supabase
+        .channel(`event-messages-${eventId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'event_messages',
+          filter: `event_id=eq.${eventId}`,
+        }, async (payload) => {
+          const newMsg = payload.new as any;
 
-        const message = {
-          ...newMsg,
-          user: userData || undefined,
-        };
+          // Use sender profile cache to avoid re-fetching the same user repeatedly
+          let userData = eventSenderProfileCache.get(newMsg.user_id);
+          if (!userData) {
+            const { data } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', newMsg.user_id)
+              .single();
+            userData = data || undefined;
+            if (userData) {
+              eventSenderProfileCache.set(newMsg.user_id, userData);
+            }
+          }
 
-        const { messages } = get();
-        if (!messages.find((m: any) => m.id === message.id)) {
-          set({ messages: [...messages, message] });
-        }
-      })
-      .subscribe();
+          const message = {
+            ...newMsg,
+            user: userData,
+          };
 
-    return channel;
+          const { messages } = get();
+          if (!messages.find((m: any) => m.id === message.id)) {
+            set({ messages: [...messages, message] });
+          }
+        })
+        .subscribe();
+
+      return channel;
+    } catch {
+      return null;
+    }
   },
 
   unsubscribeFromMessages: (channel: any) => {

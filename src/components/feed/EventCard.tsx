@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -52,18 +52,19 @@ function EventCard({
   const colors = useThemeColors();
   const timeSince = getRelativeTime(post.created_at);
 
-  const attendees = event.attendees ?? [];
-  const attendeeCount = event.attendee_count ?? attendees.length;
-  const isFull = attendeeCount >= event.max_attendees;
-  const hasJoined = currentUserId
-    ? attendees.some(
-        (a) => a.user_id === currentUserId && a.status === 'confirmed',
-      )
-    : false;
-
-  const displayedAttendees = attendees
-    .filter((a) => a.status === 'confirmed')
-    .slice(0, 4);
+  const { attendees, attendeeCount, isFull, hasJoined, displayedAttendees } = useMemo(() => {
+    const att = event.attendees ?? [];
+    const count = event.attendee_count ?? att.length;
+    return {
+      attendees: att,
+      attendeeCount: count,
+      isFull: count >= event.max_attendees,
+      hasJoined: currentUserId
+        ? att.some((a) => a.user_id === currentUserId && a.status === 'confirmed')
+        : false,
+      displayedAttendees: att.filter((a) => a.status === 'confirmed').slice(0, 4),
+    };
+  }, [event.attendees, event.attendee_count, event.max_attendees, currentUserId]);
 
   const handleJoinPress = useCallback(() => {
     haptic.light();
@@ -73,6 +74,11 @@ function EventCard({
       onJoin(event.id);
     }
   }, [event.id, hasJoined, onJoin, onLeave]);
+
+  const handleVenuePress = useCallback(() => {
+    const venueId = event.venue_id ?? post.venue_id;
+    if (venueId && onVenuePress) onVenuePress(venueId);
+  }, [event.venue_id, post.venue_id, onVenuePress]);
 
   const venueName = event.venue?.name ?? event.location_name;
 
@@ -157,10 +163,7 @@ function EventCard({
           <TouchableOpacity
             style={styles.venueRow}
             activeOpacity={0.7}
-            onPress={() => {
-              const venueId = event.venue_id ?? post.venue_id;
-              if (venueId && onVenuePress) onVenuePress(venueId);
-            }}
+            onPress={handleVenuePress}
             disabled={!onVenuePress || (!event.venue_id && !post.venue_id)}
           >
             <Ionicons name="location-outline" size={14} color={colors.textSecondary} />

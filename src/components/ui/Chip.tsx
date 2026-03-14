@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function ChipInner({
+const ChipInner = React.memo(function ChipInner({
   label,
   icon,
   color = Colors.primary,
@@ -54,47 +54,51 @@ function ChipInner({
   const activeColor = selected ? color : color;
   const isSelected = selected;
 
-  const containerStyle: StyleProp<ViewStyle>[] = [
-    styles.container,
-    isSmall ? styles.containerSm : styles.containerMd,
-  ];
+  const { containerStyle, textColor, iconColor } = useMemo(() => {
+    const cs: StyleProp<ViewStyle>[] = [
+      styles.container,
+      isSmall ? styles.containerSm : styles.containerMd,
+    ];
 
-  let textColor: string;
-  let iconColor: string;
+    let tc: string;
+    let ic: string;
 
-  switch (variant) {
-    case 'filled': {
-      containerStyle.push({
-        backgroundColor: isSelected ? activeColor : colors.backgroundSecondary,
-      });
-      textColor = isSelected ? Colors.textOnPrimary : colors.textSecondary;
-      iconColor = isSelected ? Colors.textOnPrimary : colors.textSecondary;
-      break;
+    switch (variant) {
+      case 'filled': {
+        cs.push({
+          backgroundColor: isSelected ? activeColor : colors.backgroundSecondary,
+        });
+        tc = isSelected ? Colors.textOnPrimary : colors.textSecondary;
+        ic = isSelected ? Colors.textOnPrimary : colors.textSecondary;
+        break;
+      }
+      case 'outlined': {
+        cs.push({
+          backgroundColor: isSelected ? hexToRgba(activeColor, 0.08) : 'transparent',
+          borderWidth: 1,
+          borderColor: isSelected ? activeColor : colors.border,
+        });
+        tc = isSelected ? activeColor : colors.textSecondary;
+        ic = isSelected ? activeColor : colors.textTertiary;
+        break;
+      }
+      case 'soft':
+      default: {
+        cs.push({
+          backgroundColor: isSelected
+            ? hexToRgba(activeColor, 0.14)
+            : colors.backgroundSecondary,
+        });
+        tc = isSelected ? activeColor : colors.textSecondary;
+        ic = isSelected ? activeColor : colors.textTertiary;
+        break;
+      }
     }
-    case 'outlined': {
-      containerStyle.push({
-        backgroundColor: isSelected ? hexToRgba(activeColor, 0.08) : 'transparent',
-        borderWidth: 1,
-        borderColor: isSelected ? activeColor : colors.border,
-      });
-      textColor = isSelected ? activeColor : colors.textSecondary;
-      iconColor = isSelected ? activeColor : colors.textTertiary;
-      break;
-    }
-    case 'soft':
-    default: {
-      containerStyle.push({
-        backgroundColor: isSelected
-          ? hexToRgba(activeColor, 0.14)
-          : colors.backgroundSecondary,
-      });
-      textColor = isSelected ? activeColor : colors.textSecondary;
-      iconColor = isSelected ? activeColor : colors.textTertiary;
-      break;
-    }
-  }
 
-  containerStyle.push(style);
+    cs.push(style);
+
+    return { containerStyle: cs, textColor: tc, iconColor: ic };
+  }, [isSmall, variant, isSelected, activeColor, colors, style]);
 
   return (
     <View style={containerStyle}>
@@ -118,7 +122,7 @@ function ChipInner({
       </Text>
     </View>
   );
-}
+});
 
 const SPRING_CONFIG = { damping: 6, stiffness: 400 };
 

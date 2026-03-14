@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { sendPushNotification } from '../lib/notifications';
+import { useBlockStore } from './blockStore';
 import type { Conversation, DirectMessage, DirectMessageType, DirectMessageMetadata, MessageStatus, User } from '../types';
+
+// Sender profile cache to avoid re-fetching the same user on every incoming message
+const senderProfileCache = new Map<string, any>();
 
 interface MessageState {
   conversations: Conversation[];
@@ -136,14 +140,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       created_at: new Date().toISOString(),
     };
 
-    set({ messages: [...get().messages, optimisticMessage] });
-
-    const updatedConversations = get().conversations.map((c) =>
-      c.id === convId
-        ? { ...c, last_message_text: previewText, last_message_at: optimisticMessage.created_at, last_message_sender_id: senderId, last_message_status: 'sent' as const }
-        : c,
-    );
-    set({ conversations: updatedConversations });
+    // Batch messages + conversations update into a single set() call
+    set({
+      messages: [...get().messages, optimisticMessage],
+      conversations: get().conversations.map((c) =>
+        c.id === convId
+          ? { ...c, last_message_text: previewText, last_message_at: optimisticMessage.created_at, last_message_sender_id: senderId, last_message_status: 'sent' as const }
+          : c,
+      ),
+    });
 
     try {
       const { data: persisted, error } = await supabase
@@ -191,21 +196,26 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   markAsSeen: async (convId, myId) => {
-    set({
-      messages: get().messages.map((m) =>
-        m.conversation_id === convId && m.sender_id !== myId && m.status !== 'seen'
-          ? { ...m, status: 'seen' }
-          : m,
-      ),
-    });
+    // Batch messages + conversations update into a single set() call
+    const updatedMessages = get().messages.map((m) =>
+      m.conversation_id === convId && m.sender_id !== myId && m.status !== 'seen'
+        ? { ...m, status: 'seen' as MessageStatus }
+        : m,
+    );
 
     const { conversations } = get();
     const target = conversations.find((c) => c.id === convId);
     if (target && (target.unread_count ?? 0) > 0) {
-      const updated = conversations.map((c) =>
+      const updatedConversations = conversations.map((c) =>
         c.id === convId ? { ...c, unread_count: 0 } : c,
       );
-      set({ conversations: updated, totalUnreadCount: updated.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) });
+      set({
+        messages: updatedMessages,
+        conversations: updatedConversations,
+        totalUnreadCount: updatedConversations.reduce((sum, c) => sum + (c.unread_count ?? 0), 0),
+      });
+    } else {
+      set({ messages: updatedMessages });
     }
 
     try {
@@ -234,13 +244,22 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           },
           async (payload) => {
             const incoming = payload.new as any;
-            const { data: senderProfile } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', incoming.sender_id)
-              .single();
 
-            const message: DirectMessage = { ...incoming, status: incoming.status ?? 'sent', user: senderProfile || undefined };
+            // Use sender profile cache to avoid fetching the same user repeatedly
+            let senderProfile = senderProfileCache.get(incoming.sender_id);
+            if (!senderProfile) {
+              const { data } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', incoming.sender_id)
+                .single();
+              senderProfile = data || undefined;
+              if (senderProfile) {
+                senderProfileCache.set(incoming.sender_id, senderProfile);
+              }
+            }
+
+            const message: DirectMessage = { ...incoming, status: incoming.status ?? 'sent', user: senderProfile };
             const currentMessages = get().messages;
             if (!currentMessages.find((m) => m.id === message.id)) {
               set({ messages: [...currentMessages, message] });
@@ -344,7 +363,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       if (error || !data) return [];
 
-      const { useBlockStore } = await import('./blockStore');
       const blockedUsers = useBlockStore.getState().blockedUsers;
       return (data as User[])
         .filter((u) => !blockedUsers.includes(u.id))
@@ -444,7 +462,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     });
 
     // Delegate block to blockStore (handles follows + conversation status)
-    const { useBlockStore } = await import('./blockStore');
     const blockStore = useBlockStore.getState();
     // Determine blocker (current user) from the request
     const request = messageRequests.find((r) => r.id === convId);

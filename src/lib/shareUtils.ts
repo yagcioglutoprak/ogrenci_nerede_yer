@@ -15,10 +15,10 @@ export async function captureAndShare(
       return { success: false, error: 'View reference is not available' };
     }
 
-    // Capture the view as a PNG
+    // Capture the view as a JPG (smaller file size than PNG)
     const uri = await captureRef(viewRef, {
-      format: 'png',
-      quality: 1,
+      format: 'jpg',
+      quality: 0.85,
       result: 'tmpfile',
     });
 
@@ -30,9 +30,9 @@ export async function captureAndShare(
 
     // Open native share sheet
     await Sharing.shareAsync(uri, {
-      mimeType: 'image/png',
+      mimeType: 'image/jpeg',
       dialogTitle: 'Ogrenci Nerede Yer?',
-      UTI: 'public.png',
+      UTI: 'public.jpeg',
     });
 
     return { success: true };

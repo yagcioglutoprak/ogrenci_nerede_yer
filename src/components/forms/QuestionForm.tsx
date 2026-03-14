@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,10 +38,44 @@ export default function QuestionForm({ user }: QuestionFormProps) {
     setSelectedSemt(null);
   };
 
-  const handleSemtSelect = (semt: string) => {
+  const handleSemtSelect = useCallback((semt: string) => {
     haptic.light();
-    setSelectedSemt(selectedSemt === semt ? null : semt);
-  };
+    setSelectedSemt((prev) => prev === semt ? null : semt);
+  }, []);
+
+  const semtChips = useMemo(() => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.semtChipContainer}
+    >
+      {ISTANBUL_SEMTLER.map((semt) => {
+        const isSelected = selectedSemt === semt;
+        return (
+          <Animated.View key={semt} layout={Layout.springify()}>
+            <TouchableOpacity
+              style={[
+                styles.semtChip,
+                { borderColor: isSelected ? FeatureColors.question : colors.border },
+                isSelected && { backgroundColor: FeatureColors.question + '15' },
+              ]}
+              onPress={() => handleSemtSelect(semt)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.semtChipText,
+                  { color: isSelected ? FeatureColors.question : colors.textSecondary },
+                ]}
+              >
+                {semt}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
+    </ScrollView>
+  ), [selectedSemt, colors.border, colors.textSecondary, handleSemtSelect]);
 
   const handleSubmit = async () => {
     if (!question.trim()) {
@@ -113,37 +147,7 @@ export default function QuestionForm({ user }: QuestionFormProps) {
         <>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Semt</Text>
           <Text style={[styles.sectionHint, { color: colors.textTertiary }]}>Opsiyonel - sorunuzu bir semtle iliskilendirin</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.semtChipContainer}
-          >
-            {ISTANBUL_SEMTLER.map((semt) => {
-              const isSelected = selectedSemt === semt;
-              return (
-                <Animated.View key={semt} layout={Layout.springify()}>
-                  <TouchableOpacity
-                    style={[
-                      styles.semtChip,
-                      { borderColor: isSelected ? FeatureColors.question : colors.border },
-                      isSelected && { backgroundColor: FeatureColors.question + '15' },
-                    ]}
-                    onPress={() => handleSemtSelect(semt)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.semtChipText,
-                        { color: isSelected ? FeatureColors.question : colors.textSecondary },
-                      ]}
-                    >
-                      {semt}
-                    </Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
+          {semtChips}
         </>
       )}
 

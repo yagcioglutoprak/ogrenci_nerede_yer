@@ -51,7 +51,7 @@ const COVER_HEIGHT = 160;
 type ProfileTab = 'favorites' | 'posts' | 'lists';
 
 // Animated stat counter that springs to value
-function AnimatedStat({ value, label, icon, color, delay }: {
+const AnimatedStat = React.memo(function AnimatedStat({ value, label, icon, color, delay }: {
   value: number;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -82,10 +82,10 @@ function AnimatedStat({ value, label, icon, color, delay }: {
       <Text style={[styles.statLabel, { color: colors.textTertiary }]}>{label}</Text>
     </Animated.View>
   );
-}
+});
 
 // XP Progress Bar
-function XPProgressBar({ xp, colors }: { xp: number; colors: any }) {
+const XPProgressBar = React.memo(function XPProgressBar({ xp, colors }: { xp: number; colors: any }) {
   const progress = useSharedValue(0);
   const nextLevel = Math.ceil(xp / 500) * 500;
   const currentLevelBase = nextLevel - 500;
@@ -122,10 +122,10 @@ function XPProgressBar({ xp, colors }: { xp: number; colors: any }) {
       </View>
     </View>
   );
-}
+});
 
 // Profile Completion Banner
-function ProfileCompletionBanner({ user, colors }: { user: any; colors: any }) {
+const ProfileCompletionBanner = React.memo(function ProfileCompletionBanner({ user, colors }: { user: any; colors: any }) {
   const router = useRouter();
 
   const fields = [
@@ -191,7 +191,7 @@ function ProfileCompletionBanner({ user, colors }: { user: any; colors: any }) {
       </View>
     </View>
   );
-}
+});
 
 const completionStyles = StyleSheet.create({
   card: {
@@ -255,9 +255,11 @@ const completionStyles = StyleSheet.create({
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const colors = useThemeColors();
-  const { userLists, fetchUserLists } = useListStore();
+  const userLists = useListStore((s) => s.userLists);
+  const fetchUserLists = useListStore((s) => s.fetchUserLists);
 
   const [activeTab, setActiveTab] = useState<ProfileTab>('favorites');
   const [favorites, setFavorites] = useState<Venue[]>([]);
@@ -289,7 +291,7 @@ export default function ProfileScreen() {
       loadProfile();
       fetchUserLists(user.id);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const loadProfile = async () => {
     if (!user) return;

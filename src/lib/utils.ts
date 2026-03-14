@@ -1,9 +1,17 @@
 import { PriceRanges, VenueLevels } from './constants';
 
+// Pre-computed lookup for price labels
+const PRICE_LABELS = ['', '₺', '₺₺', '₺₺₺', '₺₺₺₺'];
+
+// Pre-computed lookup map for price descriptions
+const PRICE_DESCRIPTION_MAP: Record<number, string> = Object.fromEntries(
+  PriceRanges.map((r) => [r.value, r.description])
+);
+
 // Zaman formatlama (Türkçe)
-export function getRelativeTime(dateString: string): string {
+export function getRelativeTime(input: Date | string): string {
   const now = new Date();
-  const date = new Date(dateString);
+  const date = typeof input === 'string' ? new Date(input) : input;
   const diffMs = now.getTime() - date.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
@@ -21,12 +29,11 @@ export function getRelativeTime(dateString: string): string {
 
 // Fiyat aralığı gösterimi
 export function getPriceLabel(priceRange: number): string {
-  return '₺'.repeat(priceRange);
+  return PRICE_LABELS[priceRange] || '';
 }
 
 export function getPriceDescription(priceRange: number): string {
-  const range = PriceRanges.find((r) => r.value === priceRange);
-  return range?.description || '';
+  return PRICE_DESCRIPTION_MAP[priceRange] || '';
 }
 
 // Mekan seviyesi
@@ -74,14 +81,6 @@ export function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2);
-}
-
-// Rating rengi
-export function getRatingColor(rating: number): string {
-  if (rating >= 4.5) return '#22C55E'; // Yeşil
-  if (rating >= 3.5) return '#FBBF24'; // Sarı
-  if (rating >= 2.5) return '#F59E0B'; // Turuncu
-  return '#EF4444'; // Kırmızı
 }
 
 // Sayı kısaltma (1200 -> 1.2K)

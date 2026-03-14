@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -11,6 +11,17 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { BorderRadius, Spacing } from '../../lib/constants';
+
+const shimmerOverlayStyle = {
+  position: 'absolute' as const,
+  top: 0,
+  bottom: 0,
+  width: 200,
+  left: '50%' as const,
+};
+const GRADIENT_START = { x: 0, y: 0.5 };
+const GRADIENT_END = { x: 1, y: 0.5 };
+const flexOne = { flex: 1 };
 
 interface SkeletonProps {
   width?: number | string;
@@ -35,36 +46,38 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
     transform: [{ translateX: interpolate(translateX.value, [-1, 1], [-200, 200]) }],
   }));
 
+  const containerStyle = useMemo(() => ({
+    width: width as any,
+    height,
+    borderRadius,
+    backgroundColor: colors.shimmer,
+    overflow: 'hidden' as const,
+  }), [width, height, borderRadius, colors.shimmer]);
+
+  const gradientColors = useMemo<[string, string, string]>(() => [
+    'transparent',
+    colors.shimmerHighlight ?? 'rgba(255,255,255,0.3)',
+    'transparent',
+  ], [colors.shimmerHighlight]);
+
   return (
     <View
       style={[
-        {
-          width: width as any,
-          height,
-          borderRadius,
-          backgroundColor: colors.shimmer,
-          overflow: 'hidden',
-        },
+        containerStyle,
         style,
       ]}
     >
       <Animated.View
         style={[
-          {
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            width: 200,
-            left: '50%',
-          },
+          shimmerOverlayStyle,
           shimmerStyle,
         ]}
       >
         <LinearGradient
-          colors={['transparent', colors.shimmerHighlight ?? 'rgba(255,255,255,0.3)', 'transparent']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={{ flex: 1 }}
+          colors={gradientColors}
+          start={GRADIENT_START}
+          end={GRADIENT_END}
+          style={flexOne}
         />
       </Animated.View>
     </View>

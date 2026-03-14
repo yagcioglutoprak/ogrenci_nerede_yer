@@ -42,14 +42,15 @@ export const useListStore = create<ListState>((set, get) => ({
         .limit(10);
 
       if (!error && data) {
-        set({ lists: data as List[] });
+        set({ lists: data as List[], loading: false });
       } else if (error) {
-        set({ error: error.message });
+        set({ error: error.message, loading: false });
+      } else {
+        set({ loading: false });
       }
     } catch (err: any) {
-      set({ error: err?.message || 'Populer listeler yuklenirken hata olustu' });
+      set({ error: err?.message || 'Populer listeler yuklenirken hata olustu', loading: false });
     }
-    set({ loading: false });
   },
 
   fetchUserLists: async (userId) => {
@@ -84,14 +85,15 @@ export const useListStore = create<ListState>((set, get) => ({
         if (data.venues) {
           (data.venues as any[]).sort((a: any, b: any) => a.position - b.position);
         }
-        set({ selectedList: data as List });
+        set({ selectedList: data as List, loading: false });
       } else if (error) {
-        set({ error: error.message });
+        set({ error: error.message, loading: false });
+      } else {
+        set({ loading: false });
       }
     } catch (err: any) {
-      set({ error: err?.message || 'Liste detayi yuklenirken hata olustu' });
+      set({ error: err?.message || 'Liste detayi yuklenirken hata olustu', loading: false });
     }
-    set({ loading: false });
   },
 
   createList: async ({ title, description, cover_image_url, user_id }) => {
@@ -173,13 +175,12 @@ export const useListStore = create<ListState>((set, get) => ({
       const currentCount = get().selectedList?.likes_count ?? 0;
       const newCount = isUnliking ? Math.max(0, currentCount - 1) : currentCount + 1;
 
-      // Optimistic update: update local selectedList immediately
+      // Optimistic update: batch selectedList + lists into a single set() call
       const selectedList = get().selectedList;
-      if (selectedList && selectedList.id === listId) {
-        set({ selectedList: { ...selectedList, likes_count: newCount } });
-      }
-      // Also update in lists array
       set({
+        selectedList: selectedList && selectedList.id === listId
+          ? { ...selectedList, likes_count: newCount }
+          : selectedList,
         lists: get().lists.map(l => l.id === listId ? { ...l, likes_count: newCount } : l),
       });
 
@@ -217,13 +218,12 @@ export const useListStore = create<ListState>((set, get) => ({
       const currentCount = get().selectedList?.followers_count ?? 0;
       const newCount = isUnfollowing ? Math.max(0, currentCount - 1) : currentCount + 1;
 
-      // Optimistic update: update local selectedList immediately
+      // Optimistic update: batch selectedList + lists into a single set() call
       const selectedList = get().selectedList;
-      if (selectedList && selectedList.id === listId) {
-        set({ selectedList: { ...selectedList, followers_count: newCount } });
-      }
-      // Also update in lists array
       set({
+        selectedList: selectedList && selectedList.id === listId
+          ? { ...selectedList, followers_count: newCount }
+          : selectedList,
         lists: get().lists.map(l => l.id === listId ? { ...l, followers_count: newCount } : l),
       });
 

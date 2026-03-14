@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,7 @@ interface VenueBubbleProps {
   status?: MessageStatus;
 }
 
-export default function VenueBubble({
+function VenueBubble({
   venueId,
   venueName,
   venueCoverUrl,
@@ -31,11 +31,15 @@ export default function VenueBubble({
   const colors = useThemeColors();
   const isDark = useIsDarkMode();
   const router = useRouter();
-  const priceLabel = PriceRanges.find((p) => p.value === venuePriceRange)?.label ?? '\u20ba';
+  const priceLabel = useMemo(() => PriceRanges.find((p) => p.value === venuePriceRange)?.label ?? '\u20ba', [venuePriceRange]);
 
-  const cardBg = isOwn
+  const cardBg = useMemo(() => isOwn
     ? undefined // will use gradient
-    : isDark ? colors.surface : colors.backgroundSecondary;
+    : isDark ? colors.surface : colors.backgroundSecondary, [isOwn, isDark, colors.surface, colors.backgroundSecondary]);
+
+  const handlePress = useCallback(() => {
+    router.push(`/venue/${venueId}`);
+  }, [router, venueId]);
 
   const cardInner = (
     <>
@@ -73,7 +77,7 @@ export default function VenueBubble({
   return (
     <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
       <TouchableOpacity
-        onPress={() => router.push(`/venue/${venueId}`)}
+        onPress={handlePress}
         activeOpacity={0.8}
         style={[
           styles.card,
@@ -117,6 +121,8 @@ export default function VenueBubble({
     </View>
   );
 }
+
+export default React.memo(VenueBubble);
 
 const styles = StyleSheet.create({
   container: {

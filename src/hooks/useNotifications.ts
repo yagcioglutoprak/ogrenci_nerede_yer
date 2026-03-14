@@ -8,9 +8,11 @@ export function useNotifications() {
   const router = useRouter();
   const { user } = useAuthStore();
   const responseListener = useRef<Notifications.Subscription | null>(null);
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     let isActive = true;
 
     const setupNotifications = async () => {
@@ -22,7 +24,7 @@ export function useNotifications() {
         responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
           const data = response.notification.request.content.data;
           if (data?.route) {
-            router.push(data.route as string);
+            routerRef.current.push(data.route as string);
           }
         });
       } catch {
@@ -41,5 +43,5 @@ export function useNotifications() {
         // Cleanup failed silently
       }
     };
-  }, [router, user]);
+  }, [user?.id]);
 }

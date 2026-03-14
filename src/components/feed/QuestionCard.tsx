@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -36,12 +36,17 @@ function QuestionCard({
   const colors = useThemeColors();
   const timeSince = getRelativeTime(post.created_at);
 
-  const sortedAnswers = (topAnswers ?? [])
-    .slice()
-    .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
-    .slice(0, 2);
+  const sortedAnswers = useMemo(
+    () => (topAnswers ?? [])
+      .slice()
+      .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+      .slice(0, 2),
+    [topAnswers],
+  );
 
   const answerCount = totalAnswers ?? sortedAnswers.length;
+
+  const handleAnswer = useCallback(() => onAnswer(post.id), [onAnswer, post.id]);
 
   return (
     <TouchableOpacity
@@ -177,7 +182,7 @@ function QuestionCard({
         <TouchableOpacity
           style={styles.answerButton}
           activeOpacity={0.7}
-          onPress={() => onAnswer(post.id)}
+          onPress={handleAnswer}
         >
           <Ionicons name="chatbubble-outline" size={16} color={FeatureColors.question} />
           <Text style={styles.answerButtonText}>Yanitla</Text>

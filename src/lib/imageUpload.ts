@@ -4,6 +4,16 @@ import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'images';
 
+const MIME_MAP: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  heic: 'image/jpeg', // Convert HEIC → JPEG for broader compatibility
+  heif: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
 /**
  * Detect MIME type from URI, handling ph:// and file:// URIs safely.
  */
@@ -18,19 +28,10 @@ function detectMimeType(uri: string): { ext: string; mimeType: string } {
   // Only use extension if it comes after the last slash (avoids false matches)
   if (lastDot > lastSlash && lastDot < path.length - 1) {
     const ext = path.substring(lastDot + 1).toLowerCase();
-    const mimeMap: Record<string, string> = {
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      heic: 'image/jpeg', // Convert HEIC → JPEG for broader compatibility
-      heif: 'image/jpeg',
-      webp: 'image/webp',
-      gif: 'image/gif',
-    };
-    if (mimeMap[ext]) {
+    if (MIME_MAP[ext]) {
       // For HEIC/HEIF, use .jpg extension since we treat them as JPEG
       const finalExt = (ext === 'heic' || ext === 'heif') ? 'jpg' : ext;
-      return { ext: finalExt, mimeType: mimeMap[ext] };
+      return { ext: finalExt, mimeType: MIME_MAP[ext] };
     }
   }
 
@@ -83,6 +84,7 @@ export async function uploadImage(
 
 /**
  * Upload multiple local images to Supabase Storage.
+ * Limits concurrency to 2 at a time to avoid memory pressure.
  * Returns array of public URLs (skips failed uploads).
  * Returns empty array if all uploads fail — callers must handle this case.
  */
@@ -92,13 +94,21 @@ export async function uploadImages(
 ): Promise<string[]> {
   if (localUris.length === 0) return [];
 
-  const results = await Promise.all(
-    localUris.map((uri) => uploadImage(uri, folder)),
-  );
+  const CONCURRENCY = 2;
+  const uploadedUrls: string[] = [];
 
-  const uploadedUrls = results
-    .filter((r) => r.url !== null)
-    .map((r) => r.url as string);
+  for (let i = 0; i < localUris.length; i += CONCURRENCY) {
+    const batch = localUris.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((uri) => uploadImage(uri, folder)),
+    );
+
+    for (const r of results) {
+      if (r.url !== null) {
+        uploadedUrls.push(r.url);
+      }
+    }
+  }
 
   // Return only successfully uploaded URLs.
   // If all uploads failed, return empty array — callers must handle the empty case.

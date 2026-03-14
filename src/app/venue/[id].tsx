@@ -52,16 +52,16 @@ export default function VenueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const {
-    selectedVenue: venue,
-    reviews,
-    loading,
-    fetchVenueById,
-    fetchReviews,
-    addReview,
-    toggleFavorite,
-  } = useVenueStore();
-  const { userLists, fetchUserLists, addVenueToList } = useListStore();
+  const venue = useVenueStore((s) => s.selectedVenue);
+  const reviews = useVenueStore((s) => s.reviews);
+  const loading = useVenueStore((s) => s.loading);
+  const fetchVenueById = useVenueStore((s) => s.fetchVenueById);
+  const fetchReviews = useVenueStore((s) => s.fetchReviews);
+  const addReview = useVenueStore((s) => s.addReview);
+  const toggleFavorite = useVenueStore((s) => s.toggleFavorite);
+  const userLists = useListStore((s) => s.userLists);
+  const fetchUserLists = useListStore((s) => s.fetchUserLists);
+  const addVenueToList = useListStore((s) => s.addVenueToList);
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);

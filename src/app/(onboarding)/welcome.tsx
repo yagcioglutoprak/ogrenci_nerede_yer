@@ -333,7 +333,7 @@ export default function WelcomeScreen() {
     }
   };
 
-  const renderSlide = ({ item }: { item: Slide }) => (
+  const renderSlide = useCallback(({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}>
       {/* Phone mockup frame */}
       <View style={[styles.phoneMockup, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
@@ -354,7 +354,7 @@ export default function WelcomeScreen() {
         <Text style={[styles.slideSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
       </View>
     </View>
-  );
+  ), [width, colors]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>

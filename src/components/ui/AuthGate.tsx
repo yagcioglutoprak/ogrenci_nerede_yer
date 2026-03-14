@@ -12,6 +12,11 @@ import {
 } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 
+const ICON_GRADIENT_COLORS: [string, string] = [Colors.primary, Colors.accent];
+const BUTTON_GRADIENT_COLORS: [string, string] = [Colors.primary, Colors.primaryDark];
+const GRADIENT_START = { x: 0, y: 0 };
+const GRADIENT_END = { x: 1, y: 1 };
+
 interface AuthGateProps {
   icon?: keyof typeof Ionicons.glyphMap;
   title?: string;
@@ -32,9 +37,9 @@ const AuthGate = React.memo(function AuthGate({
       {/* Gradient icon circle */}
       <Animated.View entering={FadeInDown.delay(100).springify().damping(20).stiffness(300)}>
         <LinearGradient
-          colors={[Colors.primary, Colors.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={ICON_GRADIENT_COLORS}
+          start={GRADIENT_START}
+          end={GRADIENT_END}
           style={styles.iconCircle}
         >
           <Ionicons name={icon} size={36} color="#FFFFFF" />
@@ -65,9 +70,9 @@ const AuthGate = React.memo(function AuthGate({
           style={styles.buttonOuter}
         >
           <LinearGradient
-            colors={[Colors.primary, Colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={BUTTON_GRADIENT_COLORS}
+            start={GRADIENT_START}
+            end={GRADIENT_END}
             style={styles.buttonGradient}
           >
             <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />

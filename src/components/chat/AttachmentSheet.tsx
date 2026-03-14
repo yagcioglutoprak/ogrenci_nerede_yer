@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,18 @@ interface AttachmentSheetProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickVenue }: AttachmentSheetProps) {
+function AttachmentSheet({ visible, onClose, onPickPhoto, onPickVenue }: AttachmentSheetProps) {
   const colors = useThemeColors();
+
+  const handlePickPhoto = useCallback(() => {
+    onClose();
+    onPickPhoto();
+  }, [onClose, onPickPhoto]);
+
+  const handlePickVenue = useCallback(() => {
+    onClose();
+    onPickVenue();
+  }, [onClose, onPickVenue]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
@@ -48,7 +58,7 @@ export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickV
 
           <TouchableOpacity
             style={styles.optionRow}
-            onPress={() => { onClose(); onPickPhoto(); }}
+            onPress={handlePickPhoto}
             activeOpacity={0.7}
           >
             <View style={[styles.optionIcon, { backgroundColor: Colors.primarySoft }]}>
@@ -59,7 +69,7 @@ export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickV
 
           <TouchableOpacity
             style={styles.optionRow}
-            onPress={() => { onClose(); onPickVenue(); }}
+            onPress={handlePickVenue}
             activeOpacity={0.7}
           >
             <View style={[styles.optionIcon, { backgroundColor: Colors.accentSoft }]}>
@@ -72,6 +82,8 @@ export default function AttachmentSheet({ visible, onClose, onPickPhoto, onPickV
     </View>
   );
 }
+
+export default React.memo(AttachmentSheet);
 
 const styles = StyleSheet.create({
   backdrop: {
