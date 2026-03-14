@@ -796,7 +796,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                     <Ionicons name="location" size={18} color={Colors.primary} />
                   </View>
                   <Text style={[styles.infoTextLg, { color: colors.text }]} numberOfLines={2}>
-                    {venue.address}
+                    {displayVenue?.address ?? venue?.address}
                   </Text>
                   <TouchableOpacity style={styles.directionsBtn} onPress={handleDirections} activeOpacity={0.8}>
                     <Ionicons name="navigate" size={14} color="#FFF" />
@@ -813,18 +813,46 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                   </Text>
                 </View>
 
-                {venue.phone && (
+                {(displayVenue?.phone || displayVenue?.google_phone) && (
                   <View style={styles.infoRow}>
                     <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
                       <Ionicons name="call" size={18} color={Colors.primaryDark} />
                     </View>
-                    <TouchableOpacity onPress={() => Linking.openURL(`tel:${venue.phone}`)}>
-                      <Text style={[styles.infoTextLg, { color: colors.text }]}>{venue.phone}</Text>
+                    <TouchableOpacity onPress={() => Linking.openURL(`tel:${displayVenue?.phone || displayVenue?.google_phone}`)}>
+                      <Text style={[styles.infoTextLg, { color: colors.text }]}>{displayVenue?.phone || displayVenue?.google_phone}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
 
-                {venue.tags && venue.tags.length > 0 && (
+                {displayVenue?.google_website && (
+                  <View style={styles.infoRow}>
+                    <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
+                      <Ionicons name="globe" size={18} color={Colors.accent} />
+                    </View>
+                    <TouchableOpacity onPress={() => Linking.openURL(displayVenue.google_website!)}>
+                      <Text style={[styles.infoTextLg, { color: Colors.primary }]} numberOfLines={1}>
+                        {displayVenue.google_website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {displayVenue?.google_hours && displayVenue.google_hours.length > 0 && (
+                  <View style={styles.infoRow}>
+                    <View style={[styles.infoIconCircle, { backgroundColor: colors.primarySoft }]}>
+                      <Ionicons name="time" size={18} color={Colors.verified} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      {displayVenue.google_hours.map((line, i) => (
+                        <Text key={i} style={[styles.infoTextSm, { color: colors.textSecondary }]}>
+                          {line}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {venue?.tags && venue.tags.length > 0 && (
                   <View style={styles.tagContainer}>
                     {venue.tags.map((tag) => (
                       <View key={tag} style={[styles.tagPillLg, { backgroundColor: colors.accentSoft }]}>
@@ -1419,6 +1447,11 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 26,
     fontFamily: FontFamily.bodyMedium,
+  },
+  infoTextSm: {
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+    fontFamily: FontFamily.body,
   },
   directionsBtn: {
     flexDirection: 'row',
