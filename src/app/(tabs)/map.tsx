@@ -36,7 +36,6 @@ import {
   FontFamily,
   SpringConfig,
 } from '../../lib/constants';
-import { fetchIstanbulRestaurants } from '../../lib/overpassApi';
 import { haptic } from '../../lib/haptics';
 import ReAnimated, {
   useSharedValue,
@@ -70,26 +69,26 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
   const items: ClusterItem[] = [];
 
   // ONY (reviewed) venues are NEVER clustered — always visible individually
-  const onyVenues = venues.filter((v) => v.source !== 'google_places');
-  const osmVenues = venues.filter((v) => v.source === 'google_places');
+  const onyVenues = venues.filter((v) => v.source !== 'scraped');
+  const scrapedVenues = venues.filter((v) => v.source === 'scraped');
 
   for (const v of onyVenues) {
     items.push({ type: 'venue' as const, venue: v });
   }
 
-  // Unreviewed (OSM) venues: show individually only when zoomed in
+  // Scraped venues: show individually only when zoomed in
   if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) {
-    for (const v of osmVenues) {
+    for (const v of scrapedVenues) {
       items.push({ type: 'venue' as const, venue: v });
     }
     return items;
   }
 
-  // Cluster unreviewed venues — coarse grid so clusters stay large
+  // Cluster scraped venues — coarse grid so clusters stay large
   const cellSize = region.latitudeDelta / 3;
   const buckets = new Map<string, Venue[]>();
 
-  for (const v of osmVenues) {
+  for (const v of scrapedVenues) {
     const cellX = Math.floor(v.latitude / cellSize);
     const cellY = Math.floor(v.longitude / cellSize);
     const key = `${cellX}_${cellY}`;
@@ -117,10 +116,10 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
 }
 
 // 3-tier marker system
-type MarkerTier = 'google_places' | 'unreviewed' | 'reviewed';
+type MarkerTier = 'scraped' | 'unreviewed' | 'reviewed';
 
 const getMarkerTier = (venue: Venue): MarkerTier => {
-  if (venue.source === 'google_places') return 'google_places';
+  if (venue.source === 'scraped') return 'scraped';
   if (venue.total_reviews > 0) return 'reviewed';
   return 'unreviewed';
 };
@@ -152,8 +151,10 @@ export default function MapScreen() {
   const isDark = useIsDarkMode();
   const insets = useSafeAreaInsets();
 
-  const { venues, loading, error, fetchVenues, filters, setFilters, clearError } =
-    useVenueStore();
+  const {
+    venues, loading, error, fetchVenues, filters, setFilters, clearError,
+    nearbyScrapedVenues, nearbyScrapedCount, fetchNearbyScraped, countNearbyScraped,
+  } = useVenueStore();
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -179,10 +180,16 @@ export default function MapScreen() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const markerPressedRef = useRef(false);
 
-  // External restaurants from OpenStreetMap
-  const [osmVenues, setOsmVenues] = useState<Venue[]>([]);
+  // Debounce region changes for scraped venue loading
+  const debouncedRegionLat = useDebounce(region.latitude, 500);
+  const debouncedRegionLng = useDebounce(region.longitude, 500);
+  const debouncedRegionDelta = useDebounce(region.latitudeDelta, 500);
 
-  // Unified search results (Supabase + OSM combined)
+  // Zoom thresholds for progressive disclosure
+  const isDistrictZoom = debouncedRegionDelta < 0.05;
+  const isNeighborhoodZoom = debouncedRegionDelta < 0.01;
+
+  // Unified search results (Supabase combined)
   const [searchResults, setSearchResults] = useState<Venue[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -194,10 +201,13 @@ export default function MapScreen() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // ── Merge ONY venues with OSM restaurants, filtered to visible region ──
+  // ── Merge ONY venues with scraped venues (only when zoomed in), deduplicated ──
   const visibleVenues = useMemo(() => {
-    const all = [...venues, ...osmVenues];
-    const latHalf = region.latitudeDelta / 2 + 0.005; // small buffer
+    const scrapedToShow = isNeighborhoodZoom ? nearbyScrapedVenues : [];
+    const seen = new Set(venues.map((v) => v.id));
+    const uniqueScraped = scrapedToShow.filter((v) => !seen.has(v.id));
+    const all = [...venues, ...uniqueScraped];
+    const latHalf = region.latitudeDelta / 2 + 0.005;
     const lngHalf = region.longitudeDelta / 2 + 0.005;
     return all.filter(
       (v) =>
@@ -206,7 +216,7 @@ export default function MapScreen() {
         v.longitude >= region.longitude - lngHalf &&
         v.longitude <= region.longitude + lngHalf,
     );
-  }, [venues, osmVenues, region]);
+  }, [venues, nearbyScrapedVenues, region, isNeighborhoodZoom]);
 
   // ── Memoized clusters ──
   const clusteredItems = useMemo(
@@ -242,13 +252,20 @@ export default function MapScreen() {
   useEffect(() => {
     requestLocationPermission();
     fetchVenues();
-    // Fetch all Istanbul restaurants from OpenStreetMap
-    fetchIstanbulRestaurants()
-      .then(setOsmVenues)
-      .catch(() => {}); // Silent fail — OSM venues are supplementary
   }, []);
 
-  // Debounced search — queries both Supabase (app venues) and cached OSM venues
+  // Load nearby scraped venues when zoomed in enough, fully debounced
+  const debouncedRegionLngDelta = useDebounce(region.longitudeDelta, 500);
+  useEffect(() => {
+    if (isDistrictZoom) {
+      countNearbyScraped(debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta);
+    }
+    if (isNeighborhoodZoom) {
+      fetchNearbyScraped(debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta);
+    }
+  }, [debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta]);
+
+  // Debounced search — queries Supabase for both ONY and scraped venues
   useEffect(() => {
     if (!debouncedSearch.trim()) {
       setShowSearchResults(false);
@@ -256,47 +273,31 @@ export default function MapScreen() {
       return;
     }
 
-    const query = debouncedSearch.trim().toLowerCase();
-
-    // 1) Instant: filter cached OSM venues client-side
-    const osmMatches = osmVenues
-      .filter(
-        (v) =>
-          v.name.toLowerCase().includes(query) ||
-          v.address.toLowerCase().includes(query),
-      )
-      .sort((a, b) => {
-        const aScore = a.name.toLowerCase().startsWith(query) ? 0 : 1;
-        const bScore = b.name.toLowerCase().startsWith(query) ? 0 : 1;
-        return aScore - bScore;
-      })
-      .slice(0, 15);
-
-    // Show OSM results immediately while Supabase loads
-    setSearchResults(osmMatches);
     setShowSearchResults(true);
     setSearchLoading(true);
 
-    // 2) Async: search Supabase for reviewed / user-added venues
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
-          .from('venues')
-          .select('*')
-          .or(
-            `name.ilike.%${debouncedSearch.trim()}%,address.ilike.%${debouncedSearch.trim()}%`,
-          )
+        // Split query into words so "kofteci ramiz beylikduzu" matches
+        // venues where each word appears in either name or address
+        const sanitized = debouncedSearch.trim().replace(/[,()]/g, '');
+        const words = sanitized.split(/\s+/).filter((w) => w.length >= 2);
+        if (words.length === 0) return;
+
+        let query = supabase.from('venues').select('*');
+        for (const word of words) {
+          query = query.or(`name.ilike.%${word}%,address.ilike.%${word}%`);
+        }
+        const { data } = await query
+          .order('source', { ascending: true }) // 'ony' before 'scraped'
           .order('overall_rating', { ascending: false })
-          .limit(10);
+          .limit(15);
 
         if (cancelled) return;
-        const appVenues = (data as Venue[]) || [];
-        const appIds = new Set(appVenues.map((v) => v.id));
-        const dedupedOsm = osmMatches.filter((v) => !appIds.has(v.id));
-        setSearchResults([...appVenues, ...dedupedOsm]);
+        setSearchResults((data as Venue[]) || []);
       } catch {
-        // Keep OSM results on Supabase failure
+        // Keep existing results on failure
       } finally {
         if (!cancelled) setSearchLoading(false);
       }
@@ -305,7 +306,7 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, osmVenues]);
+  }, [debouncedSearch]);
 
   const requestLocationPermission = async () => {
     try {
@@ -413,7 +414,7 @@ export default function MapScreen() {
           if (item.type === 'cluster') {
             const { cluster } = item;
             const count = cluster.venues.length;
-            const hasOnyVenue = cluster.venues.some((v) => v.source !== 'google_places');
+            const hasOnyVenue = cluster.venues.some((v) => v.source !== 'scraped');
 
             // ONY clusters: logo + red count badge
             if (hasOnyVenue) {
@@ -441,7 +442,7 @@ export default function MapScreen() {
               );
             }
 
-            // OSM clusters: grey dot with count
+            // Scraped venue clusters: grey dot with count
             return (
               <Marker
                 key={cluster.id}
@@ -463,7 +464,7 @@ export default function MapScreen() {
           const isSelected = selectedVenue?.id === venue.id;
 
           // ── Tier 1: Unreviewed external venue — restaurant icon pin ──
-          if (tier === 'google_places') {
+          if (tier === 'scraped') {
             const pinContent = (
               <View style={isSelected ? styles.osmPinSelected : styles.osmPin}>
                 <Ionicons name="restaurant" size={14} color={isSelected ? '#FFF' : 'rgba(255,255,255,0.85)'} />
@@ -603,7 +604,7 @@ export default function MapScreen() {
                   ) : null
                 }
                 renderItem={({ item }) => {
-                  const isAppVenue = item.source !== 'google_places';
+                  const isAppVenue = item.source !== 'scraped';
                   return (
                     <TouchableOpacity
                       style={[styles.searchDropdownItem, { borderBottomColor: colors.borderLight }]}
@@ -703,6 +704,37 @@ export default function MapScreen() {
             accessibilityRole="button"
           >
             <Ionicons name="location" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        </GlassView>
+      )}
+
+      {/* Discovery Pill — shows nearby scraped venue count at district zoom */}
+      {isDistrictZoom && !isNeighborhoodZoom && nearbyScrapedCount > 0 && !selectedVenue && !sheetExpanded && (
+        <GlassView
+          style={[styles.discoveryPill, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]}
+        >
+          <TouchableOpacity
+            style={styles.discoveryPillInner}
+            onPress={() => {
+              haptic.light();
+              // Zoom in to show individual pins
+              mapRef.current?.animateToRegion(
+                {
+                  latitude: region.latitude,
+                  longitude: region.longitude,
+                  latitudeDelta: 0.008,
+                  longitudeDelta: 0.008,
+                },
+                600,
+              );
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
+            <Text style={[styles.discoveryPillText, { color: colors.text }]}>
+              {nearbyScrapedCount > 999 ? '999+' : nearbyScrapedCount} mekan kesfedilmeyi bekliyor
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
           </TouchableOpacity>
         </GlassView>
       )}
@@ -1006,7 +1038,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.primary,
     marginTop: -1,
   },
-  // Tier 1: OSM restaurant pin
+  // Tier 1: Scraped restaurant pin
   osmPin: {
     width: 30,
     height: 30,
@@ -1262,7 +1294,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  // Grey cluster for unreviewed OSM venues — liquid glass style
+  // Grey cluster for unreviewed scraped venues — liquid glass style
   greyClusterBadge: {
     minWidth: 34,
     height: 34,
@@ -1284,5 +1316,33 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.heading,
     fontSize: 13,
     letterSpacing: -0.3,
+  },
+
+  // Discovery Pill — floating CTA for nearby unreviewed venues
+  discoveryPill: {
+    position: 'absolute',
+    left: Spacing.lg,
+    right: Spacing.lg,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 0.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  discoveryPillInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  discoveryPillText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.body,
+    letterSpacing: -0.2,
   },
 });

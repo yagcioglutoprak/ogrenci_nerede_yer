@@ -40,15 +40,20 @@ export interface Venue {
   level: number;                // 1-4 (Yeni -> Efsane)
   cover_image_url: string | null;
   tags: string[];               // ['wifi', 'vejetaryen', 'kahvalti']
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   // Editorial (OgrenciNeredeYer team review)
-  editorial_rating?: number | null;   // 1-10 team rating
-  editorial_note?: string | null;     // Team written note
-  // Source & Google Places integration
-  source?: 'google_places' | 'ony';   // default 'ony'
-  google_rating?: number;              // Google's rating (1-5)
-  google_place_id?: string;            // Google Places API ID
+  editorial_rating?: number | null;
+  editorial_note?: string | null;
+  // Source & enrichment
+  source?: 'ony' | 'scraped';
+  google_rating?: number | null;
+  google_place_id?: string | null;
+  google_enriched_at?: string | null;
+  osm_id?: string | null;
+  overture_id?: string | null;
+  fsq_id?: string | null;
+  cuisine?: string | null;
 }
 
 export interface SocialVideo {

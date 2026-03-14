@@ -9,6 +9,8 @@ const PAGE_SIZE = 30;
 
 interface VenueState {
   venues: Venue[];
+  nearbyScrapedVenues: Venue[];
+  nearbyScrapedCount: number;
   selectedVenue: Venue | null;
   reviews: Review[];
   filters: VenueFilters;
@@ -23,6 +25,8 @@ interface VenueState {
   fetchVenueById: (id: string) => Promise<void>;
   fetchReviews: (venueId: string) => Promise<void>;
   searchVenues: (query: string) => Promise<void>;
+  fetchNearbyScraped: (lat: number, lng: number, latDelta: number, lngDelta: number) => Promise<void>;
+  countNearbyScraped: (lat: number, lng: number, latDelta: number, lngDelta: number) => Promise<void>;
   addVenue: (venue: Omit<Venue, 'id' | 'created_at' | 'avg_taste_rating' | 'avg_value_rating' | 'avg_friendliness_rating' | 'overall_rating' | 'total_reviews' | 'level'>) => Promise<{ data: Venue | null; error: string | null }>;
   addReview: (review: Omit<Review, 'id' | 'created_at'>) => Promise<{ error: string | null }>;
   toggleFavorite: (venueId: string, userId: string) => Promise<void>;
@@ -33,6 +37,8 @@ interface VenueState {
 
 export const useVenueStore = create<VenueState>((set, get) => ({
   venues: [],
+  nearbyScrapedVenues: [],
+  nearbyScrapedCount: 0,
   selectedVenue: null,
   reviews: [],
   filters: {},
@@ -234,8 +240,10 @@ export const useVenueStore = create<VenueState>((set, get) => ({
       const venues = get().venues;
       set({ venues: [data as Venue, ...venues] });
       // Badge check and XP (fire-and-forget)
-      checkAndAwardBadges(venue.created_by);
-      addXP(venue.created_by, 15);
+      if (venue.created_by) {
+        checkAndAwardBadges(venue.created_by);
+        addXP(venue.created_by, 15);
+      }
       return { data: data as Venue, error: null };
     }
 
@@ -344,6 +352,47 @@ export const useVenueStore = create<VenueState>((set, get) => ({
 
   isFavorite: (venueId) => {
     return get().favoriteVenueIds.has(venueId);
+  },
+
+  fetchNearbyScraped: async (lat, lng, latDelta, lngDelta) => {
+    const halfLat = latDelta / 2;
+    const halfLng = lngDelta / 2;
+
+    try {
+      const { data } = await supabase
+        .from('venues')
+        .select('*')
+        .eq('source', 'scraped')
+        .gte('latitude', lat - halfLat)
+        .lte('latitude', lat + halfLat)
+        .gte('longitude', lng - halfLng)
+        .lte('longitude', lng + halfLng)
+        .limit(200);
+
+      set({ nearbyScrapedVenues: (data as Venue[]) || [] });
+    } catch {
+      // Silent fail — scraped venues are supplementary
+    }
+  },
+
+  countNearbyScraped: async (lat, lng, latDelta, lngDelta) => {
+    const halfLat = latDelta / 2;
+    const halfLng = lngDelta / 2;
+
+    try {
+      const { count } = await supabase
+        .from('venues')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'scraped')
+        .gte('latitude', lat - halfLat)
+        .lte('latitude', lat + halfLat)
+        .gte('longitude', lng - halfLng)
+        .lte('longitude', lng + halfLng);
+
+      set({ nearbyScrapedCount: count ?? 0 });
+    } catch {
+      // Silent fail
+    }
   },
 
   setFilters: (filters) => {

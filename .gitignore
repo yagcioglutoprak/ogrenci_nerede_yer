@@ -42,3 +42,5 @@ yarn-error.*
 /ios
 /android
 supabase/.temp/
+scripts/scraper/data/
+.superpowers/

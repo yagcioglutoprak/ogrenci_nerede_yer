@@ -62,9 +62,9 @@ function mapToVenue(el: OverpassElement): Venue | null {
     level: 1,
     cover_image_url: null,
     tags: [],
-    created_by: '',
+    created_by: null,
     created_at: '2026-01-01T00:00:00Z',
-    source: 'google_places' as const,
+    source: 'scraped' as const,
     google_rating: undefined,
     google_place_id: undefined,
   };
