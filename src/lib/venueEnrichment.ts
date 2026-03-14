@@ -8,7 +8,7 @@ import type { Venue } from '../types';
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
-const ENRICHMENT_TTL_DAYS = 30;
+// Permanent cache — once enriched, never re-fetch
 
 // ==========================================
 // Types
@@ -18,6 +18,7 @@ export interface PlaceDetails {
   rating?: number;
   userRatingCount?: number;
   nationalPhoneNumber?: string;
+  formattedAddress?: string;
   regularOpeningHours?: {
     weekdayDescriptions: string[];
   };
@@ -43,13 +44,8 @@ function isApiKeyConfigured(): boolean {
   return true;
 }
 
-function isFresh(enrichedAt: string | null | undefined): boolean {
-  if (!enrichedAt) return false;
-  const enrichedDate = new Date(enrichedAt);
-  const now = new Date();
-  const diffMs = now.getTime() - enrichedDate.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  return diffDays < ENRICHMENT_TTL_DAYS;
+function isAlreadyEnriched(enrichedAt: string | null | undefined): boolean {
+  return !!enrichedAt;
 }
 
 // ==========================================
@@ -121,6 +117,7 @@ export async function fetchPlaceDetails(
 
   const fieldMask = [
     'displayName',
+    'formattedAddress',
     'rating',
     'userRatingCount',
     'nationalPhoneNumber',
@@ -155,6 +152,7 @@ export async function fetchPlaceDetails(
       rating: data.rating,
       userRatingCount: data.userRatingCount,
       nationalPhoneNumber: data.nationalPhoneNumber,
+      formattedAddress: data.formattedAddress,
       regularOpeningHours: data.regularOpeningHours,
       priceLevel: data.priceLevel,
       photos: data.photos,
@@ -172,12 +170,11 @@ export async function fetchPlaceDetails(
  * Main enrichment function — call when a user taps a venue.
  *
  * 1. Fetch venue from Supabase
- * 2. If google data is fresh (< 30 days), return as-is
- * 3. Otherwise: find Google Place ID -> fetch details -> update Supabase -> return
+ * 2. If already enriched, return cached data (permanent cache)
+ * 3. Otherwise: find Google Place ID -> fetch details -> save to Supabase -> return
  */
 export async function enrichVenue(venueId: string): Promise<Venue | null> {
   try {
-    // 1. Fetch venue from database
     const { data: venue, error } = await supabase
       .from('venues')
       .select('*')
@@ -191,17 +188,16 @@ export async function enrichVenue(venueId: string): Promise<Venue | null> {
 
     const venueRow = venue as VenueRow;
 
-    // 2. Check freshness — skip enrichment if data is recent
-    if (venueRow.google_place_id && isFresh(venueRow.google_enriched_at)) {
+    // Already enriched → return cached data permanently
+    if (isAlreadyEnriched(venueRow.google_enriched_at)) {
       return venueRow as Venue;
     }
 
-    // 3. No API key means we can't enrich, just return existing data
     if (!isApiKeyConfigured()) {
       return venueRow as Venue;
     }
 
-    // 4. Resolve Google Place ID (use existing or find new)
+    // Resolve Google Place ID
     let googlePlaceId = venueRow.google_place_id ?? null;
     if (!googlePlaceId) {
       googlePlaceId = await findGooglePlaceId(
@@ -212,19 +208,18 @@ export async function enrichVenue(venueId: string): Promise<Venue | null> {
     }
 
     if (!googlePlaceId) {
-      // Could not find a matching place — mark as attempted so we don't retry too often
+      // Mark as attempted so we don't retry on every tap
       await supabase
         .from('venues')
         .update({ google_enriched_at: new Date().toISOString() })
         .eq('id', venueId);
-
       return venueRow as Venue;
     }
 
-    // 5. Fetch details from Google
+    // Fetch full details from Google
     const details = await fetchPlaceDetails(googlePlaceId);
 
-    // 6. Build update payload
+    // Build update payload — cache everything permanently
     const updatePayload: Record<string, unknown> = {
       google_place_id: googlePlaceId,
       google_enriched_at: new Date().toISOString(),
@@ -234,13 +229,37 @@ export async function enrichVenue(venueId: string): Promise<Venue | null> {
       if (details.rating != null) {
         updatePayload.google_rating = details.rating;
       }
-      // Only fill phone if the venue doesn't already have one
-      if (details.nationalPhoneNumber && !venueRow.phone) {
-        updatePayload.phone = details.nationalPhoneNumber;
+      if (details.userRatingCount != null) {
+        updatePayload.google_rating_count = details.userRatingCount;
+      }
+      if (details.formattedAddress) {
+        // Update address if current one is generic (e.g. just "Istanbul")
+        if (!venueRow.address || venueRow.address === 'Istanbul') {
+          updatePayload.address = details.formattedAddress;
+        }
+      }
+      if (details.nationalPhoneNumber) {
+        updatePayload.google_phone = details.nationalPhoneNumber;
+        if (!venueRow.phone) {
+          updatePayload.phone = details.nationalPhoneNumber;
+        }
+      }
+      if (details.websiteUri) {
+        updatePayload.google_website = details.websiteUri;
+      }
+      if (details.priceLevel) {
+        updatePayload.google_price_level = details.priceLevel;
+      }
+      if (details.regularOpeningHours?.weekdayDescriptions) {
+        updatePayload.google_hours = details.regularOpeningHours.weekdayDescriptions;
+      }
+      if (details.photos && details.photos.length > 0) {
+        updatePayload.google_photos = details.photos
+          .slice(0, 5)
+          .map((p) => p.name);
       }
     }
 
-    // 7. Update Supabase
     const { data: updated, error: updateError } = await supabase
       .from('venues')
       .update(updatePayload)

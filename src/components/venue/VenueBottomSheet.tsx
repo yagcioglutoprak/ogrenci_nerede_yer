@@ -49,6 +49,7 @@ import RatingBar from '../ui/RatingBar';
 import StarRating from '../ui/StarRating';
 import Avatar from '../ui/Avatar';
 import { haptic } from '../../lib/haptics';
+import { enrichVenue, fetchPlacePhoto } from '../../lib/venueEnrichment';
 import type { Venue, Review, Post, SocialVideo } from '../../types';
 
 const ONY_LOGO = require('../../../assets/logo-icon-hires.png');
@@ -87,6 +88,12 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Rating modal state
+  const [enrichedVenue, setEnrichedVenue] = useState<Venue | null>(null);
+  const [enriching, setEnriching] = useState(false);
+
+  // Use enriched data when available, fall back to original venue
+  const displayVenue = enrichedVenue ?? venue;
+
   const [showRating, setShowRating] = useState(false);
   const [rateTaste, setRateTaste] = useState(0);
   const [rateValue, setRateValue] = useState(0);
@@ -166,10 +173,21 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
         setVenuePosts([]);
         setMyReview(null);
         setShowPostPrompt(false);
+        setEnrichedVenue(null);
         setLoadingDetail(true);
 
         // Fetch reviews
         fetchReviews(venue.id).finally(() => setLoadingDetail(false));
+
+        // Enrich scraped venues with Google Places data on tap
+        if (venue.source === 'scraped' && !venue.google_enriched_at) {
+          setEnriching(true);
+          enrichVenue(venue.id)
+            .then((enriched) => {
+              if (enriched) setEnrichedVenue(enriched);
+            })
+            .finally(() => setEnriching(false));
+        }
 
         // Fetch venue posts
         fetchVenuePosts(venue.id);
@@ -532,8 +550,13 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
             {/* ---- MORPHING IMAGE: thumbnail → hero ---- */}
             <View style={styles.venueRow}>
               <Animated.View style={[styles.morphImageWrap, { backgroundColor: colors.backgroundSecondary }, morphImageStyle]}>
-                {venue.cover_image_url ? (
-                  <Image source={{ uri: venue.cover_image_url }} style={styles.morphImage} />
+                {(displayVenue?.cover_image_url || (displayVenue?.google_photos?.[0])) ? (
+                  <Image
+                    source={{ uri: displayVenue.cover_image_url || fetchPlacePhoto(displayVenue.google_photos![0], 800) }}
+                    style={styles.morphImage}
+                  />
+                ) : enriching ? (
+                  <ActivityIndicator size="small" color={Colors.primary} />
                 ) : (
                   <Ionicons name="restaurant" size={28} color={colors.textTertiary} />
                 )}
@@ -565,16 +588,30 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
                 {tier === 'unreviewed' ? (
                   <>
                     <Text style={[styles.venueAddress, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {venue.address}
+                      {displayVenue?.address ?? venue?.address}
                     </Text>
-                    <Text style={[styles.noReviewsHint, { color: colors.textTertiary }]}>
-                      Henuz degerlendirme yok
-                    </Text>
+                    {displayVenue?.google_rating ? (
+                      <View style={styles.ratingsRow}>
+                        <Ionicons name="star" size={14} color={Colors.star} />
+                        <Text style={[styles.priceText, { color: colors.text, fontWeight: '600' }]}>
+                          {displayVenue.google_rating.toFixed(1)}
+                        </Text>
+                        {displayVenue.google_rating_count != null && (
+                          <Text style={[styles.priceText, { color: colors.textSecondary }]}>
+                            ({displayVenue.google_rating_count})
+                          </Text>
+                        )}
+                      </View>
+                    ) : (
+                      <Text style={[styles.noReviewsHint, { color: colors.textTertiary }]}>
+                        {enriching ? 'Bilgiler yukleniyor...' : 'Henuz degerlendirme yok'}
+                      </Text>
+                    )}
                   </>
                 ) : (
                   <>
                     <Text style={[styles.venueAddress, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {venue.address}
+                      {displayVenue?.address ?? venue?.address}
                     </Text>
                     <View style={styles.ratingsRow}>
                       {venue.editorial_rating != null && (

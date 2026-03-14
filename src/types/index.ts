@@ -50,6 +50,12 @@ export interface Venue {
   google_rating?: number | null;
   google_place_id?: string | null;
   google_enriched_at?: string | null;
+  google_photos?: string[] | null;
+  google_phone?: string | null;
+  google_website?: string | null;
+  google_hours?: string[] | null;
+  google_price_level?: string | null;
+  google_rating_count?: number | null;
   osm_id?: string | null;
   overture_id?: string | null;
   fsq_id?: string | null;
