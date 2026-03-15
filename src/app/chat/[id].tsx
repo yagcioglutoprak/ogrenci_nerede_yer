@@ -21,6 +21,7 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/c
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import Avatar from '../../components/ui/Avatar';
+import { GlassBar } from '../../components/glass';
 import AttachmentSheet from '../../components/chat/AttachmentSheet';
 import VenuePickerModal from '../../components/chat/VenuePickerModal';
 import ImageBubble from '../../components/chat/ImageBubble';
@@ -312,7 +313,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={[styles.header, {
+      <GlassBar style={[styles.header, {
         backgroundColor: colors.background,
         shadowColor: isDark ? '#000' : colors.shadow,
       }]}>
@@ -359,7 +360,7 @@ export default function ChatScreen() {
         >
           <Ionicons name="person-circle-outline" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
-      </View>
+      </GlassBar>
 
       {/* Pending request banner */}
       {isSender && (
@@ -482,7 +483,7 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </Animated.View>
         ) : (
-          <View style={[
+          <GlassBar style={[
             styles.inputBar,
             {
               backgroundColor: isDark ? colors.surface : colors.backgroundSecondary,
@@ -534,7 +535,7 @@ export default function ChatScreen() {
                 <Ionicons name="send" size={18} color="#FFF" style={{ marginLeft: 2 }} />
               </LinearGradient>
             </TouchableOpacity>
-          </View>
+          </GlassBar>
         )}
       </KeyboardAvoidingView>
 

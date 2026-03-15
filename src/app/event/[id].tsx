@@ -27,6 +27,7 @@ import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig, Feat
 import { LinearGradient } from 'expo-linear-gradient';
 import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
+import { GlassBar } from '../../components/glass';
 import MessageBubble from '../../components/chat/MessageBubble';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
@@ -437,7 +438,7 @@ export default function EventRoomScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+        <GlassBar style={[styles.headerBar, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -451,7 +452,7 @@ export default function EventRoomScreen() {
             </Text>
           </View>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassBar>
 
         {/* Messages list */}
         <FlatList
@@ -481,12 +482,9 @@ export default function EventRoomScreen() {
         />
 
         {/* Message input bar */}
-        <View style={[
-          styles.inputBar,
-          { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary },
-        ]}>
+        <GlassBar style={styles.inputBar}>
           {inputBarContent}
-        </View>
+        </GlassBar>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

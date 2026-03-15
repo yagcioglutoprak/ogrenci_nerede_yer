@@ -32,6 +32,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors, Spacing, FontSize, FontFamily, SpringConfig } from '../lib/constants';
 import { haptic } from '../lib/haptics';
+import GlassView from '../components/ui/GlassView';
 import type { Story } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -387,11 +388,15 @@ export default function ReelsScreen() {
             pointerEvents="box-none"
           >
             <Pressable
-              style={styles.closeButton}
               onPress={handleClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
+              <GlassView
+                style={styles.closeButton}
+                fallbackColor="rgba(0,0,0,0.3)"
+              >
+                <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
+              </GlassView>
             </Pressable>
           </LinearGradient>
 
@@ -508,7 +513,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },

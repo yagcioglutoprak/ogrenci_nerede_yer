@@ -23,6 +23,7 @@ import { useFeedStore } from '../../stores/feedStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
+import { GlassBar } from '../../components/glass';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
@@ -283,7 +284,7 @@ export default function PostDetailScreen() {
           keyboardVerticalOffset={0}
         >
           {/* Header bar */}
-          <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          <GlassBar style={[styles.headerBar, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
             <TouchableOpacity
               onPress={() => router.back()}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -292,7 +293,7 @@ export default function PostDetailScreen() {
             </TouchableOpacity>
             <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
             <View style={{ width: 24 }} />
-          </View>
+          </GlassBar>
 
           {/* Answers list */}
           <FlatList
@@ -312,9 +313,9 @@ export default function PostDetailScreen() {
           />
 
           {/* Answer input bar */}
-          <View style={[styles.commentBar, { backgroundColor: colors.backgroundSecondary }]}>
+          <GlassBar style={styles.commentBar}>
             {inputContent}
-          </View>
+          </GlassBar>
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -489,7 +490,7 @@ export default function PostDetailScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+        <GlassBar style={[styles.headerBar, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -505,7 +506,7 @@ export default function PostDetailScreen() {
             <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
           </View>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassBar>
 
         {/* Comments list */}
         <FlatList
@@ -525,9 +526,9 @@ export default function PostDetailScreen() {
         />
 
         {/* Comment input bar */}
-        <View style={[styles.commentBar, { backgroundColor: colors.backgroundSecondary }]}>
+        <GlassBar style={styles.commentBar}>
           {regularInputContent}
-        </View>
+        </GlassBar>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

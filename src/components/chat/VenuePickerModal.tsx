@@ -15,6 +15,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useVenueStore } from '../../stores/venueStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily, PriceRanges } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { GlassBar } from '../glass';
 import type { Venue } from '../../types';
 
 interface VenuePickerModalProps {
@@ -156,7 +157,7 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
         </View>
 
         {/* Search */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.backgroundSecondary }]}>
+        <GlassBar style={[styles.searchContainer, { backgroundColor: colors.backgroundSecondary }]}>
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
@@ -173,7 +174,7 @@ export default function VenuePickerModal({ visible, onClose, onSelect }: VenuePi
               <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
-        </View>
+        </GlassBar>
 
         {/* Venue List */}
         <FlatList

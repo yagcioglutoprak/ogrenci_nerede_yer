@@ -7,7 +7,7 @@ import { Colors, Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { haptic } from '../../lib/haptics';
 import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GlassView from '../../components/ui/GlassView';
+import { GlassBar, GlassContainer } from '../../components/glass';
 import { useMessageStore } from '../../stores/messageStore';
 import { useAuthStore } from '../../stores/authStore';
 import Animated, {
@@ -417,12 +417,12 @@ const FloatingGlassTabBar = React.memo(function FloatingGlassTabBar({ state, des
   }, [state.index, colors, totalUnreadCount, handleTabLayout]);
 
   return (
-    <View
+    <GlassContainer
       style={[
         iosStyles.floatingWrapper,
         { bottom: Math.max(insets.bottom, Spacing.sm) },
       ]}
-      pointerEvents="box-none"
+      spacing={12}
     >
       <View style={iosStyles.addButtonOverlay} pointerEvents="box-none">
         <AddButton
@@ -434,9 +434,8 @@ const FloatingGlassTabBar = React.memo(function FloatingGlassTabBar({ state, des
       </View>
 
       <GestureDetector gesture={panGesture}>
-        <GlassView
+        <GlassBar
           style={[iosStyles.glassBar, { borderColor: colors.glass.border }]}
-          interactive
         >
           <View style={iosStyles.tabRow}>
             {/* Sliding liquid glass pill — single shared indicator */}
@@ -455,9 +454,9 @@ const FloatingGlassTabBar = React.memo(function FloatingGlassTabBar({ state, des
             <View style={iosStyles.centerSpacer} onLayout={handleTabLayout('add')} />
             {rightTabs.map(renderTab)}
           </View>
-        </GlassView>
+        </GlassBar>
       </GestureDetector>
-    </View>
+    </GlassContainer>
   );
 });
 

@@ -14,6 +14,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { useDebounce } from '../../hooks/useDebounce';
 import { haptic } from '../../lib/haptics';
+import { GlassBar } from '../../components/glass';
 import type { Venue } from '../../types';
 
 export default function ListCreateScreen() {
@@ -97,7 +98,7 @@ export default function ListCreateScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <GlassBar style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -109,7 +110,7 @@ export default function ListCreateScreen() {
             <Text style={styles.saveBtnText}>Kaydet</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </GlassBar>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* Cover Image */}

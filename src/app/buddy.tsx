@@ -13,6 +13,7 @@ import { useBuddyStore } from '../stores/buddyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeColors, useIsDarkMode } from '../hooks/useThemeColors';
 import { haptic } from '../lib/haptics';
+import { GlassBar } from '../components/glass';
 import SwipeDeck from '../components/buddy/SwipeDeck';
 import * as Location from 'expo-location';
 import ReAnimated, {
@@ -483,7 +484,7 @@ export default function BuddyScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={[styles.chatHeader, { borderBottomColor: isDark ? colors.border : '#F0F0F3' }]}>
+        <GlassBar style={[styles.chatHeader, { borderBottomColor: isDark ? colors.border : '#F0F0F3' }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -509,7 +510,7 @@ export default function BuddyScreen() {
           <TouchableOpacity onPress={handleEndMeetup} style={styles.endMeetupBtn}>
             <Text style={styles.endMeetupText}>Bitir</Text>
           </TouchableOpacity>
-        </View>
+        </GlassBar>
 
         {chatExpired && (
           <TouchableOpacity style={styles.expiredBanner} onPress={() => setShowRating(true)}>
@@ -535,7 +536,7 @@ export default function BuddyScreen() {
             }
             renderItem={renderBuddyChatItem}
           />
-          <View style={[styles.inputBar, { borderColor: colors.border, backgroundColor: colors.background }]}>
+          <GlassBar style={[styles.inputBar, { borderColor: colors.border }]}>
             <TextInput
               style={[styles.messageInput, { color: colors.text, backgroundColor: isDark ? colors.surface : colors.backgroundSecondary }]}
               value={messageText}
@@ -547,7 +548,7 @@ export default function BuddyScreen() {
             <TouchableOpacity onPress={handleSendMessage} style={styles.sendBtn} disabled={!messageText.trim()}>
               <Ionicons name="send" size={20} color="#FFF" />
             </TouchableOpacity>
-          </View>
+          </GlassBar>
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -562,7 +563,7 @@ export default function BuddyScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <GlassBar style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -578,7 +579,7 @@ export default function BuddyScreen() {
           <TouchableOpacity onPress={goUnavailable} style={styles.cancelBtn}>
             <Text style={styles.cancelText}>Iptal</Text>
           </TouchableOpacity>
-        </View>
+        </GlassBar>
 
         {/* Pending incoming requests notification */}
         {pendingMatches.length > 0 && (
@@ -655,13 +656,13 @@ export default function BuddyScreen() {
   // ============================
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <GlassBar style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Yemek Buddy</Text>
         <View style={{ width: 40 }} />
-      </View>
+      </GlassBar>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.formContent}>
         {/* Hero banner */}

@@ -45,6 +45,7 @@ import { useVenueStore } from '../../stores/venueStore';
 import { useAuthStore } from '../../stores/authStore';
 import { supabase } from '../../lib/supabase';
 import GlassView from '../ui/GlassView';
+import { GlassSheet, GlassProvider } from '../glass';
 import RatingBar from '../ui/RatingBar';
 import StarRating from '../ui/StarRating';
 import Avatar from '../ui/Avatar';
@@ -77,10 +78,11 @@ interface VenueBottomSheetProps {
   onExpandChange?: (expanded: boolean) => void;
 }
 
-// Custom glass background for BottomSheet
+// Custom glass background for BottomSheet — uses GlassSheet which
+// sets GlassContext=true so all children (cards, pills) render solid
 function GlassBackground({ style }: { style?: any }) {
   return (
-    <GlassView
+    <GlassSheet
       style={[styles.glassBackground, style]}
       blurIntensity={90}
     />
@@ -517,6 +519,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
       style={styles.sheet}
     >
       {venue && (
+        <GlassProvider value={true}>
         <BottomSheetScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -989,6 +992,7 @@ export default function VenueBottomSheet({ venue, onDismiss, onExpandChange }: V
             </View>
           )}
         </BottomSheetScrollView>
+        </GlassProvider>
       )}
     </BottomSheet>
 

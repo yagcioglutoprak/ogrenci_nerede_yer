@@ -20,6 +20,7 @@ import { supabase } from '../../lib/supabase';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useBlockStore } from '../../stores/blockStore';
 import Avatar from '../../components/ui/Avatar';
+import { GlassBar } from '../../components/glass';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import type { User, Post } from '../../types';
@@ -204,7 +205,7 @@ export default function UserProfileScreen() {
   if (!profileUser) {
     return (
       <SafeAreaView style={[styles.loadingScreen, { backgroundColor: colors.background }]} edges={['top']}>
-        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+        <GlassBar style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -213,7 +214,7 @@ export default function UserProfileScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassBar>
         <View style={styles.notFoundContent}>
           <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
           <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Kullanıcı bulunamadı</Text>
@@ -233,13 +234,13 @@ export default function UserProfileScreen() {
   if (isBlockedByMe && profileUser) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
-        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+        <GlassBar style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{profileUser.username}</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </GlassBar>
         <View style={styles.notFoundContent}>
           <Ionicons name="ban" size={48} color={colors.textTertiary} />
           <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Bu kullanıcıyı engelledin</Text>
@@ -278,7 +279,7 @@ export default function UserProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['top']}>
       {/* Header bar */}
-      <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.borderLight }]}>
+      <GlassBar style={[styles.headerBar, { borderBottomColor: colors.borderLight }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -287,7 +288,7 @@ export default function UserProfileScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>{profileUser.username}</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </GlassBar>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: Spacing.xxl + insets.bottom }]}>
         {/* Profile card */}

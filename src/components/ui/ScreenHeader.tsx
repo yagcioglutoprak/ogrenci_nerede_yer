@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Spacing, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { GlassBar } from '../glass';
 import GlassView from './GlassView';
 
 const ACTION_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
@@ -21,13 +22,16 @@ interface ScreenHeaderProps {
   rightAction?: ActionButton;
   /** Compact mode for sub-screens (centered title, smaller font) */
   compact?: boolean;
+  /** Use glass background (default true on iOS for compact, false for full) */
+  glass?: boolean;
 }
 
+/**
+ * Action button — uses GlassView for a subtle glass circle on iOS.
+ * When inside a GlassBar (compact mode), GlassView auto-renders solid
+ * via GlassContext, preventing glass-on-glass.
+ */
 const ActionButtonView = React.memo(function ActionButtonView({ action, colors }: { action: ActionButton; colors: ReturnType<typeof useThemeColors> }) {
-  const content = (
-    <Ionicons name={action.icon} size={20} color={action.color ?? colors.textTertiary} />
-  );
-
   if (Platform.OS === 'ios') {
     return (
       <TouchableOpacity
@@ -36,7 +40,7 @@ const ActionButtonView = React.memo(function ActionButtonView({ action, colors }
         hitSlop={ACTION_HIT_SLOP}
       >
         <GlassView style={styles.actionButton} interactive>
-          {content}
+          <Ionicons name={action.icon} size={20} color={action.color ?? colors.textTertiary} />
         </GlassView>
       </TouchableOpacity>
     );
@@ -49,38 +53,49 @@ const ActionButtonView = React.memo(function ActionButtonView({ action, colors }
       activeOpacity={0.7}
       hitSlop={ACTION_HIT_SLOP}
     >
-      {content}
+      <Ionicons name={action.icon} size={20} color={action.color ?? colors.textTertiary} />
     </TouchableOpacity>
   );
 });
 
-export default function ScreenHeader({ title, subtitle, leftAction, rightAction, compact = false }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, subtitle, leftAction, rightAction, compact = false, glass }: ScreenHeaderProps) {
   const colors = useThemeColors();
 
+  // Compact mode: glass by default on iOS (it's a navigation bar)
+  // Full mode: NO glass — large title is part of the content layer, not navigation chrome
   if (compact) {
-    return (
-      <View style={[styles.compactContainer, { backgroundColor: colors.background }]}>
+    const useGlass = glass ?? Platform.OS === 'ios';
+
+    const content = (
+      <>
         <View style={styles.compactSide}>
-          {leftAction && (
-            <ActionButtonView action={leftAction} colors={colors} />
-          )}
+          {leftAction && <ActionButtonView action={leftAction} colors={colors} />}
         </View>
         <Text style={[styles.compactTitle, { color: colors.text }]} numberOfLines={1}>
           {title}
         </Text>
         <View style={styles.compactSide}>
-          {rightAction && (
-            <ActionButtonView action={rightAction} colors={colors} />
-          )}
+          {rightAction && <ActionButtonView action={rightAction} colors={colors} />}
         </View>
+      </>
+    );
+
+    if (useGlass) {
+      return <GlassBar style={styles.compactContainer}>{content}</GlassBar>;
+    }
+
+    return (
+      <View style={[styles.compactContainer, { backgroundColor: colors.background }]}>
+        {content}
       </View>
     );
   }
 
+  // Full/large title mode — transparent background, glass action buttons
   return (
     <Animated.View
       entering={FadeInDown.springify().damping(22).stiffness(340)}
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={styles.container}
     >
       <View style={styles.titleRow}>
         <View style={styles.titleBlock}>
@@ -90,12 +105,8 @@ export default function ScreenHeader({ title, subtitle, leftAction, rightAction,
           )}
         </View>
         <View style={styles.actions}>
-          {leftAction && (
-            <ActionButtonView action={leftAction} colors={colors} />
-          )}
-          {rightAction && (
-            <ActionButtonView action={rightAction} colors={colors} />
-          )}
+          {leftAction && <ActionButtonView action={leftAction} colors={colors} />}
+          {rightAction && <ActionButtonView action={rightAction} colors={colors} />}
         </View>
       </View>
     </Animated.View>
@@ -132,7 +143,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingTop: 6,
   },
-  // Compact mode (sub-screens)
   compactContainer: {
     flexDirection: 'row',
     alignItems: 'center',

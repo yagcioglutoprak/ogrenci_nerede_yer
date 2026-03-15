@@ -29,6 +29,7 @@ import { getRelativeTime } from '../../lib/utils';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { useIsDarkMode } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
+import { GlassBar } from '../../components/glass';
 import type { Conversation, MessageStatus } from '../../types';
 
 const BUDDY_COLOR = '#06B6D4';
@@ -397,7 +398,7 @@ export default function MessagesScreen() {
 
       {/* Search bar */}
       <Animated.View entering={FadeInDown.delay(80).springify().damping(20).stiffness(300)} exiting={FadeOut.duration(150)} style={styles.searchWrap}>
-        <View style={[styles.searchBar, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary, borderColor: isDark ? colors.border : 'transparent' }]}>
+        <GlassBar style={[styles.searchBar, { backgroundColor: isDark ? colors.surface : colors.backgroundSecondary, borderColor: isDark ? colors.border : 'transparent' }]}>
           <Ionicons name="search" size={18} color={colors.textTertiary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
@@ -411,7 +412,7 @@ export default function MessagesScreen() {
               <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
-        </View>
+        </GlassBar>
       </Animated.View>
 
       {showSkeleton ? (

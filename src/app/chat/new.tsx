@@ -17,6 +17,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import Avatar from '../../components/ui/Avatar';
+import { GlassBar } from '../../components/glass';
 import { haptic } from '../../lib/haptics';
 import type { User } from '../../types';
 
@@ -136,7 +137,7 @@ export default function NewDMScreen() {
       </Animated.View>
 
       {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.backgroundSecondary }]}>
+      <GlassBar style={[styles.searchContainer, { backgroundColor: colors.backgroundSecondary }]}>
         <Ionicons name="search" size={18} color={colors.textTertiary} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
@@ -154,7 +155,7 @@ export default function NewDMScreen() {
             <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
         )}
-      </View>
+      </GlassBar>
 
       {/* Results */}
       {searching ? (

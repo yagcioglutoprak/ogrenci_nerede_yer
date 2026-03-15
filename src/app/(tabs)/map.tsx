@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassView from '../../components/ui/GlassView';
+import { GlassBar, GlassContainer } from '../../components/glass';
 import VenueBottomSheet from '../../components/venue/VenueBottomSheet';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Region } from 'react-native-maps';
@@ -570,7 +571,8 @@ export default function MapScreen() {
 
       {/* Liquid Glass Search Bar — hidden when sheet is expanded */}
       {!sheetExpanded && <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
-        <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]}>
+        <GlassContainer spacing={8}>
+        <GlassBar style={[styles.searchBarBlur, { borderColor: colors.glass.border }]}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
@@ -612,7 +614,7 @@ export default function MapScreen() {
               {hasActiveFilters && <View style={styles.filterBadgeDot} />}
             </TouchableOpacity>
           </View>
-        </GlassView>
+        </GlassBar>
 
         {/* Search results dropdown */}
         {showSearchResults && debouncedSearch.trim().length > 0 && (
@@ -687,6 +689,7 @@ export default function MapScreen() {
             )}
           </GlassView>
         )}
+        </GlassContainer>
       </SafeAreaView>}
 
       {/* Error banner — Liquid Glass on iOS */}

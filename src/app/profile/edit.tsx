@@ -14,6 +14,7 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { uploadImage } from '../../lib/imageUpload';
 import { useDebounce } from '../../hooks/useDebounce';
 import { haptic } from '../../lib/haptics';
+import { GlassBar } from '../../components/glass';
 import SCHOOLS from '../../data/schools.json';
 
 function normalizeTurkish(text: string): string {
@@ -111,7 +112,7 @@ export default function ProfileEditScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <GlassBar style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -123,7 +124,7 @@ export default function ProfileEditScreen() {
             <Text style={styles.saveBtnText}>Kaydet</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </GlassBar>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Animated.View entering={FadeInDown.delay(0).springify().damping(22).stiffness(340)}>
