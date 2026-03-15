@@ -317,8 +317,9 @@ export const useVenueStore = create<VenueState>((set, get) => ({
   },
 
   fetchNearbyScrapedWithCount: async (lat, lng, latDelta, lngDelta) => {
-    const halfLat = latDelta / 2;
-    const halfLng = lngDelta / 2;
+    // Fetch 3x the viewport so panning has pre-loaded buffer in all directions
+    const halfLat = latDelta * 1.5;
+    const halfLng = lngDelta * 1.5;
 
     try {
       const { data, count } = await supabase
@@ -329,7 +330,7 @@ export const useVenueStore = create<VenueState>((set, get) => ({
         .lte('latitude', lat + halfLat)
         .gte('longitude', lng - halfLng)
         .lte('longitude', lng + halfLng)
-        .limit(200);
+        .limit(500);
 
       set({
         nearbyScrapedVenues: (data as Venue[]) || [],

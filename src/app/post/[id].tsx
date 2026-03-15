@@ -23,7 +23,6 @@ import { useFeedStore } from '../../stores/feedStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import Avatar from '../../components/ui/Avatar';
-import GlassView from '../../components/ui/GlassView';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
@@ -202,7 +201,7 @@ export default function PostDetailScreen() {
     const renderQuestionHeader = () => (
       <Animated.View entering={FadeInDown.springify().damping(22).stiffness(340)}>
         {/* Question card */}
-        <View style={[qStyles.questionCard, { backgroundColor: colors.background }]}>
+        <View style={[qStyles.questionCard, { backgroundColor: colors.backgroundSecondary }]}>
           <View style={qStyles.questionHeader}>
             <Avatar
               uri={post.user?.avatar_url}
@@ -277,36 +276,23 @@ export default function PostDetailScreen() {
     );
 
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
           {/* Header bar */}
-          {Platform.OS === 'ios' ? (
-            <GlassView style={styles.headerBar}>
-              <TouchableOpacity
-                onPress={() => router.back()}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="chevron-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
-              <View style={{ width: 24 }} />
-            </GlassView>
-          ) : (
-            <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
-              <TouchableOpacity
-                onPress={() => router.back()}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="chevron-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
-              <View style={{ width: 24 }} />
-            </View>
-          )}
+          <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[qStyles.headerTitle, { color: colors.text }]}>Soru Detayi</Text>
+            <View style={{ width: 24 }} />
+          </View>
 
           {/* Answers list */}
           <FlatList
@@ -318,7 +304,7 @@ export default function PostDetailScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyComments}>
-                <Ionicons name="chatbubbles-outline" size={36} color={Colors.border} />
+                <Ionicons name="chatbubbles-outline" size={36} color={colors.border} />
                 <Text style={[styles.emptyCommentsText, { color: colors.text }]}>Henuz yanit yok</Text>
                 <Text style={[styles.emptyCommentsSubtext, { color: colors.textSecondary }]}>Ilk yaniti sen ver!</Text>
               </View>
@@ -326,15 +312,9 @@ export default function PostDetailScreen() {
           />
 
           {/* Answer input bar */}
-          {Platform.OS === 'ios' ? (
-            <GlassView style={styles.commentBar}>
-              {inputContent}
-            </GlassView>
-          ) : (
-            <View style={[styles.commentBar, { backgroundColor: colors.background }]}>
-              {inputContent}
-            </View>
-          )}
+          <View style={[styles.commentBar, { backgroundColor: colors.backgroundSecondary }]}>
+            {inputContent}
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -502,50 +482,30 @@ export default function PostDetailScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
         {/* Header bar */}
-        {Platform.OS === 'ios' ? (
-          <GlassView style={styles.headerBar}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={styles.headerUser}>
-              <Avatar
-                uri={post.user?.avatar_url}
-                name={post.user?.full_name ?? post.user?.username ?? '?'}
-                size={28}
-              />
-              <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
-            </View>
-            <View style={{ width: 24 }} />
-          </GlassView>
-        ) : (
-          <View style={[styles.headerBar, { backgroundColor: colors.background }]}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={styles.headerUser}>
-              <Avatar
-                uri={post.user?.avatar_url}
-                name={post.user?.full_name ?? post.user?.username ?? '?'}
-                size={28}
-              />
-              <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
-            </View>
-            <View style={{ width: 24 }} />
+        <View style={[styles.headerBar, { backgroundColor: colors.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerUser}>
+            <Avatar
+              uri={post.user?.avatar_url}
+              name={post.user?.full_name ?? post.user?.username ?? '?'}
+              size={28}
+            />
+            <Text style={[styles.headerUsername, { color: colors.text }]}>{post.user?.username ?? 'Kullanici'}</Text>
           </View>
-        )}
+          <View style={{ width: 24 }} />
+        </View>
 
         {/* Comments list */}
         <FlatList
@@ -557,7 +517,7 @@ export default function PostDetailScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyComments}>
-              <Ionicons name="chatbubbles-outline" size={36} color={Colors.border} />
+              <Ionicons name="chatbubbles-outline" size={36} color={colors.border} />
               <Text style={[styles.emptyCommentsText, { color: colors.text }]}>Henuz yorum yok</Text>
               <Text style={[styles.emptyCommentsSubtext, { color: colors.textSecondary }]}>Ilk yorumu sen yap!</Text>
             </View>
@@ -565,15 +525,9 @@ export default function PostDetailScreen() {
         />
 
         {/* Comment input bar */}
-        {Platform.OS === 'ios' ? (
-          <GlassView style={styles.commentBar}>
-            {regularInputContent}
-          </GlassView>
-        ) : (
-          <View style={[styles.commentBar, { backgroundColor: colors.background }]}>
-            {regularInputContent}
-          </View>
-        )}
+        <View style={[styles.commentBar, { backgroundColor: colors.backgroundSecondary }]}>
+          {regularInputContent}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -747,8 +701,11 @@ const styles = StyleSheet.create({
   commentBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginHorizontal: Spacing.sm,
+    marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xl,
     gap: Spacing.md,
   },
   commentInput: {
@@ -774,9 +731,12 @@ const qStyles = StyleSheet.create({
     fontFamily: FontFamily.headingBold,
   },
   questionCard: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
+    borderRadius: BorderRadius.lg,
   },
   questionHeader: {
     flexDirection: 'row',

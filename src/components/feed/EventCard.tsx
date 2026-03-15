@@ -210,8 +210,7 @@ function EventCard({
         style={[
           styles.joinButton,
           hasJoined && styles.joinButtonJoined,
-          isFull && !hasJoined && styles.joinButtonFull,
-          hasJoined && { borderColor: Colors.primary },
+          isFull && !hasJoined && [styles.joinButtonFull, { backgroundColor: colors.starEmpty }],
         ]}
         activeOpacity={0.7}
         onPress={handleJoinPress}
@@ -228,16 +227,16 @@ function EventCard({
           size={18}
           color={
             hasJoined
-              ? Colors.primary
+              ? Colors.success
               : isFull
                 ? colors.textTertiary
-                : '#FFFFFF'
+                : Colors.primary
           }
         />
         <Text
           style={[
             styles.joinButtonText,
-            hasJoined && { color: Colors.primary },
+            hasJoined && { color: Colors.success },
             isFull && !hasJoined && { color: colors.textTertiary },
           ]}
         >
@@ -379,19 +378,22 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primary,
-  },
-  joinButtonJoined: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  joinButtonJoined: {
+    borderColor: Colors.success,
+    backgroundColor: 'rgba(22, 163, 74, 0.08)',
   },
   joinButtonFull: {
-    backgroundColor: '#E8E8EC',
+    borderColor: 'transparent',
+    backgroundColor: Colors.starEmpty,
   },
   joinButtonText: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.headingBold,
-    color: '#FFFFFF',
+    color: Colors.primary,
   },
 });
 

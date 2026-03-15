@@ -23,7 +23,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEventStore } from '../../stores/eventStore';
 import { useAuthStore } from '../../stores/authStore';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig } from '../../lib/constants';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily, SpringConfig, FeatureColors } from '../../lib/constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import Avatar from '../../components/ui/Avatar';
 import GlassView from '../../components/ui/GlassView';
 import MessageBubble from '../../components/chat/MessageBubble';
@@ -31,8 +32,6 @@ import { useThemeColors, useIsDarkMode } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
 import { getRelativeTime } from '../../lib/utils';
 import type { EventMessage, EventAttendee } from '../../types';
-
-const MEETUP_CYAN = '#06B6D4';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -201,7 +200,7 @@ export default function EventRoomScreen() {
   const renderSystemMessage = (msg: EventMessage) => (
     <View style={styles.systemMessage}>
       <View style={[styles.systemMessagePill, { backgroundColor: colors.backgroundSecondary }]}>
-        <Ionicons name="person-add-outline" size={12} color={MEETUP_CYAN} />
+        <Ionicons name="person-add-outline" size={12} color={FeatureColors.meetup} />
         <Text style={[styles.systemMessageText, { color: colors.textSecondary }]}>
           {msg.message}
         </Text>
@@ -245,9 +244,14 @@ export default function EventRoomScreen() {
   const renderHeader = () => (
     <View>
       {/* Event Info Card */}
-      <View
-        style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}
-      >
+      <View style={{ position: 'relative' }}>
+        <LinearGradient
+          colors={[`rgba(232, 97, 77, 0.12)`, 'transparent']}
+          style={styles.eventCardGradient}
+        />
+        <View
+          style={[styles.eventCard, { backgroundColor: colors.backgroundSecondary }]}
+        >
         {/* Title + Date */}
         <View style={styles.eventTitleRow}>
           <View style={styles.meetupBadge}>
@@ -302,7 +306,7 @@ export default function EventRoomScreen() {
         <View style={styles.attendeesSection}>
           <View style={styles.attendeeAvatars}>
             {confirmedAttendees.slice(0, 5).map((a, i) => (
-              <View key={`${a.user_id}-${i}`} style={[styles.attendeeAvatar, i > 0 && { marginLeft: -8 }]}>
+              <View key={`${a.user_id}-${i}`} style={[styles.attendeeAvatar, i > 0 && { marginLeft: -8 }, { borderColor: colors.backgroundSecondary }]}>
                 <Avatar
                   uri={a.user?.avatar_url}
                   name={a.user?.full_name ?? '?'}
@@ -311,7 +315,7 @@ export default function EventRoomScreen() {
               </View>
             ))}
             {confirmedAttendees.length > 5 && (
-              <View style={[styles.attendeeMore, { backgroundColor: colors.border }]}>
+              <View style={[styles.attendeeMore, { backgroundColor: colors.border, borderColor: colors.backgroundSecondary }]}>
                 <Text style={[styles.attendeeMoreText, { color: colors.textSecondary }]}>
                   +{confirmedAttendees.length - 5}
                 </Text>
@@ -324,34 +328,35 @@ export default function EventRoomScreen() {
         </View>
 
         {/* Join/Leave button */}
-        {user && (
-          <AnimatedTouchable
+        <AnimatedTouchable
+          style={[
+            styles.joinButton,
+            isAttendee
+              ? { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.success }
+              : { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.primary },
+            joinAnimatedStyle,
+          ]}
+          onPress={isAttendee ? handleLeave : handleJoin}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={isAttendee ? 'checkmark-circle' : 'add-circle-outline'}
+            size={18}
+            color={isAttendee ? Colors.success : Colors.primary}
+          />
+          <Text
             style={[
-              styles.joinButton,
-              isAttendee
-                ? { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border }
-                : { backgroundColor: Colors.primary },
-              joinAnimatedStyle,
+              styles.joinButtonText,
+              isAttendee ? { color: Colors.success } : { color: Colors.primary },
             ]}
-            onPress={isAttendee ? handleLeave : handleJoin}
-            activeOpacity={0.7}
           >
-            <Ionicons
-              name={isAttendee ? 'checkmark-circle' : 'add-circle-outline'}
-              size={18}
-              color={isAttendee ? Colors.primary : '#FFFFFF'}
-            />
-            <Text
-              style={[
-                styles.joinButtonText,
-                isAttendee ? { color: Colors.primary } : { color: '#FFFFFF' },
-              ]}
-            >
-              {isAttendee ? 'Katildin' : 'Katil'}
-            </Text>
-          </AnimatedTouchable>
-        )}
+            {isAttendee ? 'Katildin' : 'Katil'}
+          </Text>
+        </AnimatedTouchable>
       </View>
+      </View>
+
+      <View style={[styles.chatDivider, { backgroundColor: colors.border }]} />
 
       {/* Chat section header */}
       <View style={styles.chatHeader}>
@@ -440,7 +445,7 @@ export default function EventRoomScreen() {
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <View style={[styles.headerDot, { backgroundColor: MEETUP_CYAN }]} />
+            <View style={[styles.headerDot, { backgroundColor: FeatureColors.meetup }]} />
             <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
               {event?.title ?? 'Bulusma Odasi'}
             </Text>
@@ -526,6 +531,13 @@ const styles = StyleSheet.create({
   },
 
   // Event info card
+  eventCardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+  },
   eventCard: {
     margin: Spacing.lg,
     padding: Spacing.lg,
@@ -541,7 +553,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: MEETUP_CYAN,
+    backgroundColor: FeatureColors.meetup,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: BorderRadius.full,
@@ -603,7 +615,6 @@ const styles = StyleSheet.create({
   },
   attendeeAvatar: {
     borderWidth: 2,
-    borderColor: '#FFFFFF',
     borderRadius: 14,
   },
   attendeeMore: {
@@ -614,7 +625,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: -8,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
   attendeeMoreText: {
     fontSize: 10,
@@ -638,6 +648,12 @@ const styles = StyleSheet.create({
   joinButtonText: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.headingBold,
+  },
+
+  // Chat divider
+  chatDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: Spacing.lg,
   },
 
   // Chat header
@@ -695,7 +711,7 @@ const styles = StyleSheet.create({
   // Empty chat
   emptyChat: {
     alignItems: 'center',
-    paddingVertical: Spacing.xxxl * 2,
+    paddingVertical: Spacing.xxxl,
     gap: Spacing.sm,
   },
   emptyChatText: {

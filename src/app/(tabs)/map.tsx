@@ -28,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import {
   Colors,
   DEFAULT_REGION,
+  FeatureColors,
   MapConfig,
   PriceRanges,
   Spacing,
@@ -51,6 +52,8 @@ import type { Venue } from '../../types';
 // Native marker image — rendered by Apple Maps / Google Maps natively,
 // bypassing React's view hierarchy (avoids Fabric AIRMapMarker crash).
 const MARKER_LOGO = require('../../../assets/logo-icon.png');
+const SCRAPED_PIN = require('../../../assets/scraped-pin.png');
+const SCRAPED_PIN_SELECTED = require('../../../assets/scraped-pin-selected.png');
 
 // ── Clustering types ──
 interface ClusterGroup {
@@ -65,7 +68,7 @@ type ClusterItem =
 
 // ── Grid-based clustering ──
 
-function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
+function clusterVenues(venues: Venue[], cellSize: number): ClusterItem[] {
   const items: ClusterItem[] = [];
 
   // ONY (reviewed) venues are NEVER clustered — always visible individually
@@ -76,16 +79,15 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
     items.push({ type: 'venue' as const, venue: v });
   }
 
-  // Scraped venues: show individually only when zoomed in
-  if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) {
+  // Scraped venues: show individually only when zoomed in enough
+  if (cellSize <= 0) {
     for (const v of scrapedVenues) {
       items.push({ type: 'venue' as const, venue: v });
     }
     return items;
   }
 
-  // Cluster scraped venues — coarse grid so clusters stay large
-  const cellSize = region.latitudeDelta / 3;
+  // Cluster scraped venues using a fixed grid (stable across pans)
   const buckets = new Map<string, Venue[]>();
 
   for (const v of scrapedVenues) {
@@ -101,8 +103,10 @@ function clusterVenues(venues: Venue[], region: Region): ClusterItem[] {
   }
 
   for (const [key, group] of buckets) {
-    if (group.length === 1) {
-      items.push({ type: 'venue', venue: group[0] });
+    if (group.length <= 4) {
+      for (const v of group) {
+        items.push({ type: 'venue', venue: v });
+      }
     } else {
       const lat = group.reduce((s, v) => s + v.latitude, 0) / group.length;
       const lng = group.reduce((s, v) => s + v.longitude, 0) / group.length;
@@ -187,14 +191,12 @@ export default function MapScreen() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const markerPressedRef = useRef(false);
 
-  // Debounce region changes for scraped venue loading
-  const debouncedRegionLat = useDebounce(region.latitude, 500);
-  const debouncedRegionLng = useDebounce(region.longitude, 500);
-  const debouncedRegionDelta = useDebounce(region.latitudeDelta, 500);
+  // Debounce region for fetches only
+  const debouncedRegion = useDebounce(region, 500);
 
-  // Zoom thresholds for progressive disclosure
-  const isDistrictZoom = debouncedRegionDelta < 0.05;
-  const isNeighborhoodZoom = debouncedRegionDelta < 0.01;
+  // Zoom thresholds (instant from current region state)
+  const isDistrictZoom = region.latitudeDelta < 0.08;
+  const isNeighborhoodZoom = region.latitudeDelta < 0.05;
 
   // Unified search results (Supabase combined)
   const [searchResults, setSearchResults] = useState<Venue[]>([]);
@@ -209,26 +211,38 @@ export default function MapScreen() {
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // ── Merge ONY venues with scraped venues (only when zoomed in), deduplicated ──
+  // Scraped venues are viewport-filtered (2x buffer) so stale pins from a
+  // previous fetch don't linger on the edge after a big pan.
   const visibleVenues = useMemo(() => {
-    const scrapedToShow = isNeighborhoodZoom ? nearbyScrapedVenues : [];
+    if (!isNeighborhoodZoom) return [...venues];
+    const bufLat = region.latitudeDelta;
+    const bufLng = region.longitudeDelta;
+    const scrapedToShow = nearbyScrapedVenues.filter(
+      (v) =>
+        v.latitude >= region.latitude - bufLat &&
+        v.latitude <= region.latitude + bufLat &&
+        v.longitude >= region.longitude - bufLng &&
+        v.longitude <= region.longitude + bufLng,
+    );
     const seen = new Set(venues.map((v) => v.id));
     const uniqueScraped = scrapedToShow.filter((v) => !seen.has(v.id));
-    const all = [...venues, ...uniqueScraped];
-    const latHalf = region.latitudeDelta / 2 + 0.005;
-    const lngHalf = region.longitudeDelta / 2 + 0.005;
-    return all.filter(
-      (v) =>
-        v.latitude >= region.latitude - latHalf &&
-        v.latitude <= region.latitude + latHalf &&
-        v.longitude >= region.longitude - lngHalf &&
-        v.longitude <= region.longitude + lngHalf,
-    );
-  }, [venues, nearbyScrapedVenues, region, isNeighborhoodZoom]);
+    return [...venues, ...uniqueScraped];
+  }, [venues, nearbyScrapedVenues, isNeighborhoodZoom, region]);
 
-  // ── Memoized clusters ──
+  // ── Stable cell size: quantized to powers of 2 so the grid doesn't shift
+  // on every tiny zoom change. Only recomputes when zoom crosses a band.
+  // Returns 0 when zoomed past the cluster threshold (show individual pins).
+  const stableCellSize = useMemo(() => {
+    if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) return 0;
+    const raw = region.latitudeDelta / 3;
+    return Math.pow(2, Math.round(Math.log2(raw)));
+  }, [region.latitudeDelta]);
+
+  // ── Memoized clusters — only recomputes on zoom band change or venue list change,
+  // NOT on every pan (panning doesn't change stableCellSize).
   const clusteredItems = useMemo(
-    () => clusterVenues(visibleVenues, region),
-    [visibleVenues, region],
+    () => clusterVenues(visibleVenues, stableCellSize),
+    [visibleVenues, stableCellSize],
   );
 
   const handleClusterPress = useCallback(
@@ -261,16 +275,16 @@ export default function MapScreen() {
     if (venues.length === 0) fetchVenues();
   }, []);
 
-  // Load nearby scraped venues when zoomed in enough, fully debounced
-  const debouncedRegionLngDelta = useDebounce(region.longitudeDelta, 500);
+  // Load nearby scraped venues when zoomed in enough, debounced
   useEffect(() => {
-    if (isDistrictZoom) {
-      countNearbyScraped(debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta);
+    const { latitude, longitude, latitudeDelta, longitudeDelta } = debouncedRegion;
+    if (latitudeDelta < 0.08) {
+      countNearbyScraped(latitude, longitude, latitudeDelta, longitudeDelta);
     }
-    if (isNeighborhoodZoom) {
-      fetchNearbyScraped(debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta);
+    if (latitudeDelta < 0.05) {
+      fetchNearbyScraped(latitude, longitude, latitudeDelta, longitudeDelta);
     }
-  }, [debouncedRegionLat, debouncedRegionLng, debouncedRegionDelta, debouncedRegionLngDelta]);
+  }, [debouncedRegion]);
 
   // Debounced search — queries Supabase for both ONY and scraped venues
   useEffect(() => {
@@ -402,7 +416,6 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         initialRegion={initialRegion}
-        region={region}
         onRegionChangeComplete={setRegion}
         showsUserLocation
         showsMyLocationButton={false}
@@ -470,23 +483,36 @@ export default function MapScreen() {
 
           const isSelected = selectedVenue?.id === venue.id;
 
-          // ── Tier 1: Unreviewed external venue — restaurant icon pin ──
+          // ── Tier 1: Unreviewed external venue ──
+          // Non-selected: native image (zero React overhead for 200+ pins)
+          // Selected: React view with spring animation (only 1 at a time)
           if (tier === 'scraped') {
-            const pinContent = (
-              <View style={isSelected ? styles.osmPinSelected : styles.osmPin}>
-                <Ionicons name="restaurant" size={14} color={isSelected ? '#FFF' : 'rgba(255,255,255,0.85)'} />
-              </View>
-            );
+            if (isSelected) {
+              return (
+                <Marker
+                  key={venue.id}
+                  coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+                  tracksViewChanges={true}
+                  onPress={() => handleMarkerPress(venue)}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <SelectedPop>
+                    <View style={styles.osmPinSelected}>
+                      <Ionicons name="restaurant" size={14} color="#FFF" />
+                    </View>
+                  </SelectedPop>
+                </Marker>
+              );
+            }
             return (
               <Marker
                 key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
-                tracksViewChanges={true}
+                image={SCRAPED_PIN}
+                tracksViewChanges={false}
                 onPress={() => handleMarkerPress(venue)}
                 anchor={{ x: 0.5, y: 0.5 }}
-              >
-                {isSelected ? <SelectedPop>{pinContent}</SelectedPop> : pinContent}
-              </Marker>
+              />
             );
           }
 
@@ -512,7 +538,7 @@ export default function MapScreen() {
                 key={venue.id}
                 coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
                 onPress={() => handleMarkerPress(venue)}
-                tracksViewChanges={true}
+                tracksViewChanges={isSelected}
               >
                 {isSelected ? <SelectedPop>{tagContent}</SelectedPop> : tagContent}
               </Marker>
@@ -525,7 +551,7 @@ export default function MapScreen() {
               key={venue.id}
               coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
               onPress={() => handleMarkerPress(venue)}
-              tracksViewChanges={true}
+              tracksViewChanges={isSelected}
               anchor={{ x: 0.5, y: isSelected ? 1 : 0.5 }}
             >
               {isSelected ? (
@@ -546,11 +572,11 @@ export default function MapScreen() {
       {!sheetExpanded && <SafeAreaView edges={['top']} style={styles.searchBarSafe}>
         <GlassView style={[styles.searchBarBlur, { borderColor: colors.glass.border }]}>
           <View style={styles.searchBar}>
-            <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.searchIcon} />
+            <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
               placeholder="Mekan veya semt ara..."
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               selectionColor={Colors.primary}
@@ -687,44 +713,44 @@ export default function MapScreen() {
         </GlassView>
       )}
 
-      {/* Buddy FAB */}
-      <TouchableOpacity
-        style={[styles.buddyFab, { bottom: Math.max(insets.bottom, 8) + 130 }]}
-        onPress={() => router.push('/buddy')}
-        activeOpacity={0.8}
-        accessibilityLabel="Yemek arkadasi bul"
-        accessibilityRole="button"
-      >
-        <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.buddyFabGradient}>
-          <Ionicons name="people" size={20} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
+      {/* Right FAB stack — location + buddy, stacked vertically */}
+      <View style={[styles.fabStack, { bottom: Math.max(insets.bottom, 8) + 90 }]}>
+        <TouchableOpacity
+          style={styles.buddyFab}
+          onPress={() => router.push('/buddy')}
+          activeOpacity={0.8}
+          accessibilityLabel="Yemek arkadasi bul"
+          accessibilityRole="button"
+        >
+          <LinearGradient colors={[FeatureColors.meetup, FeatureColors.buddyDark]} style={styles.buddyFabGradient}>
+            <Ionicons name="people" size={20} color="#FFF" />
+          </LinearGradient>
+        </TouchableOpacity>
 
-      {/* My Location — Liquid Glass */}
-      {userLocation && (
-        <GlassView style={[styles.myLocationBlur, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]} interactive>
-          <TouchableOpacity
-            style={styles.myLocationButton}
-            onPress={centerOnUser}
-            activeOpacity={0.7}
-            accessibilityLabel="Konumuma git"
-            accessibilityRole="button"
-          >
-            <Ionicons name="location" size={20} color={Colors.primary} />
-          </TouchableOpacity>
-        </GlassView>
-      )}
+        {userLocation && (
+          <GlassView style={[styles.myLocationBlur, { borderColor: colors.glass.border }]} interactive>
+            <TouchableOpacity
+              style={styles.myLocationButton}
+              onPress={centerOnUser}
+              activeOpacity={0.7}
+              accessibilityLabel="Konumuma git"
+              accessibilityRole="button"
+            >
+              <Ionicons name="location" size={20} color={Colors.primary} />
+            </TouchableOpacity>
+          </GlassView>
+        )}
+      </View>
 
-      {/* Discovery Pill — shows nearby scraped venue count at district zoom */}
+      {/* Discovery Pill — nudge to zoom in */}
       {isDistrictZoom && !isNeighborhoodZoom && nearbyScrapedCount > 0 && !selectedVenue && !sheetExpanded && (
         <GlassView
-          style={[styles.discoveryPill, { bottom: Math.max(insets.bottom, 8) + 80, borderColor: colors.glass.border }]}
+          style={[styles.discoveryPill, { bottom: Math.max(insets.bottom, 8) + 90, borderColor: colors.glass.border }]}
         >
           <TouchableOpacity
             style={styles.discoveryPillInner}
             onPress={() => {
               haptic.light();
-              // Zoom in to show individual pins
               mapRef.current?.animateToRegion(
                 {
                   latitude: region.latitude,
@@ -737,9 +763,9 @@ export default function MapScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
+            <Ionicons name="compass-outline" size={16} color={Colors.primary} />
             <Text style={[styles.discoveryPillText, { color: colors.text }]}>
-              {nearbyScrapedCount > 999 ? '999+' : nearbyScrapedCount} mekan kesfedilmeyi bekliyor
+              Yakinlastir ve yeni mekanlar kesfet
             </Text>
             <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
           </TouchableOpacity>
@@ -758,10 +784,11 @@ export default function MapScreen() {
           activeOpacity={1}
           onPress={() => setShowFilters(false)}
         >
-          <TouchableOpacity activeOpacity={1} style={[styles.filterSheet, { backgroundColor: Platform.OS === 'ios' ? (isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.88)') : colors.background }]}>
-            <GlassView style={styles.filterHandleArea} fallbackColor="transparent">
-              <View style={[styles.filterHandle, { backgroundColor: colors.border }]} />
-            </GlassView>
+          <TouchableOpacity activeOpacity={1} style={styles.filterSheetOuter}>
+            <GlassView style={styles.filterSheet} fallbackColor={isDark ? 'rgba(30,30,30,0.92)' : 'rgba(255,255,255,0.88)'}>
+              <View style={styles.filterHandleArea}>
+                <View style={[styles.filterHandle, { backgroundColor: colors.border }]} />
+              </View>
             <Text style={[styles.filterTitle, { color: colors.text }]}>Filtreler</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
@@ -842,6 +869,7 @@ export default function MapScreen() {
                 <Text style={styles.filterApplyText}>Uygula</Text>
               </TouchableOpacity>
             </View>
+            </GlassView>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -1114,10 +1142,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  // Right FAB stack container
+  fabStack: {
+    position: 'absolute',
+    right: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
   // Buddy FAB
   buddyFab: {
-    position: 'absolute',
-    right: 16,
     borderRadius: 22,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -1135,8 +1168,6 @@ const styles = StyleSheet.create({
 
   // My Location — Liquid Glass
   myLocationBlur: {
-    position: 'absolute',
-    right: Spacing.lg,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -1160,24 +1191,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
+  filterSheetOuter: {
+    maxHeight: '70%',
+  },
   filterSheet: {
-    backgroundColor: Colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xxl,
     paddingTop: Spacing.md,
-    maxHeight: '70%',
-    borderWidth: Platform.OS === 'ios' ? StyleSheet.hairlineWidth : 0,
-    borderColor: Colors.glass.border,
-    borderBottomWidth: 0,
+    overflow: 'hidden',
   },
   filterHandleArea: {
     alignItems: 'center',
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
   },
   filterHandle: {
     width: 40,
@@ -1329,7 +1357,7 @@ const styles = StyleSheet.create({
   discoveryPill: {
     position: 'absolute',
     left: Spacing.lg,
-    right: Spacing.lg,
+    right: 76,
     borderRadius: BorderRadius.xl,
     borderWidth: 0.5,
     shadowColor: '#000',

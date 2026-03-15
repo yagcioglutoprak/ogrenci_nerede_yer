@@ -457,33 +457,32 @@ export default function FeedScreen() {
       {/* Buddy Banner */}
       {showBuddyBanner && (
         <TouchableOpacity
-          style={{ marginHorizontal: Spacing.lg, marginBottom: Spacing.md, borderRadius: BorderRadius.md, overflow: 'hidden' }}
+          style={styles.buddyBanner}
           onPress={() => router.push('/buddy')}
           activeOpacity={0.85}
         >
-          <GlassView
-            style={{ borderRadius: BorderRadius.md, overflow: 'hidden' }}
-            fallbackColor="rgba(6, 182, 212, 0.85)"
-          >
           <LinearGradient
-            colors={['#06B6D4', '#0891B2']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={{ flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, gap: Spacing.md }}
+            colors={[Colors.gradientStart, Colors.gradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.buddyBannerGradient}
           >
             <Ionicons name="people" size={24} color="#FFF" />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: FontSize.md, fontFamily: FontFamily.headingBold, color: '#FFF' }}>
+            <View style={styles.buddyBannerText}>
+              <Text style={styles.buddyBannerTitle}>
                 Yalnız yemek yeme!
               </Text>
-              <Text style={{ fontSize: FontSize.xs, fontFamily: FontFamily.body, color: 'rgba(255,255,255,0.8)' }}>
+              <Text style={styles.buddyBannerSubtitle}>
                 Yakınında yemek arkadaşı bul
               </Text>
             </View>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); setShowBuddyBanner(false); }}>
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation(); setShowBuddyBanner(false); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
           </LinearGradient>
-          </GlassView>
         </TouchableOpacity>
       )}
 
@@ -570,6 +569,38 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontFamily: FontFamily.body,
     paddingVertical: 0,
+  },
+
+  // Buddy Banner
+  buddyBanner: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  buddyBannerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  buddyBannerText: {
+    flex: 1,
+  },
+  buddyBannerTitle: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.headingBold,
+    color: '#FFFFFF',
+  },
+  buddyBannerSubtitle: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.body,
+    color: 'rgba(255,255,255,0.85)',
   },
 
   // Category Chips with animated indicator

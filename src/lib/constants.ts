@@ -299,15 +299,15 @@ export const Shadows = {
 // Centralized colors for post types & features
 // ==========================================
 export const FeatureColors = {
-  buddy: '#06B6D4',
-  buddyDark: '#0891B2',
+  buddy: '#E8614D',           // Warm coral — social, inviting
+  buddyDark: '#D4503C',
   question: '#8B5CF6',
   questionLight: '#EDE9FE',
   moment: '#F97316',
   momentLight: '#FFF7ED',
   liveGreen: '#22C55E',
-  meetup: '#06B6D4',       // same as buddy
-  meetupLight: '#ECFEFF',
+  meetup: '#E8614D',          // Same as buddy — warm coral
+  meetupLight: '#FEF0ED',
 } as const;
 
 // Supabase config
@@ -349,7 +349,7 @@ export const VENUE_TAGS = [
 
 export const POST_TYPES = {
   discovery: { label: 'Kesif', icon: 'camera-outline', color: '#E23744' },
-  meetup: { label: 'Bulusma', icon: 'people-outline', color: '#06B6D4' },
+  meetup: { label: 'Bulusma', icon: 'people-outline', color: '#E8614D' },
   question: { label: 'Soru', icon: 'help-circle-outline', color: '#8B5CF6' },
   moment: { label: 'Anlik', icon: 'flash-outline', color: '#F97316' },
 } as const;
@@ -371,7 +371,7 @@ export const ISTANBUL_SEMTLER = [
 
 // Map configuration
 export const MapConfig = {
-  CLUSTER_ZOOM_THRESHOLD: 0.005,
+  CLUSTER_ZOOM_THRESHOLD: 0.02,
   MARKER_ANIMATION_DURATION: 500,
   SEARCH_DEBOUNCE_MS: 300,
   MAX_SEARCH_RESULTS: 5,

@@ -46,7 +46,7 @@ const TABS: TabDef[] = [
 const ADD_BUTTON_SIZE = 56;
 const ADD_BUTTON_LIFT = 18;
 // Pill-shaped active indicator dimensions (iOS 26 Liquid Glass)
-const PILL_WIDTH = 56;
+const PILL_WIDTH = 66;
 const PILL_COLOR = 'rgba(226, 55, 68, 0.12)';
 // ---------------------------------------------------------------------------
 // Elevated center "+" button with gradient & glow
@@ -344,15 +344,6 @@ const FloatingGlassTabBar = React.memo(function FloatingGlassTabBar({ state, des
     const prevLayout = prevName ? tabLayouts.current[prevName] : null;
 
     if (prevLayout && prevName !== 'add') {
-      const prevTargetX = prevLayout.x + (prevLayout.width - PILL_WIDTH) / 2;
-      const distance = Math.abs(targetX - prevTargetX);
-      const stretchWidth = PILL_WIDTH + distance * 0.25;
-
-      pillWidth.value = withSequence(
-        withSpring(stretchWidth, STRETCH_SPRING),
-        withDelay(60, withSpring(PILL_WIDTH, CONTRACT_SPRING)),
-      );
-
       pillScale.value = withSequence(
         withSpring(1.06, { damping: 12, stiffness: 300, mass: 0.5 }),
         withSpring(1.0, { damping: 14, stiffness: 200, mass: 0.6 }),
@@ -696,10 +687,10 @@ const iosStyles = StyleSheet.create({
   },
   slidingPill: {
     position: 'absolute',
-    height: '100%',
+    top: 2,
+    bottom: 2,
     borderRadius: 9999,
     borderWidth: StyleSheet.hairlineWidth,
-    // Subtle glow for liquid glass feel
     shadowColor: '#E23744',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.12,
