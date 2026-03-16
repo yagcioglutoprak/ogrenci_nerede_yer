@@ -15,6 +15,8 @@ export interface User {
   followers_count?: number;
   following_count?: number;
   dm_privacy?: 'followers_only' | 'everyone';
+  age?: number | null;
+  birth_date?: string | null;
   school_lat?: number | null;
   school_lng?: number | null;
   food_preferences?: string[];

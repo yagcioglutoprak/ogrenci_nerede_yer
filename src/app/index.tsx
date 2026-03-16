@@ -9,8 +9,17 @@ export default function Index() {
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
 
+  // TODO: remove DEV_FORCE_ONBOARDING after testing
+  const DEV_FORCE_ONBOARDING = true;
+
   useEffect(() => {
     if (!initialized) return;
+
+    if (DEV_FORCE_ONBOARDING) {
+      setNeedsOnboarding(true);
+      setChecking(false);
+      return;
+    }
 
     let cancelled = false;
     hasCompletedOnboarding().then((completed) => {

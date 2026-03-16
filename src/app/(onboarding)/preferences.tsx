@@ -84,7 +84,7 @@ export default function PreferencesScreen() {
           Ne Yemeyi Seversin?
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          En az 3 se\u00e7
+          En az 3 seç
         </Text>
       </View>
 
@@ -95,7 +95,7 @@ export default function PreferencesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.tagGrid}>
-          {VENUE_TAGS.map((tag) => {
+          {VENUE_TAGS.filter((tag) => tag.key !== 'wifi').map((tag) => {
             const isSelected = selectedTags.includes(tag.key);
             return (
               <TouchableOpacity
@@ -132,14 +132,14 @@ export default function PreferencesScreen() {
           layout={LinearTransition}
           style={[styles.counter, { color: colors.textSecondary }]}
         >
-          {selectedTags.length} se\u00e7ildi
+          {selectedTags.length} seçildi
         </Animated.Text>
       </ScrollView>
 
       {/* Bottom section */}
       <Animated.View entering={FadeIn.delay(200)} style={styles.bottom}>
         <Button
-          title="Ke\u015ffetmeye Ba\u015fla"
+          title="Keşfetmeye Başla"
           onPress={handleContinue}
           loading={loading}
           variant="primary"

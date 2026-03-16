@@ -8,6 +8,26 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '../lib/constants';
 import { Platform } from 'react-native';
 
+// ═══════════════════════════════════════════════════════
+// DEV MODE — bypasses Supabase auth entirely, uses mock user in-memory.
+// Set to false to use real Supabase auth.
+// ═══════════════════════════════════════════════════════
+const DEV_MODE = true;
+
+function createDevUser(username: string, email: string): User {
+  return {
+    id: `dev-${Date.now()}`,
+    email,
+    username,
+    full_name: username,
+    avatar_url: `https://i.pravatar.cc/150?u=${username}`,
+    university: null,
+    bio: null,
+    xp_points: 0,
+    created_at: new Date().toISOString(),
+  } as User;
+}
+
 // Track auth listener subscription so we can clean up on re-initialization
 let authSubscription: { unsubscribe: () => void } | null = null;
 
@@ -59,6 +79,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   initialize: async () => {
+    if (DEV_MODE) {
+      set({ initialized: true, loading: false });
+      return;
+    }
+
     // Clean up previous listener on re-initialization (e.g. hot reload)
     if (authSubscription) {
       authSubscription.unsubscribe();
@@ -160,6 +185,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithEmail: async (email, password) => {
+    if (DEV_MODE) {
+      set({ loading: true });
+      const user = createDevUser(email.split('@')[0], email);
+      set({ user, loading: false, error: null });
+      return { error: null };
+    }
+
     set({ loading: true, error: null });
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -181,6 +213,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signUpWithEmail: async (email, password, username) => {
+    if (DEV_MODE) {
+      set({ loading: true });
+      const user = createDevUser(username, email);
+      set({ user, loading: false, error: null });
+      return { error: null };
+    }
+
     set({ loading: true, error: null });
     try {
       // Pass username in metadata so onAuthStateChange can create the profile
@@ -221,6 +260,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithApple: async () => {
+    if (DEV_MODE) {
+      set({ loading: true });
+      const user = createDevUser('dev_apple_user', 'apple@dev.local');
+      set({ user, loading: false, error: null });
+      return { error: null };
+    }
+
     set({ loading: true, error: null });
     try {
       const rawNonce = Array.from(
@@ -276,6 +322,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGoogle: async () => {
+    if (DEV_MODE) {
+      set({ loading: true });
+      const user = createDevUser('dev_google_user', 'google@dev.local');
+      set({ user, loading: false, error: null });
+      return { error: null };
+    }
+
     set({ loading: true, error: null });
     try {
       if (Platform.OS === 'android') {
@@ -314,6 +367,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    if (DEV_MODE) {
+      set({ user: null, session: null, error: null });
+      return;
+    }
+
     try {
       await supabase.auth.signOut();
     } catch {
@@ -325,6 +383,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updateProfile: async (updates) => {
     const user = get().user;
     if (!user) return { error: 'Kullanıcı bulunamadı' };
+
+    if (DEV_MODE) {
+      set({ user: { ...user, ...updates } as User });
+      return { error: null };
+    }
 
     try {
       const { error } = await supabase

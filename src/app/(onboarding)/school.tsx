@@ -14,32 +14,61 @@ import {
   BorderRadius,
   FontSize,
   FontFamily,
-  ISTANBUL_SCHOOLS,
 } from '../../lib/constants';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { useAuthStore } from '../../stores/authStore';
 import { haptic } from '../../lib/haptics';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import SCHOOLS from '../../data/schools.json';
 
-type School = (typeof ISTANBUL_SCHOOLS)[number];
+interface School {
+  name: string;
+  type: string;
+  location: string;
+}
+
+function normalizeTurkish(text: string): string {
+  return text
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ö/g, 'ö')
+    .replace(/Ç/g, 'ç')
+    .toLowerCase();
+}
 
 export default function SchoolPickerScreen() {
   const router = useRouter();
   const colors = useThemeColors();
 
+  const PAGE_SIZE = 20;
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedSchoolName, setSelectedSchoolName] = useState<string | null>(
     null,
   );
 
-  const filteredSchools = useMemo(() => {
-    if (!searchQuery.trim()) return ISTANBUL_SCHOOLS as readonly School[];
-    const q = searchQuery.toLocaleLowerCase('tr-TR');
-    return (ISTANBUL_SCHOOLS as readonly School[]).filter((s) =>
-      s.name.toLocaleLowerCase('tr-TR').includes(q),
+  const allFiltered = useMemo(() => {
+    if (!searchQuery.trim()) return SCHOOLS as School[];
+    const q = normalizeTurkish(searchQuery.trim());
+    return (SCHOOLS as School[]).filter((s) =>
+      normalizeTurkish(s.name).includes(q),
     );
   }, [searchQuery]);
+
+  const filteredSchools = useMemo(
+    () => allFiltered.slice(0, visibleCount),
+    [allFiltered, visibleCount],
+  );
+
+  const loadMore = useCallback(() => {
+    if (visibleCount < allFiltered.length) {
+      setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, allFiltered.length));
+    }
+  }, [visibleCount, allFiltered.length]);
 
   const handleSelectSchool = useCallback(
     (school: School) => {
@@ -53,15 +82,9 @@ export default function SchoolPickerScreen() {
 
   const handleContinue = useCallback(async () => {
     if (!selectedSchoolName) return;
-    const school = (ISTANBUL_SCHOOLS as readonly School[]).find(
-      (s) => s.name === selectedSchoolName,
-    );
-    if (!school) return;
 
     await useAuthStore.getState().updateProfile({
-      university: school.name,
-      school_lat: school.lat,
-      school_lng: school.lng,
+      university: selectedSchoolName,
     });
     haptic.success();
     router.replace('/(onboarding)/preferences');
@@ -75,6 +98,7 @@ export default function SchoolPickerScreen() {
   const renderSchoolRow = useCallback(
     ({ item }: { item: School }) => {
       const isSelected = item.name === selectedSchoolName;
+      const iconName = item.type === 'university' ? 'school-outline' : 'book-outline';
 
       return (
         <TouchableOpacity
@@ -89,7 +113,7 @@ export default function SchoolPickerScreen() {
           activeOpacity={0.7}
         >
           <Ionicons
-            name="school-outline"
+            name={iconName}
             size={20}
             color={isSelected ? colors.primary : colors.textTertiary}
             style={styles.rowIcon}
@@ -109,7 +133,7 @@ export default function SchoolPickerScreen() {
               style={[styles.districtLabel, { color: colors.textSecondary }]}
               numberOfLines={1}
             >
-              {item.district}
+              {item.location}
             </Text>
           </View>
 
@@ -148,7 +172,7 @@ export default function SchoolPickerScreen() {
         <Input
           placeholder="Okul ara..."
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={(text) => { setSearchQuery(text); setVisibleCount(PAGE_SIZE); }}
           icon="search-outline"
         />
       </View>
@@ -162,6 +186,8 @@ export default function SchoolPickerScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
         />
       </View>
 

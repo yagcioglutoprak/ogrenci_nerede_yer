@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Alert, Image, ActivityIndicator,
-  FlatList, Keyboard,
+  FlatList, Keyboard, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../lib/constants';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeColors } from '../../hooks/useThemeColors';
@@ -37,6 +38,10 @@ export default function ProfileEditScreen() {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [birthDate, setBirthDate] = useState<Date | null>(
+    user?.birth_date ? new Date(user.birth_date) : null,
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [university, setUniversity] = useState(user?.university || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [saving, setSaving] = useState(false);
@@ -85,10 +90,20 @@ export default function ProfileEditScreen() {
     setNameError('');
     setSaving(true);
 
+    const calcAge = (d: Date) => {
+      const today = new Date();
+      let a = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+      return a;
+    };
+
     const { error } = await updateProfile({
       full_name: fullName.trim(),
       username: username.trim(),
       bio: bio.trim(),
+      age: birthDate ? calcAge(birthDate) : null,
+      birth_date: birthDate ? birthDate.toISOString().split('T')[0] : null,
       university: university.trim(),
       avatar_url: avatarUrl,
     });
@@ -185,7 +200,51 @@ export default function ProfileEditScreen() {
           />
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(400).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
+        <Animated.View entering={FadeInDown.delay(350).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Doğum Tarihi</Text>
+          <TouchableOpacity
+            style={[styles.input, styles.dateButton, { borderColor: showDatePicker ? Colors.primary : colors.border, backgroundColor: colors.backgroundSecondary }]}
+            onPress={() => setShowDatePicker(!showDatePicker)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={18} color={birthDate ? Colors.primary : colors.textTertiary} />
+            <Text style={{ fontSize: FontSize.md, fontFamily: FontFamily.body, flex: 1, color: birthDate ? colors.text : colors.textTertiary }}>
+              {birthDate ? `${birthDate.getDate().toString().padStart(2, '0')}.${(birthDate.getMonth() + 1).toString().padStart(2, '0')}.${birthDate.getFullYear()}` : 'Gün / Ay / Yıl'}
+            </Text>
+            {birthDate && (
+              <View style={[styles.ageBadge, { backgroundColor: colors.primarySoft }]}>
+                <Text style={styles.ageBadgeText}>
+                  {(() => { const t = new Date(); let a = t.getFullYear() - birthDate.getFullYear(); const m = t.getMonth() - birthDate.getMonth(); if (m < 0 || (m === 0 && t.getDate() < birthDate.getDate())) a--; return a; })()} yaş
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          {showDatePicker && (
+            <View style={[styles.pickerContainer, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <DateTimePicker
+                value={birthDate || (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 20); return d; })()}
+                mode="date"
+                display="spinner"
+                onChange={(_e: DateTimePickerEvent, d?: Date) => { if (Platform.OS === 'android') setShowDatePicker(false); if (d) setBirthDate(d); }}
+                maximumDate={new Date()}
+                minimumDate={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 60); return d; })()}
+                locale="tr-TR"
+                themeVariant="dark"
+              />
+              <TouchableOpacity
+                style={styles.pickerDoneBtn}
+                onPress={() => {
+                  if (!birthDate) { const d = new Date(); d.setFullYear(d.getFullYear() - 20); setBirthDate(d); }
+                  setShowDatePicker(false);
+                }}
+              >
+                <Text style={styles.pickerDoneText}>Tamam</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(450).springify().damping(22).stiffness(340)} style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Okul</Text>
           {university && !showSchoolPicker ? (
             <TouchableOpacity
@@ -313,6 +372,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  dateButton: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+  },
+  ageBadge: {
+    paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.full,
+  },
+  ageBadgeText: {
+    fontSize: FontSize.xs, fontFamily: FontFamily.bodySemiBold, color: Colors.primary,
+  },
+  pickerContainer: {
+    borderWidth: 1, borderRadius: BorderRadius.md, overflow: 'hidden', marginTop: Spacing.xs,
+  },
+  pickerDoneBtn: {
+    alignItems: 'center', paddingVertical: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  pickerDoneText: {
+    fontSize: FontSize.md, fontFamily: FontFamily.headingBold, color: Colors.primary,
+  },
   selectedSchool: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },

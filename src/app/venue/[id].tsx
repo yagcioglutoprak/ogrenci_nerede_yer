@@ -1255,10 +1255,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   infoText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.xs,
     color: Colors.text,
     flex: 1,
-    lineHeight: 22,
+    lineHeight: 16,
   },
   directionsBtn: {
     flexDirection: 'row',

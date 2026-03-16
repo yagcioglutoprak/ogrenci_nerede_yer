@@ -19,7 +19,6 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { haptic } from '../../lib/haptics';
-import { hasCompletedOnboarding } from '../../lib/onboarding';
 import SocialLoginButtons from '../../components/auth/SocialLoginButtons';
 
 export default function RegisterScreen() {
@@ -78,15 +77,15 @@ export default function RegisterScreen() {
       haptic.error();
     } else {
       haptic.success();
-      const onboardingDone = await hasCompletedOnboarding();
-      router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+      // New signup always goes through onboarding
+      router.replace('/(onboarding)/profile');
     }
   };
 
   const handleSocialSuccess = async () => {
     haptic.success();
-    const onboardingDone = await hasCompletedOnboarding();
-    router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+    // New signup via social always goes through onboarding
+    router.replace('/(onboarding)/profile');
   };
 
   const handleAppleLogin = async () => {
@@ -380,6 +379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: Spacing.xl,
   },
   footerText: {
     fontSize: FontSize.md,

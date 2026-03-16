@@ -55,14 +55,14 @@ export default function LoginScreen() {
     } else {
       haptic.success();
       const onboardingDone = await hasCompletedOnboarding();
-      router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+      router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/profile');
     }
   };
 
   const handleSocialSuccess = async () => {
     haptic.success();
     const onboardingDone = await hasCompletedOnboarding();
-    router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/school');
+    router.replace(onboardingDone ? '/(tabs)/map' : '/(onboarding)/profile');
   };
 
   const handleAppleLogin = async () => {

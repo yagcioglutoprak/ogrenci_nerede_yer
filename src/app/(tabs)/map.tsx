@@ -184,7 +184,12 @@ export default function MapScreen() {
     }
     return DEFAULT_REGION;
   }, [authUser?.school_lat, authUser?.school_lng]);
-  const [region, setRegion] = useState<Region>(initialRegion);
+  // Region stored in ref — panning does NOT trigger React re-renders.
+  // Only zoom threshold crossings and debounced fetches update state.
+  const regionRef = useRef<Region>(initialRegion);
+  const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFetchCenterRef = useRef({ lat: initialRegion.latitude, lng: initialRegion.longitude });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -192,12 +197,57 @@ export default function MapScreen() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const markerPressedRef = useRef(false);
 
-  // Debounce region for fetches only
-  const debouncedRegion = useDebounce(region, 500);
+  // Zoom thresholds as state — only updated when crossing a boundary
+  const [isDistrictZoom, setIsDistrictZoom] = useState(initialRegion.latitudeDelta < 0.08);
+  const [isNeighborhoodZoom, setIsNeighborhoodZoom] = useState(initialRegion.latitudeDelta < 0.05);
 
-  // Zoom thresholds (instant from current region state)
-  const isDistrictZoom = region.latitudeDelta < 0.08;
-  const isNeighborhoodZoom = region.latitudeDelta < 0.05;
+  // Stable cell size as state — only updated when zoom band changes
+  const [stableCellSize, setStableCellSize] = useState(() => {
+    if (initialRegion.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) return 0;
+    const raw = initialRegion.latitudeDelta / 3;
+    return Math.pow(2, Math.round(Math.log2(raw)));
+  });
+
+  // Smart region change handler — updates refs always, state only on threshold crossings
+  const handleRegionChange = useCallback((newRegion: Region) => {
+    regionRef.current = newRegion;
+
+    // Update zoom thresholds only when they actually change
+    const newDistrict = newRegion.latitudeDelta < 0.08;
+    const newNeighborhood = newRegion.latitudeDelta < 0.05;
+    setIsDistrictZoom((prev) => (prev !== newDistrict ? newDistrict : prev));
+    setIsNeighborhoodZoom((prev) => (prev !== newNeighborhood ? newNeighborhood : prev));
+
+    // Update stable cell size only when zoom band changes
+    let newCellSize = 0;
+    if (newRegion.latitudeDelta >= MapConfig.CLUSTER_ZOOM_THRESHOLD) {
+      const raw = newRegion.latitudeDelta / 3;
+      newCellSize = Math.pow(2, Math.round(Math.log2(raw)));
+    }
+    setStableCellSize((prev) => (prev !== newCellSize ? newCellSize : prev));
+
+    // Debounced fetch — only when map moves >30% of viewport from last fetch center
+    if (fetchTimerRef.current) clearTimeout(fetchTimerRef.current);
+    fetchTimerRef.current = setTimeout(() => {
+      const { lat, lng } = lastFetchCenterRef.current;
+      const movedLat = Math.abs(newRegion.latitude - lat);
+      const movedLng = Math.abs(newRegion.longitude - lng);
+      const threshold = 0.3;
+      const significantMove =
+        movedLat > newRegion.latitudeDelta * threshold ||
+        movedLng > newRegion.longitudeDelta * threshold;
+
+      if (significantMove || lastFetchCenterRef.current.lat === initialRegion.latitude) {
+        lastFetchCenterRef.current = { lat: newRegion.latitude, lng: newRegion.longitude };
+        if (newRegion.latitudeDelta < 0.08) {
+          countNearbyScraped(newRegion.latitude, newRegion.longitude, newRegion.latitudeDelta, newRegion.longitudeDelta);
+        }
+        if (newRegion.latitudeDelta < 0.05) {
+          fetchNearbyScraped(newRegion.latitude, newRegion.longitude, newRegion.latitudeDelta, newRegion.longitudeDelta);
+        }
+      }
+    }, 400);
+  }, [initialRegion, countNearbyScraped, fetchNearbyScraped]);
 
   // Unified search results (Supabase combined)
   const [searchResults, setSearchResults] = useState<Venue[]>([]);
@@ -212,32 +262,14 @@ export default function MapScreen() {
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // ── Merge ONY venues with scraped venues (only when zoomed in), deduplicated ──
-  // Scraped venues are viewport-filtered (2x buffer) so stale pins from a
-  // previous fetch don't linger on the edge after a big pan.
+  // No viewport filter — the map natively clips off-screen markers.
+  // The store fetches with a 3x buffer so there's always coverage.
   const visibleVenues = useMemo(() => {
     if (!isNeighborhoodZoom) return [...venues];
-    const bufLat = region.latitudeDelta;
-    const bufLng = region.longitudeDelta;
-    const scrapedToShow = nearbyScrapedVenues.filter(
-      (v) =>
-        v.latitude >= region.latitude - bufLat &&
-        v.latitude <= region.latitude + bufLat &&
-        v.longitude >= region.longitude - bufLng &&
-        v.longitude <= region.longitude + bufLng,
-    );
     const seen = new Set(venues.map((v) => v.id));
-    const uniqueScraped = scrapedToShow.filter((v) => !seen.has(v.id));
+    const uniqueScraped = nearbyScrapedVenues.filter((v) => !seen.has(v.id));
     return [...venues, ...uniqueScraped];
-  }, [venues, nearbyScrapedVenues, isNeighborhoodZoom, region]);
-
-  // ── Stable cell size: quantized to powers of 2 so the grid doesn't shift
-  // on every tiny zoom change. Only recomputes when zoom crosses a band.
-  // Returns 0 when zoomed past the cluster threshold (show individual pins).
-  const stableCellSize = useMemo(() => {
-    if (region.latitudeDelta < MapConfig.CLUSTER_ZOOM_THRESHOLD) return 0;
-    const raw = region.latitudeDelta / 3;
-    return Math.pow(2, Math.round(Math.log2(raw)));
-  }, [region.latitudeDelta]);
+  }, [venues, nearbyScrapedVenues, isNeighborhoodZoom]);
 
   // ── Memoized clusters — only recomputes on zoom band change or venue list change,
   // NOT on every pan (panning doesn't change stableCellSize).
@@ -276,16 +308,16 @@ export default function MapScreen() {
     if (venues.length === 0) fetchVenues();
   }, []);
 
-  // Load nearby scraped venues when zoomed in enough, debounced
+  // Initial fetch for scraped venues at startup
   useEffect(() => {
-    const { latitude, longitude, latitudeDelta, longitudeDelta } = debouncedRegion;
+    const { latitude, longitude, latitudeDelta, longitudeDelta } = initialRegion;
     if (latitudeDelta < 0.08) {
       countNearbyScraped(latitude, longitude, latitudeDelta, longitudeDelta);
     }
     if (latitudeDelta < 0.05) {
       fetchNearbyScraped(latitude, longitude, latitudeDelta, longitudeDelta);
     }
-  }, [debouncedRegion]);
+  }, []);
 
   // Debounced search — queries Supabase for both ONY and scraped venues
   useEffect(() => {
@@ -356,8 +388,8 @@ export default function MapScreen() {
       {
         latitude: venue.latitude,
         longitude: venue.longitude,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
+        latitudeDelta: regionRef.current.latitudeDelta,
+        longitudeDelta: regionRef.current.longitudeDelta,
       },
       MapConfig.MARKER_ANIMATION_DURATION,
     );
@@ -417,7 +449,7 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         initialRegion={initialRegion}
-        onRegionChangeComplete={setRegion}
+        onRegionChangeComplete={handleRegionChange}
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
@@ -756,8 +788,8 @@ export default function MapScreen() {
               haptic.light();
               mapRef.current?.animateToRegion(
                 {
-                  latitude: region.latitude,
-                  longitude: region.longitude,
+                  latitude: regionRef.current.latitude,
+                  longitude: regionRef.current.longitude,
                   latitudeDelta: 0.008,
                   longitudeDelta: 0.008,
                 },
